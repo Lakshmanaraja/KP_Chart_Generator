@@ -580,6 +580,8 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
             for (r, c), (val1, val2) in zip(mismatches, mismatch_values)
         )
 
+        if ( score < 0.8 ) :
+            continue
         # skip duplicates
         if mismatch_str in seen_mismatches:
             continue
