@@ -585,6 +585,18 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
     print(all_items)
     # Sort and get top 10
     top_10 = sorted(all_items, key=lambda x: x[3], reverse=True)[:15]
+
+    unique_values = set()
+    top_15_unique = []
+
+    for item in sorted_items:
+        mismatch_values = tuple(item[4])  # convert list → tuple (so it's hashable)
+        if mismatch_values not in unique_values:
+            unique_values.add(mismatch_values)
+            top_15_unique.append(item)
+        if len(top_15_unique) == 15:
+            break
+
     print(f"Start Time : {start_time.time()}")
     print(f"End Time : {end_time.time()}")
     print(f"Total Number of Charts : {len(best_birth_time_list)}" )
@@ -593,7 +605,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
 
     results = []
 
-    for key, time, mismatches, score, mismatch_values in top_10:
+    for key, time, mismatches, score, mismatch_values in top_15_unique:
         mismatch_str = ", ".join(
             f"({int(r)}, {planet_short_name_list[int(c) - 1]}, {val1},{val2})"
             for (r, c), (val1, val2) in zip(mismatches, mismatch_values)
