@@ -624,7 +624,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
     "total": len(best_birth_time_list),
     "results": results
     }
-
+    print(response)
     # Convert to JSON string (for API or frontend)
     #json_output = json.dumps(results, indent=2)
     return(response)
