@@ -339,7 +339,7 @@ def compute_kp_json(date_str:str, time_str:str, lat:float, lon:float, tz_offset_
     #cusps, ascmc = swe.houses_ex(JD, lat, lon) if hasattr(swe, 'houses_ex') else swe.houses(JD, lat, lon)
   
     JD = to_julian_day(ut_dt.year, ut_dt.month, ut_dt.day, ut_dt.hour, ut_dt.minute, ut_dt.second)
-    print(JD)
+    #print(JD)
     cusps, ascmc = swe.houses(JD, lat, lon) 
     if len(cusps) == 13:
         cusp_list = [cusps[i] for i in range(1,13)]
@@ -351,7 +351,7 @@ def compute_kp_json(date_str:str, time_str:str, lat:float, lon:float, tz_offset_
     for i in range(12):
         cusp_trop = normalize_angle(cusp_list[i])
         cusp_sid = normalize_angle(cusp_trop - ayanamsha)
-        print(cusp_sid)
+        #print(cusp_sid)
         sign_id, sign_name = sign_from_deg(cusp_sid)
         sign_lord = SIGN_RULER[sign_id]
         nak_idx, nak_name, nak_lord, charan, pos_in_nak, nak_size = get_nak_charan_and_pos(cusp_sid)
@@ -582,7 +582,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
         if not any((int(r), int(c)) in ignore_locations for r, c in mismatches)
     ]
 
-    print(all_items)
+    #print(all_items)
     # Sort and get top 10
     top_10 = sorted(all_items, key=lambda x: x[3], reverse=True)[:15]
 
@@ -619,7 +619,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
         })
 
     response = {
-    "total": len(all_items),
+    "total": len(best_birth_time_list),
     "results": results
     }
 
