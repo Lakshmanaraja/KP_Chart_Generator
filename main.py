@@ -586,7 +586,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
 
     #print(all_items)
     # Sort and get top 10
-    top_10 = sorted(all_items, key=lambda x: x[3], reverse=True)[:15]
+    top_10 = sorted(all_items, key=lambda x: x[3], reverse=True)
 
     unique_values = set()
     top_15_unique = []
