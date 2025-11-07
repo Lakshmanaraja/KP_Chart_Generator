@@ -512,27 +512,16 @@ def compare_with_answer(df,answer_df):
 
 @app.get("/api/btr_correction")
 def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,answer_chart:str,planet_order:str,must_not_mismatch:str,ayanamsa='Lahiri'):
-    #BTR_Submission = json.loads(data) 
-
-    # birth_time = ["originalBirthTime"]
-    # ayan_mode = BTR_Submission["ayanamsa"]
-    # birth_date = BTR_Submission["dateOfBirth"]
-    # lat = BTR_Submission["latitude"]
-    # lon = BTR_Submission["longitude"]
-    # tz = int(BTR_Submission["timezone"])
-    # answer_chart = BTR_Submission["answerMatrix"]
-
     birth_date = dateOfBirth
     birth_time = originalBirthTime
     start_time = datetime.datetime.strptime(originalBirthTime, "%H:%M:%S") - datetime.timedelta(minutes=int(time_range))
     end_time = datetime.datetime.strptime(originalBirthTime, "%H:%M:%S") + datetime.timedelta(minutes=int(time_range))
     step = datetime.timedelta(seconds=int(time_delta))
 
-    #answer_list = json.loads(answer_chart)
     answer_list = ast.literal_eval(answer_chart)
     answer_df = pd.DataFrame(answer_list)
     answer_df.index += 1
-    #answer_df = pd.DataFrame(answer_chart, index=range(1, len(answer_chart)+1))
+
 
     # (Optional) Add column names using planetOrder
     planet_list = ast.literal_eval(planet_order)
@@ -540,41 +529,28 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
 
     must_not_mismatch_list = ast.literal_eval(must_not_mismatch)
 
-    #print(answer_df)
-    #answer_df = pd.DataFrame.from_dict(answer_chart,orient='index',columns=Planet_order)
-
-
     best_birth_time_list = {}
     i =0 
 
     #Loop
     current = start_time
     while current <= end_time:
-        #print(current.strftime("%H:%M:%S"))
+
         i = i+1
         birth_time = current.strftime("%H:%M:%S")
 
-        #print(birth_time)
         df = calculate_TS_Bhava_significator(birth_date,birth_time,lat,lon,tz,ayan_mode='Lahiri')
-        #print(df)
         percentage ,mismatch_locations, mismatch_values = compare_with_answer(df,answer_df)
         best_birth_time_list.setdefault(i,[]).append((birth_time,mismatch_locations,percentage,mismatch_values))
-        #print(percentage)
         current += step
-
-
-    #print(best_birth_time_list[136])
 
     planet_short_name_list = ['Ke','Ve','Su','Mo','Ma','Ra','Ju','Sa','Me']
 
-    #ignore_locations_text = [(3,'Mo'),(2,'Mo')] #[(10,'Ma'),(6,'Mo'),(8,'Ra'),(6,'Ke'),(6,'Sa'),(8,'Su'),(8,'Ju')]  #,,(6,'Mo'),,(8,'Me') (1,'Ra'),(10,'Ma'),(8,'Ra'),(3,'Me')
-
+    #ignore_locations_text = [(3,'Mo'),(2,'Mo')] 
     ignore_locations = [
         (row, planet_short_name_list.index(planet) + 1)
         for row, planet in must_not_mismatch_list
     ]
-
-    #print(best_birth_time_list[1][0])
 
     # Flatten and exclude unwanted mismatches
     all_items = [
@@ -584,37 +560,32 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
         if not any((int(r), int(c)) in ignore_locations for r, c in mismatches)
     ]
 
-    top_10 = sorted(
-        [item for item in all_items if item[3] >= 0.7],
+
+    all_items_sorted_filtered = sorted(
+        [item for item in all_items if item[3] >= 0.8],
         key=lambda x: x[3],
         reverse=True
         )
-
-    unique_values = set()
-    top_15_unique = []
-
-    for item in top_10:
-        mismatch_values = tuple(item[4])  # convert list → tuple (so it's hashable)
-        if mismatch_values not in unique_values:
-            unique_values.add(mismatch_values)
-            top_15_unique.append(item)
-        if len(top_15_unique) == 15:
-            break
 
     print(f"Start Time : {start_time.time()}")
     print(f"End Time : {end_time.time()}")
     print(f"Total Number of Charts : {len(best_birth_time_list)}" )
 
-
-
     results = []
+    seen_mismatches = set()  # to track unique mismatch_str
 
-    for key, time, mismatches, score, mismatch_values in top_15_unique:
+    for key, time, mismatches, score, mismatch_values in all_items_sorted_filtered:
         mismatch_str = ", ".join(
             f"({int(r)}, {planet_short_name_list[int(c) - 1]}, {val1},{val2})"
             for (r, c), (val1, val2) in zip(mismatches, mismatch_values)
         )
+
+        # skip duplicates
+        if mismatch_str in seen_mismatches:
+            continue
         
+        seen_mismatches.add(mismatch_str)
+
         results.append({
             "chartNo": key,
             "time": time,
@@ -623,10 +594,9 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
         })
 
     response = {
+    "Start Time":start_time.time(),
+    "End Time": end_time.time(),
     "total": len(best_birth_time_list),
     "results": results
     }
-    print(response)
-    # Convert to JSON string (for API or frontend)
-    #json_output = json.dumps(results, indent=2)
     return(response)
