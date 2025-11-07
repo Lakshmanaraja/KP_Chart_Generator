@@ -584,9 +584,11 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
         if not any((int(r), int(c)) in ignore_locations for r, c in mismatches)
     ]
 
-    #print(all_items)
-    # Sort and get top 10
-    top_10 = sorted(all_items, key=lambda x: x[3], reverse=True)
+    top_10 = sorted(
+        [item for item in all_items if item[3] >= 0.7],
+        key=lambda x: x[3],
+        reverse=True
+        )
 
     unique_values = set()
     top_15_unique = []
