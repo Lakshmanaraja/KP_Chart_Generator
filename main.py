@@ -618,7 +618,11 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
             "mismatches": mismatch_str
         })
 
+    response = {
+    "total": len(all_items),
+    "results": results
+    }
 
     # Convert to JSON string (for API or frontend)
-    json_output = json.dumps(results, indent=2)
-    return(json_output)
+    #json_output = json.dumps(results, indent=2)
+    return(response)
