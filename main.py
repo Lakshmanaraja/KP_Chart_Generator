@@ -511,7 +511,7 @@ def compare_with_answer(df,answer_df):
 
 
 @app.get("/api/btr_correction")
-def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,answer_chart:str,planet_order:str,ayanamsa='Lahiri'):
+def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,answer_chart:str,planet_order:str,must_not_mismatch:str,ayanamsa='Lahiri'):
     #BTR_Submission = json.loads(data) 
 
     # birth_time = ["originalBirthTime"]
@@ -537,6 +537,8 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
     # (Optional) Add column names using planetOrder
     planet_list = ast.literal_eval(planet_order)
     answer_df.columns = planet_list
+
+    must_not_mismatch_list = ast.literal_eval(must_not_mismatch)
 
     #print(answer_df)
     #answer_df = pd.DataFrame.from_dict(answer_chart,orient='index',columns=Planet_order)
@@ -565,11 +567,11 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
 
     planet_short_name_list = ['Ke','Ve','Su','Mo','Ma','Ra','Ju','Sa','Me']
 
-    ignore_locations_text = [(3,'Mo'),(2,'Mo')] #[(10,'Ma'),(6,'Mo'),(8,'Ra'),(6,'Ke'),(6,'Sa'),(8,'Su'),(8,'Ju')]  #,,(6,'Mo'),,(8,'Me') (1,'Ra'),(10,'Ma'),(8,'Ra'),(3,'Me')
+    #ignore_locations_text = [(3,'Mo'),(2,'Mo')] #[(10,'Ma'),(6,'Mo'),(8,'Ra'),(6,'Ke'),(6,'Sa'),(8,'Su'),(8,'Ju')]  #,,(6,'Mo'),,(8,'Me') (1,'Ra'),(10,'Ma'),(8,'Ra'),(3,'Me')
 
     ignore_locations = [
         (row, planet_short_name_list.index(planet) + 1)
-        for row, planet in ignore_locations_text
+        for row, planet in must_not_mismatch_list
     ]
 
     #print(best_birth_time_list[1][0])
