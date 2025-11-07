@@ -589,7 +589,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
     unique_values = set()
     top_15_unique = []
 
-    for item in sorted_items:
+    for item in top_10:
         mismatch_values = tuple(item[4])  # convert list → tuple (so it's hashable)
         if mismatch_values not in unique_values:
             unique_values.add(mismatch_values)
