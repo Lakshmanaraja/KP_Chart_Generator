@@ -525,7 +525,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
     birth_date = dateOfBirth
     birth_time = originalBirthTime
     start_time = datetime.datetime.strptime(originalBirthTime, "%H:%M:%S") - datetime.timedelta(minutes=int(time_range))
-    end_time = start_time + datetime.timedelta(minutes=int(time_range))
+    end_time = datetime.datetime.strptime(originalBirthTime, "%H:%M:%S") + datetime.timedelta(minutes=int(time_range))
     step = datetime.timedelta(seconds=int(time_delta))
 
     #answer_list = json.loads(answer_chart)
