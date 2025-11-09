@@ -488,6 +488,7 @@ def calculate_TS_Bhava_significator (birth_date:str,birth_time:str,lat:float,lon
     kpjson = compute_kp_json(birth_date, birth_time, lat, lon, tz, ayan_mode='Lahiri')
     
     presence = calculate_connected_planets(kpjson)
+    print(presence)
      # Convert DataFrame to JSON-safe structure
     #df_records = df.to_dict(orient="records")
     # Use jsonable_encoder to convert NumPy types to Python types
