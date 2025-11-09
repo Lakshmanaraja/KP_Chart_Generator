@@ -458,19 +458,15 @@ def calculate_connected_planets(kpjson):
     # Step 1: get all unique planet names
     
     
-    for pl in VIMSHOTTARI_ORDER:
+    #for pl in VIMSHOTTARI_ORDER:
         # Step 2: build presence matrix
-        presence = {}
+    presence = {}
 
-        for house, planets in connected_pl.items():
-            presence[house] = {pl: (1 if pl in planets else 0) for pl in VIMSHOTTARI_ORDER}
+    for house, planets in connected_pl.items():
+        presence[house] = {pl: (1 if pl in planets else 0) for pl in VIMSHOTTARI_ORDER}
 
         # Step 3: (optional) print as table
-
-    df = pd.DataFrame.from_dict(presence, orient='index')
-
-
-    return df
+    return presence
 
 def calculate_TS_Bhava_significator_fn (birth_date,birth_time,lat,lon,tz,ayan_mode='Lahiri'):
 
@@ -478,7 +474,9 @@ def calculate_TS_Bhava_significator_fn (birth_date,birth_time,lat,lon,tz,ayan_mo
         swe.set_ephe_path(EPHE_PATH)
     #time = start_time
     kpjson = compute_kp_json(birth_date, birth_time, lat, lon, tz, ayan_mode='Lahiri')
-    return (calculate_connected_planets(kpjson))
+    presence = calculate_connected_planets(kpjson)
+    df = pd.DataFrame.from_dict(presence, orient='index')
+    return (df)
     
 
 @app.get("/api/calculate_TS_Bhava_Significator")
@@ -488,12 +486,12 @@ def calculate_TS_Bhava_significator (birth_date:str,birth_time:str,lat:float,lon
         swe.set_ephe_path(EPHE_PATH)
     #time = start_time
     kpjson = compute_kp_json(birth_date, birth_time, lat, lon, tz, ayan_mode='Lahiri')
-
-    df = calculate_connected_planets(kpjson)
+    
+    presence = calculate_connected_planets(kpjson)
      # Convert DataFrame to JSON-safe structure
-    df_records = df.to_dict(orient="records")
+    #df_records = df.to_dict(orient="records")
     # Use jsonable_encoder to convert NumPy types to Python types
-    json_compatible = jsonable_encoder(df_records)
+    json_compatible = jsonable_encoder(presence)
     return JSONResponse(content=json_compatible)
     
 def compare_with_answer(df,answer_df):
