@@ -1,5 +1,6 @@
 from fastapi import FastAPI,HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.encoders import jsonable_encoder
 
 app = FastAPI()
 
@@ -470,6 +471,15 @@ def calculate_connected_planets(kpjson):
 
     return df
 
+def calculate_TS_Bhava_significator_fn (birth_date,birth_time,lat,lon,tz,ayan_mode='Lahiri'):
+
+    if EPHE_PATH:
+        swe.set_ephe_path(EPHE_PATH)
+    #time = start_time
+    kpjson = compute_kp_json(birth_date, birth_time, lat, lon, tz, ayan_mode='Lahiri')
+    return (calculate_connected_planets(kpjson))
+    
+
 @app.get("/api/calculate_TS_Bhava_Significator")
 def calculate_TS_Bhava_significator (birth_date:str,birth_time:str,lat:float,lon:float,tz:float,ayan_mode='Lahiri'):
 
@@ -477,7 +487,8 @@ def calculate_TS_Bhava_significator (birth_date:str,birth_time:str,lat:float,lon
         swe.set_ephe_path(EPHE_PATH)
     #time = start_time
     kpjson = compute_kp_json(birth_date, birth_time, lat, lon, tz, ayan_mode='Lahiri')
-    return(calculate_connected_planets(kpjson))
+    result = calculate_connected_planets(kpjson)
+    return jsonable_encoder(results)
     
 def compare_with_answer(df,answer_df):
 
@@ -540,7 +551,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
         i = i+1
         birth_time = current.strftime("%H:%M:%S")
 
-        df = calculate_TS_Bhava_significator(birth_date,birth_time,lat,lon,tz,ayan_mode='Lahiri')
+        df = calculate_TS_Bhava_significator_fn(birth_date,birth_time,lat,lon,tz,ayan_mode='Lahiri')
         percentage ,mismatch_locations, mismatch_values = compare_with_answer(df,answer_df)
         best_birth_time_list.setdefault(i,[]).append((birth_time,mismatch_locations,percentage,mismatch_values))
         current += step
