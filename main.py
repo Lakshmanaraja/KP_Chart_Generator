@@ -487,8 +487,13 @@ def calculate_TS_Bhava_significator (birth_date:str,birth_time:str,lat:float,lon
         swe.set_ephe_path(EPHE_PATH)
     #time = start_time
     kpjson = compute_kp_json(birth_date, birth_time, lat, lon, tz, ayan_mode='Lahiri')
-    results = calculate_connected_planets(kpjson)
-    return jsonable_encoder(results)
+
+    df = calculate_connected_planets(kpjson)
+     # Convert DataFrame to JSON-safe structure
+    df_records = df.to_dict(orient="records")
+    # Use jsonable_encoder to convert NumPy types to Python types
+    json_compatible = jsonable_encoder(df_records)
+    return JSONResponse(content=json_compatible)
     
 def compare_with_answer(df,answer_df):
 
