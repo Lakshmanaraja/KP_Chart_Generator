@@ -405,7 +405,7 @@ def primary_pl_and_loc_pl(houses,planets):
         pl_list = [h['nakshatra_lord'],h['sub_lord'],h['sub_sub_lord']]
         
         if len(set(pl_list)) < 3:
-            pl_list.extend(h['sub_sub_sub_lord']) #Filtered SNL
+            pl_list.extend([h['sub_sub_sub_lord']]) #Filtered SNL
 
         pr_pl_list[h['house_id']] = unique_list(pl_list)
 
