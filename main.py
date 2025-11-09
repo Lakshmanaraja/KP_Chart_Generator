@@ -590,24 +590,29 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
     results = []
     seen_mismatches = set()  # to track unique mismatch_str
 
+    count = 0    
     for key, time, mismatches, score, mismatch_values in all_items_sorted_filtered:
         mismatch_str = ", ".join(
             f"({int(r)}, {planet_short_name_list[int(c) - 1]}, {val1},{val2})"
             for (r, c), (val1, val2) in zip(mismatches, mismatch_values)
         )
-
+        
         # skip duplicates
         if mismatch_str in seen_mismatches:
             continue
         
         seen_mismatches.add(mismatch_str)
 
+        if count > 8
+            break
         results.append({
             "chartNo": key,
             "time": time,
             "score": round(score, 2),
             "mismatches": mismatch_str
         })
+
+        count = count + 1
 
     response = {
     "Start Time":start_time.time(),
