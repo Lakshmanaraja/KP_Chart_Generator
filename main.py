@@ -487,7 +487,7 @@ def calculate_TS_Bhava_significator (birth_date:str,birth_time:str,lat:float,lon
         swe.set_ephe_path(EPHE_PATH)
     #time = start_time
     kpjson = compute_kp_json(birth_date, birth_time, lat, lon, tz, ayan_mode='Lahiri')
-    result = calculate_connected_planets(kpjson)
+    results = calculate_connected_planets(kpjson)
     return jsonable_encoder(results)
     
 def compare_with_answer(df,answer_df):
