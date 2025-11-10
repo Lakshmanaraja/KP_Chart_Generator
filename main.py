@@ -575,7 +575,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
     print(f"Start Time : {start_time.time()}")
     print(f"End Time : {end_time.time()}")
     print(f"Total Number of Charts : {len(best_birth_time_list)}" )
-    print(f"len of filtered:{len(all_items_sorted_filtere)}")
+    print(f"len of filtered:{len(all_items_sorted_filtered)}")
 
     results = []
     seen_mismatches = set()  # to track unique mismatch_str
