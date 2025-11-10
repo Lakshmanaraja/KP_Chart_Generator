@@ -2,7 +2,7 @@ from fastapi import FastAPI,HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-
+from collections import defaultdict, Counter, OrderedDict
 app = FastAPI()
 
 # --- CORS for Lovable frontend ---
