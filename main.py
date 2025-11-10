@@ -389,11 +389,8 @@ def unique_list(pl_list):
             unique_items.append(item)
     return(unique_items)
 
-def primary_pl_and_loc_pl(houses,planets):
-    #print(kpjson)
-
-
-        # group planets by house
+def calc_primary_pl_and_loc_pl(houses,planets,isPrimaryPL=1,isLoc=1):
+    # group planets by house
     planets_by_house = {}
     for p in planets:
         planets_by_house.setdefault(p["house"], []).append(p)
@@ -417,25 +414,22 @@ def primary_pl_and_loc_pl(houses,planets):
 
         for pl in plist:
             loc_list.setdefault(h['house_id'],[]).append(pl['planet_name'])
-
-    return pr_pl_list,loc_list
-
-
-def calculate_connected_planets(kpjson):
-
-    houses = sorted(kpjson["houses"], key=lambda x: x["house_id"])
-    planets = sorted(kpjson["planets"], key=lambda x: x["house"])
-
-    connected_pl = {}
-    pr_pl_list,loc_list = primary_pl_and_loc_pl(houses,planets)
-
+    
     combined_pl = {}
 
-    for k in set(pr_pl_list) | set(loc_list):
-        combined_pl[k] = pr_pl_list.get(k, []) + loc_list.get(k, [])
+    if (isLoc==1):
+        for k in set(pr_pl_list) | set(loc_list):
+            combined_pl[k] = pr_pl_list.get(k, []) + loc_list.get(k, [])
+    else :
+            combined_pl = pr_pl_list
 
-    #print(combined_pl)
-    
+    return combined_pl
+
+
+def calc_connected_planets(houses,planets):
+    connected_pl = {}
+    combined_pl = primary_pl_and_loc_pl(houses,planets)
+
     for h in houses :
         #print(combined_pl[h['house_id']])
         connected_pl.setdefault(h['house_id'],[]).extend(combined_pl[h['house_id']])
@@ -454,51 +448,36 @@ def calculate_connected_planets(kpjson):
     for h in houses :
         connected_pl[h['house_id']] = unique_list(connected_pl[h['house_id']])
         
-
+    return(connected_pl)
     # Step 1: get all unique planet names
     
     
     #for pl in VIMSHOTTARI_ORDER:
         # Step 2: build presence matrix
+
+def calc_bhava_planet_presence_fn (birth_date,birth_time,lat,lon,tz,isPrimaryPL=1,isLoc=1,isConnectedPL=0,ayan_mode='Lahiri'):
+
+    if EPHE_PATH:
+        swe.set_ephe_path(EPHE_PATH)
+    #time = start_time
+    kpjson = compute_kp_json(birth_date, birth_time, lat, lon, tz, ayan_mode='Lahiri')
+    houses = sorted(kpjson["houses"], key=lambda x: x["house_id"])
+    planets = sorted(kpjson["planets"], key=lambda x: x["house"])
+
+    if(isConnectedPL == 1):
+        bhava_planet_dict = calc_connected_planets(houses,planets)
+    else :
+        bhava_planet_dict = calc_primary_pl_and_loc_pl(houses,planets,isPrimaryPL,isLoc)
+        
     presence = {}
 
-    for house, planets in connected_pl.items():
+    for house, planets in bhava_planet_dict.items():
         presence[house] = {pl: (1 if pl in planets else 0) for pl in VIMSHOTTARI_ORDER}
 
         # Step 3: (optional) print as table
     return presence
 
-def calculate_TS_Bhava_significator_fn (birth_date,birth_time,lat,lon,tz,ayan_mode='Lahiri'):
-
-    if EPHE_PATH:
-        swe.set_ephe_path(EPHE_PATH)
-    #time = start_time
-    kpjson = compute_kp_json(birth_date, birth_time, lat, lon, tz, ayan_mode='Lahiri')
-    presence = calculate_connected_planets(kpjson)
-    df = pd.DataFrame.from_dict(presence, orient='index')
-    return (df)
-    
-
-@app.get("/api/calculate_TS_Bhava_Significator")
-def calculate_TS_Bhava_significator (birth_date:str,birth_time:str,lat:float,lon:float,tz:float,ayan_mode='Lahiri'):
-
-    if EPHE_PATH:
-        swe.set_ephe_path(EPHE_PATH)
-    #time = start_time
-    kpjson = compute_kp_json(birth_date, birth_time, lat, lon, tz, ayan_mode='Lahiri')
-    
-    presence = calculate_connected_planets(kpjson)
-    print(presence)
-     # Convert DataFrame to JSON-safe structure
-    #df_records = df.to_dict(orient="records")
-    # Use jsonable_encoder to convert NumPy types to Python types
-    json_compatible = jsonable_encoder(presence)
-    return JSONResponse(content=json_compatible)
-    
 def compare_with_answer(df,answer_df):
-
-  
-
     # Step 1: ensure same dtype (so comparisons behave cleanly)
     df = df.astype(int)
     answer_df = answer_df.astype(int)
@@ -527,8 +506,16 @@ def compare_with_answer(df,answer_df):
     return(matches / valid_points * 100 , mismatch_locations, mismatch_values)
 
 
+@app.get("/api/calc_bhava_planet_presence")
+def calc_bhava_planet_presence (birth_date:str,birth_time:str,lat:float,lon:float,tz:float,ayan_mode='Lahiri'):
+
+    presence = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,ayan_mode)
+     # Convert DataFrame to JSON-safe structure
+    json_compatible = jsonable_encoder(presence)
+    return JSONResponse(content=json_compatible)
+
 @app.get("/api/btr_correction")
-def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,answer_chart:str,planet_order:str,must_not_mismatch:str,ayanamsa='Lahiri'):
+def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,answer_chart:str,planet_order:str,must_not_mismatch:str,isPrimaryPL=1,isLoc=1,isConnectedPL=0,ayanamsa='Lahiri'):
     birth_date = dateOfBirth
     birth_time = originalBirthTime
     start_time = datetime.datetime.strptime(originalBirthTime, "%H:%M:%S") - datetime.timedelta(minutes=int(time_range))
@@ -556,7 +543,8 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
         i = i+1
         birth_time = current.strftime("%H:%M:%S")
 
-        df = calculate_TS_Bhava_significator_fn(birth_date,birth_time,lat,lon,tz,ayan_mode='Lahiri')
+        presence = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL,isLoc,isConnectedPL,ayan_mode='Lahiri')
+        df = pd.DataFrame.from_dict(presence, orient='index')
         percentage ,mismatch_locations, mismatch_values = compare_with_answer(df,answer_df)
         best_birth_time_list.setdefault(i,[]).append((birth_time,mismatch_locations,percentage,mismatch_values))
         current += step
@@ -622,3 +610,46 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
     "results": results
     }
     return(response)
+
+@app.get("/api/bhava_planet_presence_for_questions")
+def bhava_planet_presence_for_questions(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,bhava_start:int,bhava_end:int,isPrimaryPL:int,isLoc:int,isConnectedPL:int,ayanamsa='Lahiri'):
+    
+    if EPHE_PATH:
+        swe.set_ephe_path(EPHE_PATH)
+  
+    birth_date = dateOfBirth
+    start_time = datetime.datetime.strptime(originalBirthTime, "%H:%M:%S") - datetime.timedelta(minutes=int(time_range))
+    end_time = datetime.datetime.strptime(originalBirthTime, "%H:%M:%S") + datetime.timedelta(minutes=int(time_range))
+    step = datetime.timedelta(seconds=int(time_delta))
+    print(step)
+    presence = {}
+    current = start_time
+
+    i = 0
+
+    while current <= end_time:
+        
+        birth_time = current.strftime("%H:%M:%S")
+        presence_new = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,ayan_mode='Lahiri')
+        print(presence_new)
+        if (i == 0) :
+            presence = presence_new
+        else :
+            presence = { k: {planet: max(presence[k][planet], presence_new[k][planet]) for planet in presence[k]} for k in presence}
+        
+        i = i+1    
+        if (step == datetime.timedelta(seconds=0)):
+            break
+        current += step
+
+    for bhava in presence:
+        if not (bhava_start <= bhava <= bhava_end):
+            presence[bhava] = {planet: 2 for planet in presence[bhava]}
+    #print(presence)
+    
+    json_compatible = jsonable_encoder(presence)
+    return JSONResponse(content=json_compatible)
+
+
+
+    
