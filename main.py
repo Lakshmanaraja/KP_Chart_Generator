@@ -653,5 +653,55 @@ def bhava_planet_presence_for_questions(dateOfBirth:str,originalBirthTime:str,la
     return JSONResponse(content=json_compatible)
 
 
+def aggregate(values):
+    counter = Counter(values)
+    most_common = counter.most_common()
+    top_count = most_common[0][1]
+    top_values = [v for v, c in most_common if c == top_count]
 
+    if len(top_values) == 1:
+        return top_values[0]
+    tie = set(top_values)
+    if tie == {0, 1}:
+        return 2
+    elif tie == {0, 2}:
+        return 0
+    elif tie == {1, 2}:
+        return 1
+    else:
+        return 2  # all equal fallback
+
+
+@app.get("/api/calc_answer_chart")
+def calc_answer_chart(question_json: List[Dict]):
+    # ---- STEP 1: Collect all selected values ----
+    counts = defaultdict(list)
+
+    for q in question_Json:
+        for combo in q["combinations"]:
+            key = (combo["bhava"], combo["planet"])
+            counts[key].append(q["selectedValue"])
+
+    aggregated = defaultdict(dict)
+    for (bhava, planet), values in counts.items():
+        aggregated[bhava][planet] = aggregate(values)
+
+    # ---- STEP 3: Build final ordered dictionary ----
+    final_result = OrderedDict()
+
+    for bhava in range(1, 13):
+        # create bhava dictionary in fixed planet order
+        bhava_dict = OrderedDict()
+        for planet in PLANET_ORDER:
+            bhava_dict[planet] = aggregated.get(bhava, {}).get(planet, 2)
+        final_result[bhava] = bhava_dict
+
+    # ---- OUTPUT ----
+    from pprint import pprint
+    pprint(final_result)
+
+    # Convert OrderedDict → regular dict for JSON serialization
+    final_result_dict = {bhava: dict(planets) for bhava, planets in final_result.items()}
+
+    return JSONResponse(content=final_result_dict)
     
