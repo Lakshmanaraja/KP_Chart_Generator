@@ -609,6 +609,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
     "total": len(best_birth_time_list),
     "results": results
     }
+    print(response)
     return(response)
 
 @app.get("/api/bhava_planet_presence_for_questions")
