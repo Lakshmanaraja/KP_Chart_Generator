@@ -567,7 +567,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
 
 
     all_items_sorted_filtered = sorted(
-        [item for item in all_items if item[3] >= 80.0],
+        [item for item in all_items if item[3] >= 60.0],
         key=lambda x: x[3],
         reverse=True
         )
@@ -612,7 +612,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
     return(response)
 
 @app.get("/api/bhava_planet_presence_for_questions")
-def bhava_planet_presence_for_questions(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,bhava_start:int,bhava_end:int,isPrimaryPL:int,isLoc:int,isConnectedPL:int,ayanamsa='Lahiri'):
+def bhava_planet_presence_for_questions(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,bhava_start:int,bhava_end:int,isPrimaryPL=1,isLoc=1,isConnectedPL=0,ayanamsa='Lahiri'):
     
     if EPHE_PATH:
         swe.set_ephe_path(EPHE_PATH)
@@ -630,7 +630,7 @@ def bhava_planet_presence_for_questions(dateOfBirth:str,originalBirthTime:str,la
     while current <= end_time:
         
         birth_time = current.strftime("%H:%M:%S")
-        presence_new = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,ayan_mode='Lahiri')
+        presence_new = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL,isLoc,isConnectedPL,ayan_mode='Lahiri')
         print(presence_new)
         if (i == 0) :
             presence = presence_new
