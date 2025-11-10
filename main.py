@@ -697,8 +697,8 @@ def calc_answer_chart(question_json: List[Dict]):
         final_result[bhava] = bhava_dict
 
     # ---- OUTPUT ----
-    from pprint import pprint
-    pprint(final_result)
+    # from pprint import pprint
+    # pprint(final_result)
 
     # Convert OrderedDict → regular dict for JSON serialization
     final_result_dict = {bhava: dict(planets) for bhava, planets in final_result.items()}
