@@ -567,7 +567,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
 
     print(all_items)
     all_items_sorted_filtered = sorted(
-        [item for item in all_items if item[3] >= 60.0],
+        [item for item in all_items if item[3] >= 10.0],
         key=lambda x: x[3],
         reverse=True
         )
