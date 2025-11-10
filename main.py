@@ -565,7 +565,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
         if not any((int(r), int(c)) in ignore_locations for r, c in mismatches)
     ]
 
-
+    print(all_items)
     all_items_sorted_filtered = sorted(
         [item for item in all_items if item[3] >= 60.0],
         key=lambda x: x[3],
