@@ -677,7 +677,7 @@ def calc_answer_chart(question_json: List[Dict]):
     # ---- STEP 1: Collect all selected values ----
     counts = defaultdict(list)
 
-    for q in question_Json:
+    for q in question_json:
         for combo in q["combinations"]:
             key = (combo["bhava"], combo["planet"])
             counts[key].append(q["selectedValue"])
