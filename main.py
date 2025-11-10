@@ -672,7 +672,7 @@ def aggregate(values):
         return 2  # all equal fallback
 
 
-@app.get("/api/calc_answer_chart")
+@app.post("/api/calc_answer_chart")
 def calc_answer_chart(question_json: List[Dict]):
     # ---- STEP 1: Collect all selected values ----
     counts = defaultdict(list)
