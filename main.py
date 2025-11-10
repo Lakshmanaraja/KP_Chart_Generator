@@ -428,7 +428,7 @@ def calc_primary_pl_and_loc_pl(houses,planets,isPrimaryPL=1,isLoc=1):
 
 def calc_connected_planets(houses,planets):
     connected_pl = {}
-    combined_pl = primary_pl_and_loc_pl(houses,planets)
+    combined_pl = calc_primary_pl_and_loc_pl(houses,planets)
 
     for h in houses :
         #print(combined_pl[h['house_id']])
