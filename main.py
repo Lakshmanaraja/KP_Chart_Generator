@@ -692,7 +692,7 @@ def calc_answer_chart(question_json: List[Dict]):
     for bhava in range(1, 13):
         # create bhava dictionary in fixed planet order
         bhava_dict = OrderedDict()
-        for planet in PLANET_ORDER:
+        for planet in VIMSHOTTARI_ORDER:
             bhava_dict[planet] = aggregated.get(bhava, {}).get(planet, 2)
         final_result[bhava] = bhava_dict
 
