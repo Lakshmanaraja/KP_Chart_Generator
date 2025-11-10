@@ -509,7 +509,7 @@ def compare_with_answer(df,answer_df):
 @app.get("/api/calc_bhava_planet_presence")
 def calc_bhava_planet_presence (birth_date:str,birth_time:str,lat:float,lon:float,tz:float,isPrimaryPL=1,isLoc=1,isConnectedPL=1,ayan_mode='Lahiri'):
 
-    presence = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL=1,isLoc=1,isConnectedPL=1,ayan_mode)
+    presence = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL=1,isLoc=1,isConnectedPL=1,ayan_mode='Lahiri')
      # Convert DataFrame to JSON-safe structure
     json_compatible = jsonable_encoder(presence)
     return JSONResponse(content=json_compatible)
