@@ -547,6 +547,9 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
         df = pd.DataFrame.from_dict(presence, orient='index')
         percentage ,mismatch_locations, mismatch_values = compare_with_answer(df,answer_df)
         best_birth_time_list.setdefault(i,[]).append((birth_time,mismatch_locations,percentage,mismatch_values))
+
+        if (step == datetime.timedelta(seconds=0)):
+            break
         current += step
 
     planet_short_name_list = ['Ke','Ve','Su','Mo','Ma','Ra','Ju','Sa','Me']
