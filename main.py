@@ -475,7 +475,7 @@ def calc_bhava_planet_presence_fn (birth_date,birth_time,lat,lon,tz,isPrimaryPL=
         presence[house] = {pl: (1 if pl in planets else 0) for pl in VIMSHOTTARI_ORDER}
 
         # Step 3: (optional) print as table
-    return presence
+    return presence,kpjson
 
 def compare_with_answer(df,answer_df):
     # Step 1: ensure same dtype (so comparisons behave cleanly)
@@ -509,9 +509,12 @@ def compare_with_answer(df,answer_df):
 @app.get("/api/calc_bhava_planet_presence")
 def calc_bhava_planet_presence (birth_date:str,birth_time:str,lat:float,lon:float,tz:float,isPrimaryPL=1,isLoc=1,isConnectedPL=1,ayan_mode='Lahiri'):
 
-    presence = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL=1,isLoc=1,isConnectedPL=1,ayan_mode='Lahiri')
+    presence.kpjson = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL=1,isLoc=1,isConnectedPL=1,ayan_mode='Lahiri')
      # Convert DataFrame to JSON-safe structure
-    json_compatible = jsonable_encoder(presence)
+    response = {} 
+    response["presence"]= presence
+    response["kpjson"]=kpjson
+    json_compatible = jsonable_encoder(response)
     return JSONResponse(content=json_compatible)
 
 @app.get("/api/btr_correction")
@@ -543,7 +546,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
         i = i+1
         birth_time = current.strftime("%H:%M:%S")
 
-        presence = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL,isLoc,isConnectedPL,ayan_mode='Lahiri')
+        presence,_ = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL,isLoc,isConnectedPL,ayan_mode='Lahiri')
         df = pd.DataFrame.from_dict(presence, orient='index')
         percentage ,mismatch_locations, mismatch_values = compare_with_answer(df,answer_df)
         best_birth_time_list.setdefault(i,[]).append((birth_time,mismatch_locations,percentage,mismatch_values))
@@ -635,7 +638,7 @@ def bhava_planet_presence_for_questions(dateOfBirth:str,originalBirthTime:str,la
     while current <= end_time:
         
         birth_time = current.strftime("%H:%M:%S")
-        presence_new = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL,isLoc,isConnectedPL,ayan_mode='Lahiri')
+        presence_new,_ = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL,isLoc,isConnectedPL,ayan_mode='Lahiri')
         print(presence_new)
         if (i == 0) :
             presence = presence_new
