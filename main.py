@@ -515,7 +515,7 @@ def calc_bhava_planet_presence (birth_date:str,birth_time:str,lat:float,lon:floa
     return JSONResponse(content=json_compatible)
 
 @app.get("/api/btr_correction")
-def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,answer_chart:str,planet_order:str,must_not_mismatch:str,isPrimaryPL=1,isLoc=1,isConnectedPL=0,ayanamsa='Lahiri'):
+def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,answer_chart:str,planet_order:str,must_not_mismatch:str,isPrimaryPL=1,isLoc=1,isConnectedPL=1,ayanamsa='Lahiri'):
     birth_date = dateOfBirth
     birth_time = originalBirthTime
     start_time = datetime.datetime.strptime(originalBirthTime, "%H:%M:%S") - datetime.timedelta(minutes=int(time_range))
