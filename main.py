@@ -596,7 +596,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
         
         seen_mismatches.add(mismatch_str)
 
-        if (count > 8):
+        if (count > 3):
             break
         results.append({
             "chartNo": key,
