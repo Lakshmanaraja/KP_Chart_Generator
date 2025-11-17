@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from collections import defaultdict, Counter, OrderedDict
-from vdk import calculate_vimshottari
+#from vdk import calculate_vimshottari
 
 app = FastAPI()
 
