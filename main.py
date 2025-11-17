@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from collections import defaultdict, Counter, OrderedDict
+from vdk import calculate_vimshottari
+
 app = FastAPI()
 
 # --- CORS for Lovable frontend ---
@@ -63,6 +65,20 @@ PLANETS = [
     (swe.MEAN_NODE, 'Rahu')  # we'll add Ketu as opposite
 ]
 
+VIMSHOTTARI_YEARS = {
+    "Ketu": 7,
+    "Venus": 20,
+    "Sun": 6,
+    "Moon": 10,
+    "Mars": 7,
+    "Rahu": 18,
+    "Jupiter": 16,
+    "Saturn": 19,
+    "Mercury": 17
+}
+
+DASHA_ORDER = list(VIMSHOTTARI_YEARS.keys())
+
 # Vimshottari sequence and proportions
 VIMSHOTTARI_ORDER = ['Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury']
 VIM_YEARS = [7,20,6,10,7,18,16,19,17]
@@ -88,6 +104,9 @@ SIGN_RULER = {
 SIGN_NAMES = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
 
 # -------------------- Helper functions --------------------------------
+
+NAKSHATRA_SIZE = 13.33333333333333  # 13°20'
+TOTAL_YEARS = 120
 
 def parse_date_time(date_str, time_str):
     y,m,d = [int(x) for x in date_str.split('-')]
@@ -710,4 +729,245 @@ def calc_answer_chart(question_json: List[Dict]):
     final_result_dict = {bhava: dict(planets) for bhava, planets in final_result.items()}
 
     return JSONResponse(content=final_result_dict)
+
+class BirthInput(BaseModel):
+    year: int
+    month: int
+    day: int
+    hour: float
+    latitude: float
+    longitude: float
+    timezone: float
+
+
+def get_moon_longitude(jd, lat, lon):
+    swe.set_sid_mode(swe.SIDM_LAHIRI)  
+    swe.set_topo(lon, lat, 0)
+
+    pos, fl = swe.calc(jd, swe.MOON, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)
+    return pos[0]
+
+def dasha_balance(moon_long):
+    pos = moon_long % NAKSHATRA_SIZE
+    pct_done = pos / NAKSHATRA_SIZE
+    return 1 - pct_done
+
+def circular_order_from(lord):
+    idx = DASHA_ORDER.index(lord)
+    return DASHA_ORDER[idx:] + DASHA_ORDER[:idx]
+
+# -------------------------------------------------------------------
+#                      TIME RANGE UTILITY
+# -------------------------------------------------------------------
+def add_years(start, years):
+    return start + datetime.timedelta(days=years * 365.25)
+
+# -------------------------------------------------------------------
+#                      MAJOR (MAHA) DASHA
+# -------------------------------------------------------------------
+def compute_major_dasha(start_datetime, moon_long):
+    starting = get_starting_dasha(moon_long)
+    balance = dasha_balance(moon_long)
+
+    # reorder dasha cycle
+    i = DASHA_ORDER.index(starting)
+    cycle = DASHA_ORDER[i:] + DASHA_ORDER[:i]
+
+    results = []
+    cur_start = start_datetime
+
+    # first (reduced)
+    first_year = VIMSHOTTARI_YEARS[starting] * balance
+    first_end = add_years(cur_start, first_year)
+    results.append({"lord": starting, "start": cur_start, "end": first_end})
+
+    # rest
+    cur = first_end
+    for lord in cycle[1:]:
+        yr = VIMSHOTTARI_YEARS[lord]
+        end = add_years(cur, yr)
+        results.append({"lord": lord, "start": cur, "end": end})
+        cur = end
+
+    return results
+
+
+# -------------------------------------------------------------------
+#                         BHUKTI (ANTAR DASHAS)
+# -------------------------------------------------------------------
+def calculate_bhuktis(md_lord, md_start, md_end):
+    order = circular_order_from(md_lord)
     
+    md_length = md_end - md_start   # in days
+    current = md_start
+    
+    results = []
+    for b_lord in order:
+        part = md_length * (VIMSHOTTARI_YEARS[b_lord] / TOTAL_YEARS)
+        results.append({
+            "lord": b_lord,
+            "start": current,
+            "end": current + part
+        })
+        current += part
+
+    return results
+
+
+# -------------------------------------------------------------------
+#                     ANTARA (PRATYANTAR DASHAS)
+# -------------------------------------------------------------------
+def calculate_antaras(bh_lord, bh_start, bh_end):
+    order = circular_order_from(bh_lord)
+
+    bh_length = bh_end - bh_start
+    current = bh_start
+
+    results = []
+    for a_lord in order:
+        part = bh_length * (VIMSHOTTARI_YEARS[a_lord] / TOTAL_YEARS)
+        results.append({
+            "lord": a_lord,
+            "start": current,
+            "end": current + part
+        })
+        current += part
+
+    return results
+
+
+# -------------------------------------------------------------------
+#                   PRATYANTAR (SUKSHMA DASHAS)
+# -------------------------------------------------------------------
+def calculate_pratyantaras(an_lord, an_start, an_end):
+    order = circular_order_from(an_lord)
+
+    an_length = an_end - an_start
+    current = an_start
+
+    results = []
+    for p_lord in order:
+        part = an_length * (VIMSHOTTARI_YEARS[p_lord] / TOTAL_YEARS)
+        results.append({
+            "lord": p_lord,
+            "start": current,
+            "end": current + part
+        })
+        current += part
+
+    return results
+
+def get_starting_dasha(moon_long):
+    nak = int(moon_long // NAKSHATRA_SIZE)
+    return DASHA_ORDER[nak % 9]
+
+@app.post("/major_vdasha")
+def major_vdasha(data: BirthInput):
+    hour_utc = data.hour - data.timezone
+
+    jd = to_julian_day(data.year, data.month, data.day, hour_utc)
+
+    moon_long = get_moon_longitude(jd, data.latitude, data.longitude)
+
+    birth_dt = datetime.datetime(data.year, data.month, data.day) + datetime.timedelta(hours=data.hour)
+
+    major_list = compute_major_dasha(birth_dt, moon_long)
+
+    # Store globally for next calls (cached for session)
+    DASHACACHE["major"] = major_list
+
+    return {"major_dasha": major_list}
+
+
+# --------------------------
+# 2️⃣ API – BHUKTI for selected Mahadasha
+# --------------------------
+@app.get("/sub_vdasha/{md}")
+def sub_vdasha(md: str):
+    if "major" not in DASHACACHE:
+        raise HTTPException(status_code=400, detail="Call /major_vdasha first.")
+
+    major_list = DASHACACHE["major"]
+
+    # Find the selected Mahadasha
+    md_selected = next((d for d in major_list if d["lord"].lower() == md.lower()), None)
+
+    if md_selected is None:
+        raise HTTPException(status_code=404, detail="Mahadasha not found.")
+
+    bhuktis = calculate_bhuktis(md_selected["lord"], md_selected["start"], md_selected["end"])
+
+    # store in cache
+    DASHACACHE["bhukti"] = {md.lower(): bhuktis}
+
+    return {"md": md, "bhukti": bhuktis}
+
+
+# --------------------------
+# 3️⃣ API – ANTARA for selected Bhukti
+# --------------------------
+@app.get("/sub_sub_vdasha/{md}/{ad}")
+def sub_sub_vdasha(md: str, ad: str):
+    md = md.lower()
+    ad = ad.lower()
+
+    if "bhukti" not in DASHACACHE or md not in DASHACACHE["bhukti"]:
+        raise HTTPException(status_code=400, detail="Call /sub_vdasha/<md> first.")
+
+    bhuktis = DASHACACHE["bhukti"][md]
+
+    # Find selected bhukti
+    b_selected = next((b for b in bhuktis if b["lord"].lower() == ad), None)
+
+    if b_selected is None:
+        raise HTTPException(status_code=404, detail="Bhukti not found.")
+
+    antaras = calculate_antaras(
+        b_selected["lord"], b_selected["start"], b_selected["end"]
+    )
+
+    # store for next level
+    DASHACACHE["antara"] = {(md, ad): antaras}
+
+    return {"md": md, "ad": ad, "antara": antaras}
+
+
+# --------------------------
+# 4️⃣ API – PRATYANTARA for selected Antara
+# --------------------------
+@app.get("/sub_sub_sub_vdasha/{md}/{ad}/{pd}")
+def sub_sub_sub_vdasha(md: str, ad: str, pd: str):
+    md = md.lower()
+    ad = ad.lower()
+    pd = pd.lower()
+
+    key = (md, ad)
+
+    if "antara" not in DASHACACHE or key not in DASHACACHE["antara"]:
+        raise HTTPException(status_code=400, detail="Call /sub_sub_vdasha/<md>/<ad> first.")
+
+    antar_list = DASHACACHE["antara"][key]
+
+    # Find selected antara
+    a_selected = next((a for a in antar_list if a["lord"].lower() == pd), None)
+
+    if a_selected is None:
+        raise HTTPException(status_code=404, detail="Antara not found.")
+
+    pratyantaras = calculate_pratyantaras(
+        a_selected["lord"], a_selected["start"], a_selected["end"]
+    )
+
+    return {
+        "md": md,
+        "ad": ad,
+        "pd": pd,
+        "pratyantara": pratyantaras
+    }
+
+
+# --------------------------
+# Simple In-memory Cache
+# (use DB/Redis for production)
+# --------------------------
+DASHACACHE = {}
