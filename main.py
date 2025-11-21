@@ -915,14 +915,14 @@ def major_vdasha(data: BirthInput):
     serialized = serialize(major_list)
     # save to redis with TTL (1 day)
     redis_client.set(redis_key, json.dumps(serialized), ex=86400)
-
+    console.log("API Response:", serialized)
     return {"major_dasha": serialized, "cached": False}
 
 
 # --------------------------
 # 2️⃣ API – BHUKTI for selected Mahadasha
 # --------------------------
-@app.get("/api/sub_vdasha/{md}")
+@app.post("/api/sub_vdasha/{md}")
 def sub_vdasha(data: BirthInput, md: str):
     h = birth_hash(data)
     md = md.lower()
@@ -956,7 +956,7 @@ def sub_vdasha(data: BirthInput, md: str):
 # --------------------------
 # 3️⃣ API – ANTARA for selected Bhukti
 # --------------------------
-@app.get("/api/sub_sub_vdasha/{md}/{ad}")
+@app.post("/api/sub_sub_vdasha/{md}/{ad}")
 def sub_sub_vdasha(data: BirthInput, md: str, ad: str):
     h = birth_hash(data)
     md = md.lower()
@@ -995,7 +995,7 @@ def sub_sub_vdasha(data: BirthInput, md: str, ad: str):
 # --------------------------
 # 4️⃣ API – PRATYANTARA for selected Antara
 # --------------------------
-@app.get("/api/sub_sub_sub_vdasha/{md}/{ad}/{pd}")
+@app.post("/api/sub_sub_sub_vdasha/{md}/{ad}/{pd}")
 def sub_sub_sub_vdasha(data: BirthInput, md: str, ad: str, pd: str):
     h = birth_hash(data)
     md = md.lower()
