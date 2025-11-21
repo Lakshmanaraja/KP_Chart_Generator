@@ -28,6 +28,7 @@ import pandas as pd
 import numpy as np
 import json
 import ast
+import redis, datetime, json, os, hashlib
 
 # Flatten
 
@@ -734,10 +735,20 @@ class BirthInput(BaseModel):
     year: int
     month: int
     day: int
-    hour: float
+    hour: int
+    minutes: int
+    seconds: int
     latitude: float
     longitude: float
     timezone: float
+
+
+
+# Helper: Generate birth hash for uniqueness
+def birth_hash(data: BirthInput):
+    txt = f"{data.year}{data.month}{data.day}{data.hour}{data.minutes}{data.seconds}{data.timezone}{data.latitude}{data.longitude}"
+    return hashlib.md5(txt.encode()).hexdigest()[:6]
+
 
 
 def get_moon_longitude(jd, lat, lon):
@@ -861,22 +872,33 @@ def get_starting_dasha(moon_long):
     nak = int(moon_long // NAKSHATRA_SIZE)
     return DASHA_ORDER[nak % 9]
 
+redis_client = redis.from_url(os.getenv("REDIS_URL"))
+
 @app.post("/major_vdasha")
 def major_vdasha(data: BirthInput):
-    hour_utc = data.hour - data.timezone
+    h = birth_hash(data)
+    redis_key = f"dasha:v1:md:{h}"
+    # check cache
+    cached = redis_client.get(redis_key)
+    if cached:
+        return {"major_dasha": json.loads(cached), "cached": True}
 
-    jd = to_julian_day(data.year, data.month, data.day, hour_utc)
+    #hour_utc = data.hour - data.timezone
+    #jd = to_julian_day(data.year, data.month, data.day, hour_utc)
 
+    local_dt = datetime.datetime(data.year,data.month,data.day,data.hour,data.minutes,data.seconds)
+    ut_dt = local_dt - datetime.timedelta(hours=data.timezone)
+    jd = to_julian_day(ut_dt.year, ut_dt.month, ut_dt.day, ut_dt.hour, ut_dt.minute, ut_dt.second)
     moon_long = get_moon_longitude(jd, data.latitude, data.longitude)
 
-    birth_dt = datetime.datetime(data.year, data.month, data.day) + datetime.timedelta(hours=data.hour)
+    birth_dt = datetime.datetime(data.year, data.month, data.day) + datetime.timedelta(hours=data.hour,minutes=data.minutes,seconds=data.seconds)
 
     major_list = compute_major_dasha(birth_dt, moon_long)
 
-    # Store globally for next calls (cached for session)
-    DASHACACHE["major"] = major_list
+    # save to redis with TTL (1 day)
+    redis_client.set(redis_key, json.dumps(major_list), ex=86400)
 
-    return {"major_dasha": major_list}
+    return {"major_dasha": major_list, "cached": False}
 
 
 # --------------------------
@@ -884,10 +906,19 @@ def major_vdasha(data: BirthInput):
 # --------------------------
 @app.get("/sub_vdasha/{md}")
 def sub_vdasha(md: str):
-    if "major" not in DASHACACHE:
-        raise HTTPException(status_code=400, detail="Call /major_vdasha first.")
+    redis_key = f"dasha:v1:ad:{md}:{h}"
 
-    major_list = DASHACACHE["major"]
+    cached = redis_client.get(redis_key)
+    if cached:
+        return {"md": md, "bhukti": json.loads(cached), "cached": True}
+
+    # fetch MD list from redis (dependency)
+    md_key = f"dasha:v1:md:{h}"
+    major_list_raw = redis_client.get(md_key)
+    if not major_list_raw:
+        raise HTTPException(status_code=400, detail="Call /major_vdasha first")
+
+    major_list = json.loads(major_list_raw)
 
     # Find the selected Mahadasha
     md_selected = next((d for d in major_list if d["lord"].lower() == md.lower()), None)
@@ -897,11 +928,9 @@ def sub_vdasha(md: str):
 
     bhuktis = calculate_bhuktis(md_selected["lord"], md_selected["start"], md_selected["end"])
 
-    # store in cache
-    DASHACACHE["bhukti"] = {md.lower(): bhuktis}
+    redis_client.set(redis_key, json.dumps(bhuktis), ex=86400)
 
-    return {"md": md, "bhukti": bhuktis}
-
+    return {"md": md, "bhukti": bhuktis, "cached": False}
 
 # --------------------------
 # 3️⃣ API – ANTARA for selected Bhukti
@@ -911,11 +940,19 @@ def sub_sub_vdasha(md: str, ad: str):
     md = md.lower()
     ad = ad.lower()
 
-    if "bhukti" not in DASHACACHE or md not in DASHACACHE["bhukti"]:
-        raise HTTPException(status_code=400, detail="Call /sub_vdasha/<md> first.")
+    redis_key = f"dasha:v1:pd:{md}:{ad}:{h}"
 
-    bhuktis = DASHACACHE["bhukti"][md]
+    cached = redis_client.get(redis_key)
+    if cached:
+        return {"antara": json.loads(cached), "cached": True}
 
+    # fetch bhukti
+    bhukti_key = f"dasha:v1:ad:{md}:{h}"
+    bhuktis_raw = redis_client.get(bhukti_key)
+    if not bhuktis_raw:
+        raise HTTPException(status_code=400, detail="Call /sub_vdasha/<md> first")
+
+    bhuktis = json.loads(bhuktis_raw)
     # Find selected bhukti
     b_selected = next((b for b in bhuktis if b["lord"].lower() == ad), None)
 
@@ -926,10 +963,9 @@ def sub_sub_vdasha(md: str, ad: str):
         b_selected["lord"], b_selected["start"], b_selected["end"]
     )
 
-    # store for next level
-    DASHACACHE["antara"] = {(md, ad): antaras}
+    redis_client.set(redis_key, json.dumps(antaras), ex=86400)
 
-    return {"md": md, "ad": ad, "antara": antaras}
+    return {"antara": antaras, "cached": False}
 
 
 # --------------------------
@@ -941,12 +977,18 @@ def sub_sub_sub_vdasha(md: str, ad: str, pd: str):
     ad = ad.lower()
     pd = pd.lower()
 
-    key = (md, ad)
+    redis_key = f"dasha:v1:sd:{md}:{ad}:{pd}:{h}"
 
-    if "antara" not in DASHACACHE or key not in DASHACACHE["antara"]:
-        raise HTTPException(status_code=400, detail="Call /sub_sub_vdasha/<md>/<ad> first.")
+    cached = redis_client.get(redis_key)
+    if cached:
+        return {"pratyantara": json.loads(cached), "cached": True}
 
-    antar_list = DASHACACHE["antara"][key]
+    antara_key = f"dasha:v1:pd:{md}:{ad}:{h}"
+    antar_raw = redis_client.get(antara_key)
+    if not antar_raw:
+        raise HTTPException(status_code=400, detail="Call /sub_sub_vdasha first")
+
+    antar_list = json.loads(antar_raw)
 
     # Find selected antara
     a_selected = next((a for a in antar_list if a["lord"].lower() == pd), None)
@@ -958,16 +1000,6 @@ def sub_sub_sub_vdasha(md: str, ad: str, pd: str):
         a_selected["lord"], a_selected["start"], a_selected["end"]
     )
 
-    return {
-        "md": md,
-        "ad": ad,
-        "pd": pd,
-        "pratyantara": pratyantaras
-    }
+    redis_client.set(redis_key, json.dumps(pratyantaras), ex=86400)
 
-
-# --------------------------
-# Simple In-memory Cache
-# (use DB/Redis for production)
-# --------------------------
-DASHACACHE = {}
+    return {"pratyantara": pratyantaras, "cached": False}
