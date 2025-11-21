@@ -743,6 +743,22 @@ class BirthInput(BaseModel):
     timezone: float
 
 
+# Utility: serialize datetime fields
+def serialize(dashas):
+    for d in dashas:
+        if isinstance(d["start"], datetime.datetime):
+            d["start"] = d["start"].isoformat()
+        if isinstance(d["end"], datetime.datetime):
+            d["end"] = d["end"].isoformat()
+    return dashas
+
+# Utility — convert string back to datetime
+def deserialize(dashas):
+    for d in dashas:
+        d["start"] = datetime.datetime.fromisoformat(d["start"])
+        d["end"]   = datetime.datetime.fromisoformat(d["end"])
+    return dashas
+
 
 # Helper: Generate birth hash for uniqueness
 def birth_hash(data: BirthInput):
@@ -879,10 +895,10 @@ def major_vdasha(data: BirthInput):
     h = birth_hash(data)
     redis_key = f"dasha:v1:md:{h}"
     # check cache
-    cached = json.loads(redis_client.get(redis_key))
-    for item in cached:
-        item["start"] = datetime.fromisoformat(item["start"])
-        item["end"] = datetime.fromisoformat(item["end"])
+    # Check cache first
+    cached = redis_client.get(redis_key)
+    if cached:
+        return {"major_dasha": json.loads(cached)}
 
     #hour_utc = data.hour - data.timezone
     #jd = to_julian_day(data.year, data.month, data.day, hour_utc)
@@ -896,22 +912,19 @@ def major_vdasha(data: BirthInput):
 
     major_list = compute_major_dasha(birth_dt, moon_long)
 
-    # Convert datetime fields to ISO string
-    for item in major_list:
-        item["start"] = item["start"].isoformat()
-        item["end"] = item["end"].isoformat()
-
+    serialized = serialize(major_list)
     # save to redis with TTL (1 day)
-    redis_client.set(redis_key, json.dumps(major_list), ex=86400)
+    redis_client.set(redis_key, json.dumps(serialized), ex=86400)
 
-    return {"major_dasha": major_list, "cached": False}
+    return {"major_dasha": serialized, "cached": False}
 
 
 # --------------------------
 # 2️⃣ API – BHUKTI for selected Mahadasha
 # --------------------------
-@app.get("/api/sub_vdasha/{md}")
-def sub_vdasha(md: str):
+@app.get("/api/sub_vdasha/{h}/{md}")
+def sub_vdasha(h: str, md: str):
+    md = md.lower()
     redis_key = f"dasha:v1:ad:{md}:{h}"
 
     cached = redis_client.get(redis_key)
@@ -925,6 +938,7 @@ def sub_vdasha(md: str):
         raise HTTPException(status_code=400, detail="Call /major_vdasha first")
 
     major_list = json.loads(major_list_raw)
+    major_list = deserialize(major_list)
 
     # Find the selected Mahadasha
     md_selected = next((d for d in major_list if d["lord"].lower() == md.lower()), None)
@@ -933,7 +947,7 @@ def sub_vdasha(md: str):
         raise HTTPException(status_code=404, detail="Mahadasha not found.")
 
     bhuktis = calculate_bhuktis(md_selected["lord"], md_selected["start"], md_selected["end"])
-
+    bhuktis = serialize(bhuktis)
     redis_client.set(redis_key, json.dumps(bhuktis), ex=86400)
 
     return {"md": md, "bhukti": bhuktis, "cached": False}
@@ -941,8 +955,8 @@ def sub_vdasha(md: str):
 # --------------------------
 # 3️⃣ API – ANTARA for selected Bhukti
 # --------------------------
-@app.get("/api/sub_sub_vdasha/{md}/{ad}")
-def sub_sub_vdasha(md: str, ad: str):
+@app.get("/api/sub_sub_vdasha/{h}/{md}/{ad}")
+def sub_sub_vdasha(h: str, md: str, ad: str):
     md = md.lower()
     ad = ad.lower()
 
@@ -959,6 +973,7 @@ def sub_sub_vdasha(md: str, ad: str):
         raise HTTPException(status_code=400, detail="Call /sub_vdasha/<md> first")
 
     bhuktis = json.loads(bhuktis_raw)
+    bhuktis = deserialize(bhuktis)
     # Find selected bhukti
     b_selected = next((b for b in bhuktis if b["lord"].lower() == ad), None)
 
@@ -968,6 +983,7 @@ def sub_sub_vdasha(md: str, ad: str):
     antaras = calculate_antaras(
         b_selected["lord"], b_selected["start"], b_selected["end"]
     )
+    antaras = serialize(antaras)
 
     redis_client.set(redis_key, json.dumps(antaras), ex=86400)
 
@@ -977,8 +993,8 @@ def sub_sub_vdasha(md: str, ad: str):
 # --------------------------
 # 4️⃣ API – PRATYANTARA for selected Antara
 # --------------------------
-@app.get("/api/sub_sub_sub_vdasha/{md}/{ad}/{pd}")
-def sub_sub_sub_vdasha(md: str, ad: str, pd: str):
+@app.get("/api/sub_sub_sub_vdasha/{h}/{md}/{ad}/{pd}")
+def sub_sub_sub_vdasha(h: str, md: str, ad: str, pd: str):
     md = md.lower()
     ad = ad.lower()
     pd = pd.lower()
@@ -995,7 +1011,7 @@ def sub_sub_sub_vdasha(md: str, ad: str, pd: str):
         raise HTTPException(status_code=400, detail="Call /sub_sub_vdasha first")
 
     antar_list = json.loads(antar_raw)
-
+    antar_list = deserialize(antar_list)
     # Find selected antara
     a_selected = next((a for a in antar_list if a["lord"].lower() == pd), None)
 
@@ -1005,6 +1021,7 @@ def sub_sub_sub_vdasha(md: str, ad: str, pd: str):
     pratyantaras = calculate_pratyantaras(
         a_selected["lord"], a_selected["start"], a_selected["end"]
     )
+    pratyantaras = serialize(pratyantaras)
 
     redis_client.set(redis_key, json.dumps(pratyantaras), ex=86400)
 
