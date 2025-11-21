@@ -916,7 +916,7 @@ def major_vdasha(data: BirthInput):
     # save to redis with TTL (1 day)
     redis_client.set(redis_key, json.dumps(serialized), ex=86400)
     console.log("API Response:", serialized)
-    return {"major_dasha": serialized, "cached": False}
+    return {"major_dasha": list(serialized), "cached": False}
 
 
 # --------------------------
