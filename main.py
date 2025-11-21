@@ -953,6 +953,9 @@ def sub_vdasha(data: BirthInput, md: str):
 
     bhuktis = calculate_bhuktis(md_selected["lord"], md_selected["start"], md_selected["end"])
     bhuktis = serialize(bhuktis)
+
+    if not isinstance(bhuktis, list):
+        bhuktis = [bhuktis]
     redis_client.set(redis_key, json.dumps(bhuktis), ex=86400)
 
     return {"md": md, "bhukti": bhuktis, "cached": False}
@@ -990,7 +993,9 @@ def sub_sub_vdasha(data: BirthInput, md: str, ad: str):
         b_selected["lord"], b_selected["start"], b_selected["end"]
     )
     antaras = serialize(antaras)
-
+    
+    if not isinstance(antaras, list):
+        antaras = [antaras]
     redis_client.set(redis_key, json.dumps(antaras), ex=86400)
 
     return {"antara": antaras, "cached": False}
@@ -1030,6 +1035,8 @@ def sub_sub_sub_vdasha(data: BirthInput, md: str, ad: str, pd: str):
     )
     pratyantaras = serialize(pratyantaras)
 
+    if not isinstance(pratyantaras, list):
+        pratyantaras = [pratyantaras]
     redis_client.set(redis_key, json.dumps(pratyantaras), ex=86400)
 
     return {"pratyantara": pratyantaras, "cached": False}
