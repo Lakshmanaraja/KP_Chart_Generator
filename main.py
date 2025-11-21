@@ -806,14 +806,14 @@ def compute_major_dasha(start_datetime, moon_long):
     # first (reduced)
     first_year = VIMSHOTTARI_YEARS[starting] * balance
     first_end = add_years(cur_start, first_year)
-    results.append({"lord": starting, "start": cur_start, "end": first_end})
+    results.append({"planet": starting, "start": cur_start, "end": first_end})
 
     # rest
     cur = first_end
     for lord in cycle[1:]:
         yr = VIMSHOTTARI_YEARS[lord]
         end = add_years(cur, yr)
-        results.append({"lord": lord, "start": cur, "end": end})
+        results.append({"planet": lord, "start": cur, "end": end})
         cur = end
 
     return results
@@ -832,7 +832,7 @@ def calculate_bhuktis(md_lord, md_start, md_end):
     for b_lord in order:
         part = md_length * (VIMSHOTTARI_YEARS[b_lord] / TOTAL_YEARS)
         results.append({
-            "lord": b_lord,
+            "planet": b_lord,
             "start": current,
             "end": current + part
         })
@@ -854,7 +854,7 @@ def calculate_antaras(bh_lord, bh_start, bh_end):
     for a_lord in order:
         part = bh_length * (VIMSHOTTARI_YEARS[a_lord] / TOTAL_YEARS)
         results.append({
-            "lord": a_lord,
+            "planet": a_lord,
             "start": current,
             "end": current + part
         })
@@ -876,7 +876,7 @@ def calculate_pratyantaras(an_lord, an_start, an_end):
     for p_lord in order:
         part = an_length * (VIMSHOTTARI_YEARS[p_lord] / TOTAL_YEARS)
         results.append({
-            "lord": p_lord,
+            "planet": p_lord,
             "start": current,
             "end": current + part
         })
@@ -946,12 +946,12 @@ def sub_vdasha(data: BirthInput, md: str):
     major_list = deserialize(major_list)
 
     # Find the selected Mahadasha
-    md_selected = next((d for d in major_list if d["lord"].lower() == md.lower()), None)
+    md_selected = next((d for d in major_list if d["planet"].lower() == md.lower()), None)
 
     if md_selected is None:
         raise HTTPException(status_code=404, detail="Mahadasha not found.")
 
-    bhuktis = calculate_bhuktis(md_selected["lord"], md_selected["start"], md_selected["end"])
+    bhuktis = calculate_bhuktis(md_selected["planet"], md_selected["start"], md_selected["end"])
     bhuktis = serialize(bhuktis)
 
     if not isinstance(bhuktis, list):
@@ -984,13 +984,13 @@ def sub_sub_vdasha(data: BirthInput, md: str, ad: str):
     bhuktis = json.loads(bhuktis_raw)
     bhuktis = deserialize(bhuktis)
     # Find selected bhukti
-    b_selected = next((b for b in bhuktis if b["lord"].lower() == ad), None)
+    b_selected = next((b for b in bhuktis if b["planet"].lower() == ad), None)
 
     if b_selected is None:
         raise HTTPException(status_code=404, detail="Bhukti not found.")
 
     antaras = calculate_antaras(
-        b_selected["lord"], b_selected["start"], b_selected["end"]
+        b_selected["planet"], b_selected["start"], b_selected["end"]
     )
     antaras = serialize(antaras)
     
@@ -1025,13 +1025,13 @@ def sub_sub_sub_vdasha(data: BirthInput, md: str, ad: str, pd: str):
     antar_list = json.loads(antar_raw)
     antar_list = deserialize(antar_list)
     # Find selected antara
-    a_selected = next((a for a in antar_list if a["lord"].lower() == pd), None)
+    a_selected = next((a for a in antar_list if a["planet"].lower() == pd), None)
 
     if a_selected is None:
         raise HTTPException(status_code=404, detail="Antara not found.")
 
     pratyantaras = calculate_pratyantaras(
-        a_selected["lord"], a_selected["start"], a_selected["end"]
+        a_selected["planet"], a_selected["start"], a_selected["end"]
     )
     pratyantaras = serialize(pratyantaras)
 
