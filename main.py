@@ -879,9 +879,10 @@ def major_vdasha(data: BirthInput):
     h = birth_hash(data)
     redis_key = f"dasha:v1:md:{h}"
     # check cache
-    cached = redis_client.get(redis_key)
-    if cached:
-        return {"major_dasha": json.loads(cached), "cached": True}
+    cached = json.loads(redis_client.get(redis_key))
+    for item in cached:
+        item["start"] = datetime.fromisoformat(item["start"])
+        item["end"] = datetime.fromisoformat(item["end"])
 
     #hour_utc = data.hour - data.timezone
     #jd = to_julian_day(data.year, data.month, data.day, hour_utc)
@@ -894,6 +895,11 @@ def major_vdasha(data: BirthInput):
     birth_dt = datetime.datetime(data.year, data.month, data.day) + datetime.timedelta(hours=data.hour,minutes=data.minutes,seconds=data.seconds)
 
     major_list = compute_major_dasha(birth_dt, moon_long)
+
+    # Convert datetime fields to ISO string
+    for item in major_list:
+        item["start"] = item["start"].isoformat()
+        item["end"] = item["end"].isoformat()
 
     # save to redis with TTL (1 day)
     redis_client.set(redis_key, json.dumps(major_list), ex=86400)
