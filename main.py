@@ -915,7 +915,7 @@ def major_vdasha(data: BirthInput):
     serialized = serialize(major_list)
     
     if not isinstance(serialized, list):
-    serialized = [serialized]
+        serialized = [serialized]
 
     # save to redis with TTL (1 day)
     redis_client.set(redis_key, json.dumps(serialized), ex=86400)
