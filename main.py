@@ -913,10 +913,14 @@ def major_vdasha(data: BirthInput):
     major_list = compute_major_dasha(birth_dt, moon_long)
 
     serialized = serialize(major_list)
+    
+    if not isinstance(serialized, list):
+    serialized = [serialized]
+
     # save to redis with TTL (1 day)
     redis_client.set(redis_key, json.dumps(serialized), ex=86400)
-    console.log("API Response:", serialized)
-    return {"major_dasha": list(serialized), "cached": False}
+    print(f"API Response: {serialized}")
+    return {"major_dasha": serialized, "cached": False}
 
 
 # --------------------------
