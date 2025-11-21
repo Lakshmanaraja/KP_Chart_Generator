@@ -874,7 +874,7 @@ def get_starting_dasha(moon_long):
 
 redis_client = redis.from_url(os.getenv("REDIS_URL"))
 
-@app.post("/major_vdasha")
+@app.post("api/major_vdasha")
 def major_vdasha(data: BirthInput):
     h = birth_hash(data)
     redis_key = f"dasha:v1:md:{h}"
@@ -904,7 +904,7 @@ def major_vdasha(data: BirthInput):
 # --------------------------
 # 2️⃣ API – BHUKTI for selected Mahadasha
 # --------------------------
-@app.get("/sub_vdasha/{md}")
+@app.get("api/sub_vdasha/{md}")
 def sub_vdasha(md: str):
     redis_key = f"dasha:v1:ad:{md}:{h}"
 
@@ -935,7 +935,7 @@ def sub_vdasha(md: str):
 # --------------------------
 # 3️⃣ API – ANTARA for selected Bhukti
 # --------------------------
-@app.get("/sub_sub_vdasha/{md}/{ad}")
+@app.get("api/sub_sub_vdasha/{md}/{ad}")
 def sub_sub_vdasha(md: str, ad: str):
     md = md.lower()
     ad = ad.lower()
@@ -971,7 +971,7 @@ def sub_sub_vdasha(md: str, ad: str):
 # --------------------------
 # 4️⃣ API – PRATYANTARA for selected Antara
 # --------------------------
-@app.get("/sub_sub_sub_vdasha/{md}/{ad}/{pd}")
+@app.get("api/sub_sub_sub_vdasha/{md}/{ad}/{pd}")
 def sub_sub_sub_vdasha(md: str, ad: str, pd: str):
     md = md.lower()
     ad = ad.lower()
