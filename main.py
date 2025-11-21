@@ -922,8 +922,9 @@ def major_vdasha(data: BirthInput):
 # --------------------------
 # 2️⃣ API – BHUKTI for selected Mahadasha
 # --------------------------
-@app.get("/api/sub_vdasha/{h}/{md}")
-def sub_vdasha(h: str, md: str):
+@app.get("/api/sub_vdasha/{md}")
+def sub_vdasha(data: BirthInput, md: str):
+    h = birth_hash(data)
     md = md.lower()
     redis_key = f"dasha:v1:ad:{md}:{h}"
 
@@ -955,8 +956,9 @@ def sub_vdasha(h: str, md: str):
 # --------------------------
 # 3️⃣ API – ANTARA for selected Bhukti
 # --------------------------
-@app.get("/api/sub_sub_vdasha/{h}/{md}/{ad}")
-def sub_sub_vdasha(h: str, md: str, ad: str):
+@app.get("/api/sub_sub_vdasha/{md}/{ad}")
+def sub_sub_vdasha(data: BirthInput, md: str, ad: str):
+    h = birth_hash(data)
     md = md.lower()
     ad = ad.lower()
 
@@ -993,8 +995,9 @@ def sub_sub_vdasha(h: str, md: str, ad: str):
 # --------------------------
 # 4️⃣ API – PRATYANTARA for selected Antara
 # --------------------------
-@app.get("/api/sub_sub_sub_vdasha/{h}/{md}/{ad}/{pd}")
-def sub_sub_sub_vdasha(h: str, md: str, ad: str, pd: str):
+@app.get("/api/sub_sub_sub_vdasha/{md}/{ad}/{pd}")
+def sub_sub_sub_vdasha(data: BirthInput, md: str, ad: str, pd: str):
+    h = birth_hash(data)
     md = md.lower()
     ad = ad.lower()
     pd = pd.lower()
