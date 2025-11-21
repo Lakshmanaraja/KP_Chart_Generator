@@ -3,3 +3,4 @@ uvicorn
 pyswisseph
 python-multipart
 pandas
+redis
