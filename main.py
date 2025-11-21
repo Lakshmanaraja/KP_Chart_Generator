@@ -1040,3 +1040,9 @@ def sub_sub_sub_vdasha(data: BirthInput, md: str, ad: str, pd: str):
     redis_client.set(redis_key, json.dumps(pratyantaras), ex=86400)
 
     return {"pratyantara": pratyantaras, "cached": False}
+
+@app.delete("/api/cache/clear")
+def clear_cache():
+    for key in redis_client.scan_iter("dasha:v1:*"):
+        redis_client.delete(key)
+    return {"status": "cleared"}
