@@ -774,10 +774,37 @@ def get_moon_longitude(jd, lat, lon):
     pos, fl = swe.calc(jd, swe.MOON, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)
     return pos[0]
 
+# def dasha_balance(moon_long):
+#     pos = moon_long % NAKSHATRA_SIZE
+#     pct_done = pos / NAKSHATRA_SIZE
+#     return 1 - pct_done
+
+# --- FIX START ---
+def get_nakshatra_index(moon_long):
+    # Determine absolute Nakshatra placement from 0 to 26
+    return int(moon_long // NAKSHATRA_SIZE)
+
 def dasha_balance(moon_long):
-    pos = moon_long % NAKSHATRA_SIZE
-    pct_done = pos / NAKSHATRA_SIZE
+    nak_index = get_nakshatra_index(moon_long)
+    
+    # Track moon progress relative to the individual Nakshatra boundary line
+    nak_start_long = nak_index * NAKSHATRA_SIZE
+    degrees_spent = moon_long - nak_start_long
+    
+    pct_done = degrees_spent / NAKSHATRA_SIZE
     return 1 - pct_done
+
+# def get_starting_dasha(moon_long):
+#     nak = int(moon_long // NAKSHATRA_SIZE)
+#     return DASHA_ORDER[nak % 9]
+
+def get_starting_dasha(moon_long):
+    nak = get_nakshatra_index(moon_long)
+    return DASHA_ORDER[nak % 9]
+
+
+
+# --- FIX END ---
 
 def circular_order_from(lord):
     idx = DASHA_ORDER.index(lord)
@@ -795,7 +822,43 @@ def add_years(start, years):
 def compute_major_dasha(start_datetime, moon_long):
     starting = get_starting_dasha(moon_long)
     balance = dasha_balance(moon_long)
+     # 1. Calculate the hypothetical, full 120-year cycle start as if the person 
+    # was born at the exact 0° mark of the Nakshatra (the true beginning)
+    total_years_for_lord = VIMSHOTTARI_YEARS[starting]
+    years_already_passed = total_years_for_lord * (1 - balance)
+    #print("Starting Dasha:", starting)
+    # Move the start date backwards in time to find the true, full Mahadasha beginning
+    hypothetical_md_start = start_datetime - datetime.timedelta(days=years_already_passed * 365.25)
+    hypothetical_md_end = hypothetical_md_start + datetime.timedelta(days=total_years_for_lord * 365.25)
 
+    # 2. Run a temporary full Bhukti generation for this entire first Mahadasha block
+    full_bhuktis = calculate_bhuktis(starting, hypothetical_md_start, hypothetical_md_end)
+
+    # 3. Filter out Bhuktis that completely ended BEFORE the birth time,
+    # and truncate the one active right at birth.
+    valid_bhuktis = []
+    for b in full_bhuktis:
+        # If the Bhukti ended before birth, skip it entirely
+        if b["end"] <= start_datetime:
+            continue
+        
+        # If the Bhukti started before birth but ends after, it is active at birth!
+        # Truncate its start date to the birth time.
+        if b["start"] < start_datetime < b["end"]:
+            b["start"] = start_datetime
+            valid_bhuktis.append(b)
+        else:
+            # This Bhukti starts entirely after birth
+            valid_bhuktis.append(b)
+
+    # 4. Reconstruct the results list
+    results = []
+    
+    # The true end of the first Mahadasha is when its last valid Bhukti ends
+    first_md_end = valid_bhuktis[-1]["end"]
+    results.append({"planet": starting, "start": start_datetime, "end": first_md_end})
+
+    # 5. Build the remaining full Mahadashas of the 120-year cycle normally
     # reorder dasha cycle
     i = DASHA_ORDER.index(starting)
     cycle = DASHA_ORDER[i:] + DASHA_ORDER[:i]
@@ -884,9 +947,6 @@ def calculate_pratyantaras(an_lord, an_start, an_end):
 
     return results
 
-def get_starting_dasha(moon_long):
-    nak = int(moon_long // NAKSHATRA_SIZE)
-    return DASHA_ORDER[nak % 9]
 
 redis_client = redis.from_url(os.getenv("REDIS_URL"))
 
@@ -923,6 +983,165 @@ def major_vdasha(data: BirthInput):
     return {"major_dasha": serialized, "cached": False}
 
 
+# # --------------------------
+# # 2️⃣ API – BHUKTI for selected Mahadasha
+# # --------------------------
+# @app.post("/api/sub_vdasha/{md}")
+# def sub_vdasha(data: BirthInput, md: str):
+#     h = birth_hash(data)
+#     md = md.lower()
+#     redis_key = f"dasha:v1:ad:{md}:{h}"
+
+#     cached = redis_client.get(redis_key)
+#     if cached:
+#         return {"md": md, "bhukti": json.loads(cached), "cached": True}
+
+#     # fetch MD list from redis (dependency)
+#     md_key = f"dasha:v1:md:{h}"
+#     major_list_raw = redis_client.get(md_key)
+#     if not major_list_raw:
+#         raise HTTPException(status_code=400, detail="Call /major_vdasha first")
+
+#     major_list = json.loads(major_list_raw)
+#     major_list = deserialize(major_list)
+
+#     # Find the selected Mahadasha
+#     md_selected = next((d for d in major_list if d["planet"].lower() == md.lower()), None)
+
+#     if md_selected is None:
+#         raise HTTPException(status_code=404, detail="Mahadasha not found.")
+
+#     #bhuktis = calculate_bhuktis(md_selected["planet"], md_selected["start"], md_selected["end"])
+#         # --- FIX FOR SELECTION ---
+#     # Find out what the actual birth date was from the first Dasa's start point
+#     birth_dt = major_list[0]["start"]
+#     starting_md_lord = major_list[0]["planet"]
+
+#     if md_selected["planet"] == starting_md_lord:
+#         # If user clicked the birth Dasa, rebuild it from the true historical start point
+#         local_dt = datetime.datetime(data.year, data.month, data.day, data.hour, data.minutes, data.seconds)
+#         ut_dt = local_dt - datetime.timedelta(hours=data.timezone)
+#         jd = to_julian_day(ut_dt.year, ut_dt.month, ut_dt.day, ut_dt.hour, ut_dt.minute, ut_dt.second)
+#         moon_long = get_moon_longitude(jd, data.latitude, data.longitude)
+        
+#         balance = dasha_balance(moon_long)
+#         total_years = VIMSHOTTARI_YEARS[starting_md_lord]
+#         years_passed = total_years * (1 - balance)
+        
+#         hypothetical_start = birth_dt - datetime.timedelta(days=years_passed * 365.25)
+#         hypothetical_end = hypothetical_start + datetime.timedelta(days=total_years * 365.25)
+        
+#         # Calculate full cycle, then filter out the passed Bhuktis
+#         full_bhuktis = calculate_bhuktis(starting_md_lord, hypothetical_start, hypothetical_end)
+        
+#         bhuktis = []
+#         for b in full_bhuktis:
+#             if b["end"] <= birth_dt:
+#                 continue
+#             if b["start"] < birth_dt < b["end"]:
+#                 b["start"] = birth_dt
+#                 bhuktis.append(b)
+#             else:
+#                 bhuktis.append(b)
+#     else:
+#         # For every other Dasa clicked, your original code runs perfectly
+#         bhuktis = calculate_bhuktis(md_selected["planet"], md_selected["start"], md_selected["end"])
+#     # --- END FIX ---
+
+
+
+#     bhuktis = serialize(bhuktis)
+
+#     if not isinstance(bhuktis, list):
+#         bhuktis = [bhuktis]
+#     redis_client.set(redis_key, json.dumps(bhuktis), ex=86400)
+
+#     return {"md": md, "bhukti": bhuktis, "cached": False}
+
+# # --------------------------
+# # 3️⃣ API – ANTARA for selected Bhukti
+# # --------------------------
+# @app.post("/api/sub_sub_vdasha/{md}/{ad}")
+# def sub_sub_vdasha(data: BirthInput, md: str, ad: str):
+#     h = birth_hash(data)
+#     md = md.lower()
+#     ad = ad.lower()
+
+#     redis_key = f"dasha:v1:pd:{md}:{ad}:{h}"
+
+#     cached = redis_client.get(redis_key)
+#     if cached:
+#         return {"antara": json.loads(cached), "cached": True}
+
+#     # fetch bhukti
+#     bhukti_key = f"dasha:v1:ad:{md}:{h}"
+#     bhuktis_raw = redis_client.get(bhukti_key)
+#     if not bhuktis_raw:
+#         raise HTTPException(status_code=400, detail="Call /sub_vdasha/<md> first")
+
+#     bhuktis = json.loads(bhuktis_raw)
+#     bhuktis = deserialize(bhuktis)
+#     # Find selected bhukti
+#     b_selected = next((b for b in bhuktis if b["planet"].lower() == ad), None)
+
+#     if b_selected is None:
+#         raise HTTPException(status_code=404, detail="Bhukti not found.")
+
+#     antaras = calculate_antaras(
+#         b_selected["planet"], b_selected["start"], b_selected["end"]
+#     )
+#     antaras = serialize(antaras)
+    
+#     if not isinstance(antaras, list):
+#         antaras = [antaras]
+#     redis_client.set(redis_key, json.dumps(antaras), ex=86400)
+
+#     return {"antara": antaras, "cached": False}
+
+
+# # --------------------------
+# # 4️⃣ API – PRATYANTARA for selected Antara
+# # --------------------------
+# @app.post("/api/sub_sub_sub_vdasha/{md}/{ad}/{pd}")
+# def sub_sub_sub_vdasha(data: BirthInput, md: str, ad: str, pd: str):
+#     h = birth_hash(data)
+#     md = md.lower()
+#     ad = ad.lower()
+#     pd = pd.lower()
+
+#     redis_key = f"dasha:v1:sd:{md}:{ad}:{pd}:{h}"
+
+#     cached = redis_client.get(redis_key)
+#     if cached:
+#         return {"pratyantara": json.loads(cached), "cached": True}
+
+#     antara_key = f"dasha:v1:pd:{md}:{ad}:{h}"
+#     antar_raw = redis_client.get(antara_key)
+#     if not antar_raw:
+#         raise HTTPException(status_code=400, detail="Call /sub_sub_vdasha first")
+
+#     antar_list = json.loads(antar_raw)
+#     antar_list = deserialize(antar_list)
+#     # Find selected antara
+#     a_selected = next((a for a in antar_list if a["planet"].lower() == pd), None)
+
+#     if a_selected is None:
+#         raise HTTPException(status_code=404, detail="Antara not found.")
+
+#     pratyantaras = calculate_pratyantaras(
+#         a_selected["planet"], a_selected["start"], a_selected["end"]
+#     )
+#     pratyantaras = serialize(pratyantaras)
+
+#     if not isinstance(pratyantaras, list):
+#         pratyantaras = [pratyantaras]
+#     redis_client.set(redis_key, json.dumps(pratyantaras), ex=86400)
+
+#     return {"pratyantara": pratyantaras, "cached": False}
+
+
+# New Code 
+
 # --------------------------
 # 2️⃣ API – BHUKTI for selected Mahadasha
 # --------------------------
@@ -936,7 +1155,6 @@ def sub_vdasha(data: BirthInput, md: str):
     if cached:
         return {"md": md, "bhukti": json.loads(cached), "cached": True}
 
-    # fetch MD list from redis (dependency)
     md_key = f"dasha:v1:md:{h}"
     major_list_raw = redis_client.get(md_key)
     if not major_list_raw:
@@ -945,23 +1163,52 @@ def sub_vdasha(data: BirthInput, md: str):
     major_list = json.loads(major_list_raw)
     major_list = deserialize(major_list)
 
-    # Find the selected Mahadasha
     md_selected = next((d for d in major_list if d["planet"].lower() == md.lower()), None)
-
     if md_selected is None:
         raise HTTPException(status_code=404, detail="Mahadasha not found.")
 
-    bhuktis = calculate_bhuktis(md_selected["planet"], md_selected["start"], md_selected["end"])
-    bhuktis = serialize(bhuktis)
+    birth_dt = major_list[0]["start"]          # Fixed list index lookup
+    starting_md_lord = major_list[0]["planet"] # Fixed list index lookup
 
+    if md_selected["planet"] == starting_md_lord:
+        # Reconstruct the true historical start point before birth
+        local_dt = datetime.datetime(data.year, data.month, data.day, data.hour, data.minutes, data.seconds)
+        ut_dt = local_dt - datetime.timedelta(hours=data.timezone)
+        jd = to_julian_day(ut_dt.year, ut_dt.month, ut_dt.day, ut_dt.hour, ut_dt.minute, ut_dt.second)
+        moon_long = get_moon_longitude(jd, data.latitude, data.longitude)
+        
+        balance = dasha_balance(moon_long)
+        total_years = VIMSHOTTARI_YEARS[starting_md_lord]
+        years_passed = total_years * (1 - balance)
+        
+        hypothetical_start = birth_dt - datetime.timedelta(days=years_passed * 365.25)
+        hypothetical_end = hypothetical_start + datetime.timedelta(days=total_years * 365.25)
+        
+        full_bhuktis = calculate_bhuktis(starting_md_lord, hypothetical_start, hypothetical_end)
+        
+        bhuktis = []
+        for b in full_bhuktis:
+            if b["end"] <= birth_dt:
+                continue
+            if b["start"] < birth_dt < b["end"]:
+                b["start"] = birth_dt
+                bhuktis.append(b)
+            else:
+                bhuktis.append(b)
+    else:
+        # Standard un-truncated calculation for later Dasa blocks
+        bhuktis = calculate_bhuktis(md_selected["planet"], md_selected["start"], md_selected["end"])
+
+    bhuktis = serialize(bhuktis)
     if not isinstance(bhuktis, list):
         bhuktis = [bhuktis]
     redis_client.set(redis_key, json.dumps(bhuktis), ex=86400)
 
     return {"md": md, "bhukti": bhuktis, "cached": False}
 
+
 # --------------------------
-# 3️⃣ API – ANTARA for selected Bhukti
+# 3️⃣ API – ANTARA (Pratyantar) for selected Bhukti
 # --------------------------
 @app.post("/api/sub_sub_vdasha/{md}/{ad}")
 def sub_sub_vdasha(data: BirthInput, md: str, ad: str):
@@ -975,34 +1222,67 @@ def sub_sub_vdasha(data: BirthInput, md: str, ad: str):
     if cached:
         return {"antara": json.loads(cached), "cached": True}
 
-    # fetch bhukti
+    # Fetch parent structures
+    md_key = f"dasha:v1:md:{h}"
+    major_list_raw = redis_client.get(md_key)
     bhukti_key = f"dasha:v1:ad:{md}:{h}"
     bhuktis_raw = redis_client.get(bhukti_key)
-    if not bhuktis_raw:
-        raise HTTPException(status_code=400, detail="Call /sub_vdasha/<md> first")
+    
+    if not bhuktis_raw or not major_list_raw:
+        raise HTTPException(status_code=400, detail="Call parent endpoints first")
 
-    bhuktis = json.loads(bhuktis_raw)
-    bhuktis = deserialize(bhuktis)
-    # Find selected bhukti
+    major_list = deserialize(json.loads(major_list_raw))
+    bhuktis = deserialize(json.loads(bhuktis_raw))
+    
+    birth_dt = major_list[0]["start"]
+    starting_md_lord = major_list[0]["planet"]
+    
     b_selected = next((b for b in bhuktis if b["planet"].lower() == ad), None)
-
     if b_selected is None:
         raise HTTPException(status_code=404, detail="Bhukti not found.")
 
-    antaras = calculate_antaras(
-        b_selected["planet"], b_selected["start"], b_selected["end"]
-    )
+    # FIX: If we are tracking the active sub-dasha at birth, reconstruct the full window
+    if md.lower() == starting_md_lord.lower() and b_selected["start"] == birth_dt:
+        local_dt = datetime.datetime(data.year, data.month, data.day, data.hour, data.minutes, data.seconds)
+        ut_dt = local_dt - datetime.timedelta(hours=data.timezone)
+        jd = to_julian_day(ut_dt.year, ut_dt.month, ut_dt.day, ut_dt.hour, ut_dt.minute, ut_dt.second)
+        moon_long = get_moon_longitude(jd, data.latitude, data.longitude)
+        
+        balance = dasha_balance(moon_long)
+        total_years = VIMSHOTTARI_YEARS[starting_md_lord]
+        years_passed = total_years * (1 - balance)
+        
+        hypothetical_md_start = birth_dt - datetime.timedelta(days=years_passed * 365.25)
+        hypothetical_md_end = hypothetical_md_start + datetime.timedelta(days=total_years * 365.25)
+        
+        # Pull original un-truncated parent Bhukti boundaries
+        full_bhuktis = calculate_bhuktis(starting_md_lord, hypothetical_md_start, hypothetical_md_end)
+        true_bhukti = next(b for b in full_bhuktis if b["planet"].lower() == ad)
+        
+        # Calculate nested Antaras from un-truncated windows, then apply slice filter
+        full_antaras = calculate_antaras(true_bhukti["planet"], true_bhukti["start"], true_bhukti["end"])
+        
+        antaras = []
+        for a in full_antaras:
+            if a["end"] <= birth_dt:
+                continue
+            if a["start"] < birth_dt < a["end"]:
+                a["start"] = birth_dt
+                antaras.append(a)
+            else:
+                antaras.append(a)
+    else:
+        antaras = calculate_antaras(b_selected["planet"], b_selected["start"], b_selected["end"])
+
     antaras = serialize(antaras)
-    
     if not isinstance(antaras, list):
         antaras = [antaras]
     redis_client.set(redis_key, json.dumps(antaras), ex=86400)
 
-    return {"antara": antaras, "cached": False}
-
+    return {"md": md, "ad": ad, "antara": antaras, "cached": False}
 
 # --------------------------
-# 4️⃣ API – PRATYANTARA for selected Antara
+# 4️⃣ API – PRATYANTAR (Sukshma Dashas) for selected Antara
 # --------------------------
 @app.post("/api/sub_sub_sub_vdasha/{md}/{ad}/{pd}")
 def sub_sub_sub_vdasha(data: BirthInput, md: str, ad: str, pd: str):
@@ -1017,29 +1297,73 @@ def sub_sub_sub_vdasha(data: BirthInput, md: str, ad: str, pd: str):
     if cached:
         return {"pratyantara": json.loads(cached), "cached": True}
 
+    # Fetch parent structures to check boundaries
+    md_key = f"dasha:v1:md:{h}"
+    major_list_raw = redis_client.get(md_key)
+    bhukti_key = f"dasha:v1:ad:{md}:{h}"
+    bhuktis_raw = redis_client.get(bhukti_key)
     antara_key = f"dasha:v1:pd:{md}:{ad}:{h}"
-    antar_raw = redis_client.get(antara_key)
-    if not antar_raw:
-        raise HTTPException(status_code=400, detail="Call /sub_sub_vdasha first")
+    antaras_raw = redis_client.get(antara_key)
+    
+    if not antaras_raw or not bhuktis_raw or not major_list_raw:
+        raise HTTPException(status_code=400, detail="Call parent endpoints first")
 
-    antar_list = json.loads(antar_raw)
-    antar_list = deserialize(antar_list)
-    # Find selected antara
-    a_selected = next((a for a in antar_list if a["planet"].lower() == pd), None)
-
+    major_list = deserialize(json.loads(major_list_raw))
+    antaras = deserialize(json.loads(antaras_raw))
+    
+    birth_dt = major_list[0]["start"]
+    starting_md_lord = major_list[0]["planet"]
+    
+    a_selected = next((a for a in antaras if a["planet"].lower() == pd), None)
     if a_selected is None:
-        raise HTTPException(status_code=404, detail="Antara not found.")
+        raise HTTPException(status_code=404, detail="Antara (Pratyantar) not found.")
 
-    pratyantaras = calculate_pratyantaras(
-        a_selected["planet"], a_selected["start"], a_selected["end"]
-    )
+    # FIX: If we are tracking the active Sukshma line running exactly at birth
+    if md.lower() == starting_md_lord.lower() and a_selected["start"] == birth_dt:
+        local_dt = datetime.datetime(data.year, data.month, data.day, data.hour, data.minutes, data.seconds)
+        ut_dt = local_dt - datetime.timedelta(hours=data.timezone)
+        jd = to_julian_day(ut_dt.year, ut_dt.month, ut_dt.day, ut_dt.hour, ut_dt.minute, ut_dt.second)
+        moon_long = get_moon_longitude(jd, data.latitude, data.longitude)
+        
+        balance = dasha_balance(moon_long)
+        total_years = VIMSHOTTARI_YEARS[starting_md_lord]
+        years_passed = total_years * (1 - balance)
+        
+        hypothetical_md_start = birth_dt - datetime.timedelta(days=years_passed * 365.25)
+        hypothetical_md_end = hypothetical_md_start + datetime.timedelta(days=total_years * 365.25)
+        
+        # 1. Pull historical un-truncated Bhukti
+        full_bhuktis = calculate_bhuktis(starting_md_lord, hypothetical_md_start, hypothetical_md_end)
+        true_bhukti = next(b for b in full_bhuktis if b["planet"].lower() == ad)
+        
+        # 2. Pull historical un-truncated Antara
+        full_antaras = calculate_antaras(true_bhukti["planet"], true_bhukti["start"], true_bhukti["end"])
+        true_antara = next(a for a in full_antaras if a["planet"].lower() == pd)
+        
+        # 3. Calculate Sukshma from the un-truncated Antara, then slice out the past
+        full_pratyantaras = calculate_pratyantaras(true_antara["planet"], true_antara["start"], true_antara["end"])
+        
+        pratyantaras = []
+        for p in full_pratyantaras:
+            if p["end"] <= birth_dt:
+                continue
+            if p["start"] < birth_dt < p["end"]:
+                p["start"] = birth_dt
+                pratyantaras.append(p)
+            else:
+                pratyantaras.append(p)
+    else:
+        # Standard un-truncated calculation for later periods or subsequent Mahadashas
+        pratyantaras = calculate_pratyantaras(a_selected["planet"], a_selected["start"], a_selected["end"])
+
     pratyantaras = serialize(pratyantaras)
-
     if not isinstance(pratyantaras, list):
         pratyantaras = [pratyantaras]
     redis_client.set(redis_key, json.dumps(pratyantaras), ex=86400)
 
-    return {"pratyantara": pratyantaras, "cached": False}
+    return {"md": md, "ad": ad, "pd": pd, "pratyantara": pratyantaras, "cached": False}
+
+
 
 @app.delete("/api/cache/clear")
 def clear_cache():
