@@ -6,9 +6,9 @@ from routers.btr import router as btr_router
 from routers.dasa import router as dasa_router
 from routers.transit import router as transit_router
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-load_dotenv()
+# load_dotenv()
 
 app = FastAPI() 
 
