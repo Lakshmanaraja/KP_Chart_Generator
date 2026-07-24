@@ -1,146 +1,28 @@
-import math
-import datetime
-import json
 import swisseph as swe
 
-# ---------------------- Configuration --------------------------------
-EPHE_PATH = None  # set to your ephemeris files folder if needed
-PLANETS = [
-    (swe.SUN, 'Sun'),
-    (swe.MOON, 'Moon'),
-    (swe.MERCURY, 'Mercury'),
-    (swe.VENUS, 'Venus'),
-    (swe.MARS, 'Mars'),
-    (swe.JUPITER, 'Jupiter'),
-    (swe.SATURN, 'Saturn'),
-    (swe.MEAN_NODE, 'Rahu')  # we'll add Ketu as opposite
-]
+import json
+import os
+import datetime
 
-# Vimshottari sequence and proportions
-VIMSHOTTARI_ORDER = ['Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury']
-VIM_YEARS = [7,20,6,10,7,18,16,19,17]
-VIM_TOTAL = sum(VIM_YEARS)
-#VIM_PROPORTIONS = [y / VIM_TOTAL for y in VIM_YEARS]
-VIM_PROPORTIONS = [y/sum(VIM_YEARS) for y in VIM_YEARS]
-
-# Nakshatra names and their lords (standard sequence starting from Ashwini)
-NAK_SHAPES = [
-    ('Ashwini','Ketu'),('Bharani','Venus'),('Krittika','Sun'),('Rohini','Moon'),('Mrigashira','Mars'),
-    ('Ardra','Rahu'),('Punarvasu','Jupiter'),('Pushya','Saturn'),('Ashlesha','Mercury'),('Magha','Ketu'),
-    ('Purva Phalguni','Venus'),('Uttara Phalguni','Sun'),('Hasta','Moon'),('Chitra','Mars'),('Swati','Rahu'),
-    ('Vishakha','Jupiter'),('Anuradha','Saturn'),('Jyeshtha','Mercury'),('Mula','Ketu'),('Purva Ashadha','Venus'),
-    ('Uttara Ashadha','Sun'),('Shravana','Moon'),('Dhanishta','Mars'),('Shatabhisha','Rahu'),('Purva Bhadrapada','Jupiter'),
-    ('Uttara Bhadrapada','Saturn'),('Revati','Mercury')
-]
-
-# Sign rulers mapping (1..12 where 1=Aries)
-SIGN_RULER = {
-    1: 'Mars', 2: 'Venus', 3: 'Mercury', 4: 'Moon', 5: 'Sun', 6: 'Mercury',
-    7: 'Venus', 8: 'Mars', 9: 'Jupiter', 10: 'Saturn', 11: 'Saturn', 12: 'Jupiter'
-}
-SIGN_NAMES = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
-
-# -------------------- Helper functions --------------------------------
-
-def parse_date_time(date_str, time_str):
-    y,m,d = [int(x) for x in date_str.split('-')]
-    hh,mm,ss = [int(x) for x in time_str.split(':')]
-    return y,m,d,hh,mm,ss
+#Not Needed
+from typing import Optional, List, Dict, Any
+from collections import defaultdict
+import hashlib
+import ast
+import math
 
 
-def to_julian_day(year, month, day, hour=0, minute=0, second=0):
-    ut_hours = hour + minute/60.0 + second/3600.0
-    return swe.julday(year, month, day, ut_hours)
+from utils.constants import EPHE_PATH,SIGN_NAMES,SIGN_RULER,NAK_SHAPES,TOTAL_YEARS,VIM_ORDER,VIM_YEARS,VIM_PROP,PLANETS,NAKSHATRA_SIZE
+from utils.date_utils import to_julian_day,parse_date_time,normalize_angle,sign_from_deg,get_nak_charan_and_pos,find_sub_lord_recursive,is_retrograde
 
 
-def normalize_angle(a):
-    a = a % 360.0
-    if a < 0:
-        a += 360.0
-    return a
 
 
-def sign_from_deg(deg):
-    deg = normalize_angle(deg)
-    sign_idx = int(deg // 30) + 1
-    sign_name = SIGN_NAMES[sign_idx - 1]
-    return sign_idx, sign_name
-
-def get_nak_charan_and_pos(sid_deg):
-    # Normalize the degree
-    sid_deg = sid_deg % 360.0
-
-    nak_size = 360.0 / 27.0  # 13°20′ = 13.333333...
-    nak_index = int(sid_deg // nak_size) + 1
-    if nak_index > 27:
-        nak_index = 27
-
-    nak_name, nak_lord = NAK_SHAPES[nak_index - 1]
-
-    nak_start = (nak_index - 1) * nak_size
-    pos_in_nak = sid_deg - nak_start
-
-    # Fix tiny floating negative due to rounding
-    if pos_in_nak < 0:
-        pos_in_nak += nak_size
-
-    # Each nakshatra has 4 padas
-    pada_size = nak_size / 4.0
-    charan = int(pos_in_nak // pada_size) + 1
-    if charan > 4:
-        charan = 4
-
-    return nak_index, nak_name, nak_lord, charan, pos_in_nak, nak_size
-
-
-def find_sub_lord_recursive(pos_in_nak_deg, nak_size, nak_lord, levels=3):
-    VIM_ORDER = ['Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury']
-    VIM_YEARS = [7,20,6,10,7,18,16,19,17]
-    total = sum(VIM_YEARS)
-    VIM_PROP = [y / total for y in VIM_YEARS]
-
-    # Rotate sequence so Nakshatra starts with its lord
-    idx = VIM_ORDER.index(nak_lord)
-    order = VIM_ORDER[idx:] + VIM_ORDER[:idx]
-    props = VIM_PROP[idx:] + VIM_PROP[:idx]
-
-    lords = []
-    cur_pos = pos_in_nak_deg / nak_size  # normalize 0–1
-
-    for _ in range(levels):
-        cumulative = 0.0
-        for lord, prop in zip(order, props):
-            next_cum = cumulative + prop
-            if cur_pos <= next_cum or abs(cur_pos - 1.0) < 1e-9:
-                lords.append(lord)
-                cur_pos = (cur_pos - cumulative) / prop
-                # rotate again for next level starting from current sublord
-                idx2 = VIM_ORDER.index(lord)
-                order = VIM_ORDER[idx2:] + VIM_ORDER[:idx2]
-                props = VIM_PROP[idx2:] + VIM_PROP[:idx2]
-                break
-            cumulative = next_cum
-
-    return lords
-    
-def is_retrograde(jd, pconst, delta_days=2.0):
-    lon1 = swe.calc_ut(jd, pconst)[0][0] if isinstance(swe.calc_ut(jd, pconst)[0], (list,tuple)) else swe.calc_ut(jd, pconst)[0]
-    lon2 = swe.calc_ut(jd + delta_days, pconst)[0][0] if isinstance(swe.calc_ut(jd + delta_days, pconst)[0], (list,tuple)) else swe.calc_ut(jd + delta_days, pconst)[0]
-    # normalize difference
-    d = normalize_angle(lon2 - lon1)
-    # if motion backwards more than 180 (i.e. negative real change), treat as retro
-    # Better: if d > 180 then actual change is d-360 which is negative
-    if d > 180:
-        d = d - 360
-    return d < 0
-
-# -------------------- Core computation --------------------------------
-
-def compute_kp_json(date_str, time_str, lat, lon, tz_offset_hours, ayan_mode='Lahiri'):
+def compute_kp_json(date_str:str, time_str:str, lat:float, lon:float, tz_offset_hours:float, ayan_mode='Lahiri'):
     """Compute KP JSON dict for given local date/time (with seconds) and location.
     ayan_mode: 'KP' or 'LAHIRI' (we set SWEPY sidereal mode accordingly)
     """
-    global JD
+    #global JD
     y,m,d,hh,mm,ss = parse_date_time(date_str, time_str)
     # convert local to UT
     local_dt = datetime.datetime(y,m,d,hh,mm,ss)
@@ -288,12 +170,9 @@ def compute_kp_json(date_str, time_str, lat, lon, tz_offset_hours, ayan_mode='La
         })
      # Houses
     #cusps, ascmc = swe.houses_ex(JD, lat, lon) if hasattr(swe, 'houses_ex') else swe.houses(JD, lat, lon)
-   
-    print(lat)
-    print(lon)
-    print(ut_dt.year, ut_dt.month, ut_dt.day, ut_dt.hour, ut_dt.minute, ut_dt.second)
+  
     JD = to_julian_day(ut_dt.year, ut_dt.month, ut_dt.day, ut_dt.hour, ut_dt.minute, ut_dt.second)
-    print(JD)
+    #print(JD)
     cusps, ascmc = swe.houses(JD, lat, lon) 
     if len(cusps) == 13:
         cusp_list = [cusps[i] for i in range(1,13)]
@@ -305,7 +184,7 @@ def compute_kp_json(date_str, time_str, lat, lon, tz_offset_hours, ayan_mode='La
     for i in range(12):
         cusp_trop = normalize_angle(cusp_list[i])
         cusp_sid = normalize_angle(cusp_trop - ayanamsha)
-        print(cusp_sid)
+        #print(cusp_sid)
         sign_id, sign_name = sign_from_deg(cusp_sid)
         sign_lord = SIGN_RULER[sign_id]
         nak_idx, nak_name, nak_lord, charan, pos_in_nak, nak_size = get_nak_charan_and_pos(cusp_sid)
@@ -329,16 +208,3 @@ def compute_kp_json(date_str, time_str, lat, lon, tz_offset_hours, ayan_mode='La
         })
 
     return out
-
-if __name__ == '__main__':
-    if EPHE_PATH:
-        swe.set_ephe_path(EPHE_PATH)
-
-    # Example input
-    ayan_mode = 'Lahiri'
-    date = '1981-10-14'
-    time = '12:41:30'  # includes seconds
-    lat,lon = 11.7384,78.9639 
-    tz = 5.5
-
-    kpjson = compute_kp_json(date, time, lat, lon, tz, ayan_mode='Lahiri')
