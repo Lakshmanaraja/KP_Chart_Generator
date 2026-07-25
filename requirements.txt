@@ -4,3 +4,4 @@ pyswisseph
 python-multipart
 pandas
 redis
+supabase
