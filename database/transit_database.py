@@ -20,7 +20,7 @@ class TransitDatabase:
 
         result = (
             self.supabase
-            .table("planet_positions")
+            .table("planet_transits")
             .select("*")
             .eq("planet", planet)
             #.eq("event_type", "RASI")
@@ -70,4 +70,26 @@ class TransitDatabase:
             )
 
         return query.order("entry_datetime").execute().data
- 
+    
+    # def get_kp_planet_star_sub_transits(
+    #     self,
+    #     planet:str,
+    #     beg_star_lord:str,
+    #     beg_sub_lord:str,
+    #     end_star_lord:str,
+    #     end_sub_lord:str,
+    #     start_date:str,
+    #     end_date:str
+    # ):
+    #     query = (
+    #             self.supabase
+    #             .table("kp_planet_star_sub_transits")
+    #             .select("*")
+    #             .eq("planet", planet)
+    #             .eq("star_lord", star_lord)
+    #             .eq("sub_star_lord", sub_star_lord)
+    #             .gte("entry_datetime", start_date)
+    #             .lte("entry_datetime", end_date)
+    #         )
+
+    #     return query.order("entry_datetime").execute().data

@@ -9,12 +9,12 @@ from typing import List, Dict
 router = APIRouter(prefix="/btr", tags=["BTR"])
 
 @router.get("/api/btr_correction")
-def btr_correction_endpoint(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,answer_chart:str,planet_order:str,must_not_mismatch:str,isPrimaryPL=1,isLoc=1,isConnectedPL=1,ayanamsa='Lahiri'):
+def btr_correction_endpoint(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,answer_chart:str,planet_order:str,must_not_mismatch:str,isPrimaryPL=1,isLoc=1,isConnectedPL=0,ayanamsa='Lahiri'):
     result = btr_correction(dateOfBirth,originalBirthTime,lat,lon,tz,time_delta,time_range,answer_chart,planet_order,must_not_mismatch,isPrimaryPL,isLoc,isConnectedPL,ayanamsa)
     return result
 
 @router.get("/api/calc_bhava_planet_presence")
-def calc_bhava_planet_presence_endpoint(birth_date:str,birth_time:str,lat:float,lon:float,tz:float,isPrimaryPL=1,isLoc=1,isConnectedPL=1,ayan_mode='Lahiri'):
+def calc_bhava_planet_presence_endpoint(birth_date:str,birth_time:str,lat:float,lon:float,tz:float,isPrimaryPL=1,isLoc=1,isConnectedPL=0,ayan_mode='Lahiri'):
     presence,kpjson = calc_bhava_planet_presence(birth_date,birth_time,lat,lon,tz,isPrimaryPL,isLoc,isConnectedPL,ayan_mode)
     response = {} 
     response["presence"]= presence

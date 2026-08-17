@@ -140,12 +140,12 @@ def compare_with_answer(df,answer_df):
     return(matches / valid_points * 100 , mismatch_locations, mismatch_values)
 
 
-def calc_bhava_planet_presence (birth_date:str,birth_time:str,lat:float,lon:float,tz:float,isPrimaryPL=1,isLoc=1,isConnectedPL=1,ayan_mode='Lahiri'):
+def calc_bhava_planet_presence (birth_date:str,birth_time:str,lat:float,lon:float,tz:float,isPrimaryPL=1,isLoc=1,isConnectedPL=0,ayan_mode='Lahiri'):
 
-    presence,kpjson = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL=1,isLoc=1,isConnectedPL=1,ayan_mode='Lahiri')
+    presence,kpjson = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL=1,isLoc=1,isConnectedPL=0,ayan_mode='Lahiri')
     return presence,kpjson
 
-def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,answer_chart:str,planet_order:str,must_not_mismatch:str,isPrimaryPL=1,isLoc=1,isConnectedPL=1,ayanamsa='Lahiri'):
+def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,answer_chart:str,planet_order:str,must_not_mismatch:str,isPrimaryPL=1,isLoc=1,isConnectedPL=0,ayanamsa='Lahiri'):
     birth_date = dateOfBirth
     birth_time = originalBirthTime
     start_time = datetime.datetime.strptime(originalBirthTime, "%H:%M:%S") - datetime.timedelta(minutes=int(time_range))
