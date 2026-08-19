@@ -48,6 +48,15 @@ def calc_primary_pl_and_loc_pl(houses,planets,isPrimaryPL=1,isLoc=1):
 
         for pl in plist:
             loc_list.setdefault(h['house_id'],[]).append(pl['planet_name'])
+            planet_pl = [
+            pl.get('nakshatra_lord'),
+            pl.get('sub_lord'),
+            pl.get('sub_sub_lord'),
+            pl.get('sub_sub_sub_lord') 
+            ]
+
+            loc_list[h['house_id']].extend(
+            x for x in planet_pl if x is not None )
     
     combined_pl = {}
 
