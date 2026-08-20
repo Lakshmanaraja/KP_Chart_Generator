@@ -71,25 +71,25 @@ def calc_primary_pl_and_loc_pl(houses,planets,isPrimaryPL=1,isLoc=1):
 
 def calc_connected_planets(houses,planets):
     connected_pl = {}
-    combined_pl = calc_primary_pl_and_loc_pl(houses,planets)
+    # combined_pl = calc_primary_pl_and_loc_pl(houses,planets)
 
-    for h in houses :
-        #print(combined_pl[h['house_id']])
-        connected_pl.setdefault(h['house_id'],[]).extend(combined_pl[h['house_id']])
-        for pr_pl in combined_pl[h['house_id']]:
-            for p in planets :
-                #print(p)
-                if pr_pl in [p['nakshatra_lord'],p['sub_lord']]:
+    # for h in houses :
+    #     #print(combined_pl[h['house_id']])
+    #     connected_pl.setdefault(h['house_id'],[]).extend(combined_pl[h['house_id']])
+    #     for pr_pl in combined_pl[h['house_id']]:
+    #         for p in planets :
+    #             #print(p)
+    #             if pr_pl in [p['nakshatra_lord'],p['sub_lord']]:
                     
-                    connected_pl[h['house_id']].append(p['planet_name'])
-                    #break
-                elif (pr_pl in [p['sub_sub_lord']]) & (p['nakshatra_lord']==p['sub_lord']) : #Filtered SSL
+    #                 connected_pl[h['house_id']].append(p['planet_name'])
+    #                 #break
+    #             elif (pr_pl in [p['sub_sub_lord']]) & (p['nakshatra_lord']==p['sub_lord']) : #Filtered SSL
 
-                     connected_pl[h['house_id']].append(p['planet_name'])   
+    #                  connected_pl[h['house_id']].append(p['planet_name'])   
 
 
-    for h in houses :
-        connected_pl[h['house_id']] = unique_list(connected_pl[h['house_id']])
+    # for h in houses :
+    #     connected_pl[h['house_id']] = unique_list(connected_pl[h['house_id']])
         
     return(connected_pl)
     # Step 1: get all unique planet names
@@ -129,10 +129,21 @@ def compare_with_answer(df,answer_df):
     #print(mask)
     comparison = (df == answer_df) & mask
 
+    # Special 6/8 disease questions
+    answer_disease = (answer_df.iloc[:, 5] | answer_df.iloc[:, 7])
+    df_disease = (df.iloc[:, 5] | df.iloc[:, 7])
+
+    disease_match = answer_disease == df_disease
+
+
     matches = comparison.sum().sum()
+    disease_matches = disease_match.sum()
     valid_points = mask.sum().sum()
     #mismatches = valid_points - matches
+    
+    # Avoid division by zero
 
+    accuracy = (matches + disease_matches) / valid_points * 100 if valid_points else 0
 
     # Step 3: find mismatches only within valid mask
     mismatch_mask = (df != answer_df) & mask
@@ -146,7 +157,7 @@ def compare_with_answer(df,answer_df):
         mismatch_values.append((answer_df.iat[r,c],df.iat[r,c]))
 
     #print(mismatch_locations)
-    return(matches / valid_points * 100 , mismatch_locations, mismatch_values)
+    return(accuracy , mismatch_locations, mismatch_values)
 
 
 def calc_bhava_planet_presence (birth_date:str,birth_time:str,lat:float,lon:float,tz:float,isPrimaryPL=1,isLoc=1,isConnectedPL=0,ayan_mode='Lahiri'):
