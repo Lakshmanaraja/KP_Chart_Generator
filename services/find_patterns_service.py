@@ -137,4 +137,5 @@ def planets_in_chart_fn(chart_values, bhava_number, bh_column,cols,planets_in_ch
             for value in values
             if value and value.lower() not in {"nan", "none", "-"}
         )
-        return planets_in_chart
+
+    return planets_in_chart
