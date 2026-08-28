@@ -109,7 +109,7 @@ def bhava_planet_patterns(
 
     return (
         pd.DataFrame(results, columns=columns)
-        .sort_values(["charts_matched", "planet"], ascending=[False, True])
+        .sort_values(["charts_matched", "bhava"], ascending=[False, True])
         .reset_index(drop=True)
     )
 
