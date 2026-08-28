@@ -16,6 +16,14 @@ class TimeRange(BaseModel):
     sign: str
     description: str
 
+class FindPatternsRequest(BaseModel):
+    list_of_client_ids: list[str]
+    planet_cols: list[str] = [
+        "nakshatra_lord",
+        "sub_lord",
+        "sub_sub_lord",
+        "sub_sub_sub_lord",
+    ]
 # class BTRSubmission(BaseModel):
 #     dateOfBirth: str
 #     originalBirthTime: str
