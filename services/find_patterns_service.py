@@ -110,18 +110,18 @@ def bhava_planet_patterns(
         .reset_index(drop=True)
     )
 
-def planets_in_chart_fn(chart_values, bhava_number, bh_column,cols):
+def planets_in_chart_fn(chart_values, bhava_number, bh_column,cols,planets_in_chart=set()):
     # Extract only cusps; planets data is ignored.
-    pl_list =set()        
+    #pl_list =set()        
     if chart_values.empty or bh_column not in chart_values.columns:
-        return pl_list
+        return planets_in_chart
 
     bhava_rows = chart_values[
         chart_values[bh_column].astype(str).str.strip() == str(bhava_number)
     ]
 
     if bhava_rows.empty: 
-        return pl_list
+        return planets_in_chart
 
     for column in cols:
         if column not in bhava_rows.columns:
@@ -129,9 +129,9 @@ def planets_in_chart_fn(chart_values, bhava_number, bh_column,cols):
 
         values = bhava_rows[column].dropna().astype(str).str.strip()
 
-        pl_list.update(
+        planets_in_chart.update(
             value
             for value in values
             if value and value.lower() not in {"nan", "none", "-"}
         )
-        return pl_list
+        return planets_in_chart
