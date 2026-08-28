@@ -75,8 +75,11 @@ def bhava_planet_patterns(
         
         cusp_values = pd.DataFrame(chart_json.get("cusps", []))
         planets_in_chart.update(planets_in_chart_fn(cusp_values, bhava_number, cusp_bh_column, cusp_cols))
+        print(f"Client ID: {client_id}, Bhava: {bhava_number}, Planets in chart: {planets_in_chart}")
+
         pl_values = pd.DataFrame(chart_json.get("planets", []))
         planets_in_chart.update(planets_in_chart_fn(pl_values, bhava_number, planet_bh_column, planet_cols))
+        print(f"Client ID: {client_id}, Bhava: {bhava_number}, Planets in chart: {planets_in_chart}")
 
         for planet in planets_in_chart:
             planet_to_matched_client_ids.setdefault(planet, set()).add(client_id)
