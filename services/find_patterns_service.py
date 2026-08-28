@@ -9,7 +9,7 @@ supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
 chart_db = ClientDatabase(supabase_url, supabase_key)
 
-def find_patterns(client_ids: list[str], bhava_number: str, bhava_col: str = "house_id", planet_cols: tuple[str] = ("nakshatra_lord", "sub_lord", "sub_sub_lord")):  
+def find_patterns(client_ids: list[str], bhava_number: str, cusp_bh_column: str = "house_id", planet_bh_column: str = "planet", cusp_cols: tuple[str] = ("nakshatra_lord", "sub_lord", "sub_sub_lord","sub_sub_sub_lord"), planet_cols: tuple[str] = ("name","nakshatra_lord", "sub_lord", "sub_sub_lord", "sub_sub_sub_lord")):  
     # Implementation for finding patterns
 
     # i want to pass list of client ids to this function and find patterns in their charts. 
@@ -21,12 +21,10 @@ def find_patterns(client_ids: list[str], bhava_number: str, bhava_col: str = "ho
     result = []
     if (bhava_number =="All" or bhava_number == "all" or bhava_number == "None" or bhava_number == "none"):
         for bhava in range(1, 13):
-            bhava_result = bhava_planet_patterns(chart_json_list, bhava, bhava_col, planet_cols)
+            bhava_result = bhava_planet_patterns(chart_json_list, bhava, cusp_bh_column, planet_bh_column, cusp_cols, planet_cols)
             result.append(bhava_result)
     else:
-        res = (bhava_planet_patterns(chart_json_list, bhava_number, bhava_col, planet_cols))
-        print(f"find_patterns: Single bhava result: {res}")
-        #result.append(bhava_planet_patterns(chart_json_list, bhava_number, bhava_col, planet_cols))
+        res = (bhava_planet_patterns(chart_json_list, bhava_number, cusp_bh_column, planet_bh_column, cusp_cols, planet_cols))
         result.append(res)
 
     return pd.concat(result).reset_index(drop=True)
@@ -34,13 +32,21 @@ def find_patterns(client_ids: list[str], bhava_number: str, bhava_col: str = "ho
 def bhava_planet_patterns(
     chart_json_list,
     bhava_number,
-    bhava_col="house_id",
-    planet_cols=(
+    cusp_bh_column="house_id",
+    planet_bh_column="planet",
+    cusp_cols=(
         "nakshatra_lord",
         "sub_lord",
         "sub_sub_lord",
         "sub_sub_sub_lord",
     ),
+    planet_cols=(
+        "name",
+        "nakshatra_lord",
+        "sub_lord",
+        "sub_sub_lord",
+        "sub_sub_sub_lord",
+    )
 ):
     """
     chart_json_list format:
@@ -64,34 +70,13 @@ def bhava_planet_patterns(
         # Use this only if chart_json arrives as a JSON string.
         if isinstance(chart_json, str):
             chart_json = json.loads(chart_json)
-
-        # Extract only cusps; planets data is ignored.
-        chart = pd.DataFrame(chart_json.get("cusps", []))
-
-        if chart.empty or bhava_col not in chart.columns:
-            continue
-
-        bhava_rows = chart[
-            chart[bhava_col].astype(str).str.strip() == str(bhava_number)
-        ]
-
-        if bhava_rows.empty:
-            continue
-
         # A planet is counted once per client chart for this bhava.
         planets_in_chart = set()
-
-        for column in planet_cols:
-            if column not in bhava_rows.columns:
-                continue
-
-            values = bhava_rows[column].dropna().astype(str).str.strip()
-
-            planets_in_chart.update(
-                value
-                for value in values
-                if value and value.lower() not in {"nan", "none", "-"}
-            )
+        
+        cusp_values = pd.DataFrame(chart_json.get("cusps", []))
+        planets_in_chart.update(planets_in_chart_fn(cusp_values, bhava_number, cusp_bh_column, cusp_cols))
+        pl_values = pd.DataFrame(chart_json.get("planets", []))
+        planets_in_chart.update(planets_in_chart_fn(pl_values, bhava_number, planet_bh_column, planet_cols))
 
         for planet in planets_in_chart:
             planet_to_matched_client_ids.setdefault(planet, set()).add(client_id)
@@ -124,3 +109,29 @@ def bhava_planet_patterns(
         .sort_values(["charts_matched", "planet"], ascending=[False, True])
         .reset_index(drop=True)
     )
+
+def planets_in_chart_fn(chart_values, bhava_number, bh_column,cols):
+    # Extract only cusps; planets data is ignored.
+    pl_list =set()        
+    if chart_values.empty or bh_column not in chart_values.columns:
+        return pl_list
+
+    bhava_rows = chart_values[
+        chart_values[bh_column].astype(str).str.strip() == str(bhava_number)
+    ]
+
+    if bhava_rows.empty: 
+        return pl_list
+
+    for column in cols:
+        if column not in bhava_rows.columns:
+            continue
+
+        values = bhava_rows[column].dropna().astype(str).str.strip()
+
+        pl_list.update(
+            value
+            for value in values
+            if value and value.lower() not in {"nan", "none", "-"}
+        )
+        return pl_list
