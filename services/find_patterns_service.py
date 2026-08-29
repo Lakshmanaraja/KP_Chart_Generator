@@ -61,6 +61,7 @@ def bhava_planet_patterns(
     total_charts = len(chart_json_list)
     all_client_ids = set()
     planet_to_matched_client_ids = {}
+    all_clients_source_planet_columns = {}
 
     # Unpack each database row: (client_id, chart_json)
     for client_id, chart_json in chart_json_list:
@@ -90,13 +91,14 @@ def bhava_planet_patterns(
 
         #print(f"Client ID: {client_id}, Bhava: {bhava_number}, Source Planet Columns: {dict(source_planet_columns)}")
 
-        json_ready_source_planet_columns = {
-                chart_type: {
-            planet: sorted(columns)
-            for planet, columns in planets.items()
+        all_clients_source_planet_columns[client_id] = {
+            chart_type: {
+                planet: sorted(columns)
+                for planet, columns in planet_map.items()
+            }
+            for chart_type, planet_map in source_planet_columns.items()
         }
-        for chart_type, planets in source_planet_columns.items()
-}
+
     results = []
 
     for planet, matched_client_ids in planet_to_matched_client_ids.items():
@@ -113,7 +115,7 @@ def bhava_planet_patterns(
             ) if total_charts else 0,
             "matched_client_ids": matched_client_ids,
             "failed_client_ids": failed_client_ids,
-            "source_planet_columns": json_ready_source_planet_columns, #{k: list(v) for k, v in source_planet_columns.items()},
+            "source_planet_columns": all_clients_source_planet_columns, #{k: list(v) for k, v in source_planet_columns.items()},
         })
 
     columns = [
