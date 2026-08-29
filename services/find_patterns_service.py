@@ -1,7 +1,7 @@
 from unittest import result
 import json
 import pandas as pd
-
+from collections import defaultdict
 from database.chart_database import ClientDatabase
 import os
 
@@ -72,18 +72,31 @@ def bhava_planet_patterns(
             chart_json = json.loads(chart_json)
         # A planet is counted once per client chart for this bhava.
         planets_in_chart = set()
-        
+        #bhava_planet_columns = defaultdict(set)
+        source_planet_columns = defaultdict(lambda: defaultdict(set))
+
         cusp_values = pd.DataFrame(chart_json.get("cusps", []))
-        planets_in_chart.update(planets_in_chart_fn(cusp_values, bhava_number, cusp_bh_column, cusp_cols,planets_in_chart))
-        print(f"Client ID: {client_id}, Bhava: {bhava_number}, Planets in chart: {planets_in_chart}")
+        pl_ch, source_planet_columns = planets_in_chart_fn(cusp_values, bhava_number, cusp_bh_column, cusp_cols,planets_in_chart,source_planet_columns,"cusp")
+        planets_in_chart.update(pl_ch)
+        #print(f"Client ID: {client_id}, Bhava: {bhava_number}, Planets in chart: {planets_in_chart}")
 
         pl_values = pd.DataFrame(chart_json.get("planets", []))
-        planets_in_chart.update(planets_in_chart_fn(pl_values, bhava_number, planet_bh_column, planet_cols,planets_in_chart))
-        print(f"Client ID: {client_id}, Bhava: {bhava_number}, Planets in chart: {planets_in_chart}")
+        pl_ch, source_planet_columns = planets_in_chart_fn(pl_values, bhava_number, planet_bh_column, planet_cols,planets_in_chart,source_planet_columns,"planet")
+        planets_in_chart.update(pl_ch)
+        #print(f"Client ID: {client_id}, Bhava: {bhava_number}, Planets in chart: {planets_in_chart}")
 
         for planet in planets_in_chart:
             planet_to_matched_client_ids.setdefault(planet, set()).add(client_id)
 
+        #print(f"Client ID: {client_id}, Bhava: {bhava_number}, Source Planet Columns: {dict(source_planet_columns)}")
+
+        json_ready_source_planet_columns = {
+                chart_type: {
+            planet: sorted(columns)
+            for planet, columns in planets.items()
+        }
+        for chart_type, planets in source_planet_columns.items()
+}
     results = []
 
     for planet, matched_client_ids in planet_to_matched_client_ids.items():
@@ -100,11 +113,12 @@ def bhava_planet_patterns(
             ) if total_charts else 0,
             "matched_client_ids": matched_client_ids,
             "failed_client_ids": failed_client_ids,
+            "source_planet_columns": json_ready_source_planet_columns, #{k: list(v) for k, v in source_planet_columns.items()},
         })
 
     columns = [
         "bhava", "planet", "charts_matched", "total_charts",
-        "accuracy_percent", "matched_client_ids", "failed_client_ids",
+        "accuracy_percent", "matched_client_ids", "failed_client_ids", "source_planet_columns",
     ]
 
     return (
@@ -113,18 +127,17 @@ def bhava_planet_patterns(
         .reset_index(drop=True)
     )
 
-def planets_in_chart_fn(chart_values, bhava_number, bh_column,cols,planets_in_chart=set()):
-    # Extract only cusps; planets data is ignored.
-    #pl_list =set()        
+def planets_in_chart_fn(chart_values, bhava_number, bh_column,cols,planets_in_chart=set(),source_planet_columns=defaultdict(set), source=""):
+
     if chart_values.empty or bh_column not in chart_values.columns:
-        return planets_in_chart
+        return planets_in_chart, source_planet_columns
 
     bhava_rows = chart_values[
         chart_values[bh_column].astype(str).str.strip() == str(bhava_number)
     ]
 
     if bhava_rows.empty: 
-        return planets_in_chart
+        return planets_in_chart, source_planet_columns
 
     for column in cols:
         if column not in bhava_rows.columns:
@@ -132,10 +145,10 @@ def planets_in_chart_fn(chart_values, bhava_number, bh_column,cols,planets_in_ch
 
         values = bhava_rows[column].dropna().astype(str).str.strip()
 
-        planets_in_chart.update(
-            value
-            for value in values
-            if value and value.lower() not in {"nan", "none", "-"}
-        )
+        for value in values:
+            if not value or value.lower() in {"nan", "none", "-"}:
+                continue
+            planets_in_chart.add(value)
+            source_planet_columns[source][value].add(column)
 
-    return planets_in_chart
+    return planets_in_chart , source_planet_columns
