@@ -18,6 +18,7 @@ class TimeRange(BaseModel):
 
 class FindPatternsRequest(BaseModel):
     list_of_client_ids: list[str]
+    list_of_bhavas: list[int]
     cusp_cols: list[str] = [
         "nakshatra_lord",
         "sub_lord",

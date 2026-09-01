@@ -9,7 +9,7 @@ supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
 chart_db = ClientDatabase(supabase_url, supabase_key)
 
-def find_patterns(client_ids: list[str], bhava_number: str, cusp_bh_column: str = "house_id", planet_bh_column: str = "planet", cusp_cols: tuple[str] = ("nakshatra_lord", "sub_lord", "sub_sub_lord","sub_sub_sub_lord"), planet_cols: tuple[str] = ("name","nakshatra_lord", "sub_lord", "sub_sub_lord", "sub_sub_sub_lord")):  
+def find_patterns(client_ids: list[str], bhava_numbers: list[int], cusp_bh_column: str = "house_id", planet_bh_column: str = "planet", cusp_cols: tuple[str] = ("nakshatra_lord", "sub_lord", "sub_sub_lord","sub_sub_sub_lord"), planet_cols: tuple[str] = ("name","nakshatra_lord", "sub_lord", "sub_sub_lord", "sub_sub_sub_lord")):  
     # Implementation for finding patterns
 
     # i want to pass list of client ids to this function and find patterns in their charts. 
@@ -18,16 +18,19 @@ def find_patterns(client_ids: list[str], bhava_number: str, cusp_bh_column: str 
 
     # Convert JSON data to DataFrames
     #charts = [pd.DataFrame(json_data["cusps"]) for json_data in chart_json_list]
-    result = []
-    if (bhava_number =="All" or bhava_number == "all" or bhava_number == "None" or bhava_number == "none"):
-        for bhava in range(1, 13):
-            bhava_result = bhava_planet_patterns(chart_json_list, bhava, cusp_bh_column, planet_bh_column, cusp_cols, planet_cols)
-            result.append(bhava_result)
-    else:
-        res = (bhava_planet_patterns(chart_json_list, bhava_number, cusp_bh_column, planet_bh_column, cusp_cols, planet_cols))
-        result.append(res)
+    results = [
+        bhava_planet_patterns(
+            chart_json_list,
+            bhava,
+            cusp_bh_column,
+            planet_bh_column,
+            cusp_cols,
+            planet_cols,
+        )
+        for bhava in bhava_numbers
+    ]
 
-    return pd.concat(result).reset_index(drop=True)
+    return pd.concat(results).reset_index(drop=True)
 
 def bhava_planet_patterns(
     chart_json_list,
@@ -125,7 +128,7 @@ def bhava_planet_patterns(
 
     return (
         pd.DataFrame(results, columns=columns)
-        .sort_values(["charts_matched", "bhava"], ascending=[False, True])
+        .sort_values(["bhava", "charts_matched"], ascending=[True, False])
         .reset_index(drop=True)
     )
 
