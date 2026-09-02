@@ -141,6 +141,31 @@ def planets_in_chart_fn(chart_values, bhava_number, bh_column,cols,planets_in_ch
         chart_values[bh_column].astype(str).str.strip() == str(bhava_number)
     ]
 
+    if source == 'planet':
+
+            bhava = int(bhava_number)
+
+            secondary_bhava_numbers = sorted([
+                ((bhava + 4 - 1) % 12) + 1,  # 5th bhava
+                ((bhava + 8 - 1) % 12) + 1,  # 9th bhava
+            ])
+
+            secondary_bhava_numbers = [str(value) for value in secondary_bhava_numbers]
+
+            bhavas_to_include = [str(bhava_number), *secondary_bhava_numbers]
+
+            bhava_rows = chart_values[
+                chart_values[bh_column]
+                .astype(str)
+                .str.strip()
+                .isin(bhavas_to_include)
+            ]
+    else :
+        bhava_rows = chart_values[
+                chart_values[bh_column].astype(str).str.strip() == str(bhava_number)
+            ]
+        
+
     if bhava_rows.empty: 
         return planets_in_chart, source_planet_columns
 
