@@ -89,6 +89,7 @@ def bhava_planet_patterns(
         planets_in_chart.update(pl_ch)
         #print(f"Client ID: {client_id}, Bhava: {bhava_number}, Planets in chart: {planets_in_chart}")
 
+
         for planet in planets_in_chart:
             planet_to_matched_client_ids.setdefault(planet, set()).add(client_id)
 
@@ -173,7 +174,15 @@ def planets_in_chart_fn(chart_values, bhava_number, bh_column,cols,planets_in_ch
         if column not in bhava_rows.columns:
             continue
 
-        values = bhava_rows[column].dropna().astype(str).str.strip()
+        rows_for_column = bhava_rows
+
+        # Do not read planet values from secondary bhavas
+        if column == "planet":
+            rows_for_column = bhava_rows[
+            bhava_rows[bh_column].astype(str).str.strip() == str(bhava_number)
+        ]
+
+        values = rows_for_column[column].dropna().astype(str).str.strip()
 
         for value in values:
             if not value or value.lower() in {"nan", "none", "-"}:
