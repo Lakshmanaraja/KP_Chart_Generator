@@ -177,7 +177,7 @@ def planets_in_chart_fn(chart_values, bhava_number, bh_column,cols,planets_in_ch
         rows_for_column = bhava_rows
 
         # Do not read planet values from secondary bhavas
-        if column == "planet":
+        if column == "name":
             rows_for_column = bhava_rows[
             bhava_rows[bh_column].astype(str).str.strip() == str(bhava_number)
         ]
