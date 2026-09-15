@@ -158,8 +158,8 @@ def planets_in_chart_fn(chart_values, bhava_number, bh_column,cols,planets_in_ch
             bhava_rows = chart_values[
                 chart_values[bh_column]
                 .astype(str)
-                .str.strip()
-                .isin(str(bhava_number)) #.isin(bhavas_to_include)
+                .str.strip() == str(bhava_number)
+                
             ]
     else :
         bhava_rows = chart_values[
