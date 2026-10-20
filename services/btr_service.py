@@ -11,6 +11,34 @@ import datetime
 from services.chart_service import compute_kp_json
 from utils.constants import PLANET_SHORT_NAME_LIST,VIM_ORDER,EPHE_PATH
 
+_PLANET_NAME_BY_SHORT = dict(zip(PLANET_SHORT_NAME_LIST, VIM_ORDER))
+
+
+def _planet_name(name):
+    """Normalize a planet name or short name to the full name in VIM_ORDER."""
+    if name is None:
+        return None
+    name = str(name).strip()
+    if name in VIM_ORDER:
+        return name
+    return _PLANET_NAME_BY_SHORT.get(name.casefold().capitalize())
+
+
+def _dt_planets_between(start_lord, end_lord):
+    """Return Vimshottari lords after start through end, wrapping as needed."""
+    start = _planet_name(start_lord)
+    end = _planet_name(end_lord)
+    if start not in VIM_ORDER or end not in VIM_ORDER:
+        return []
+
+    result = []
+    index = (VIM_ORDER.index(start) + 1) % len(VIM_ORDER)
+    while True:
+        result.append(VIM_ORDER[index])
+        if VIM_ORDER[index] == end:
+            return result
+        index = (index + 1) % len(VIM_ORDER)
+
 
 def unique_list(pl_list):
 
@@ -23,7 +51,7 @@ def unique_list(pl_list):
             unique_items.append(item)
     return(unique_items)
 
-def calc_primary_pl_and_loc_pl(houses,planets,isPrimaryPL=1,isLoc=1):
+def calc_primary_pl_and_loc_pl(houses,planets,isPrimaryPL=1,isLoc=1,isDT=1):
     # group planets by house
     planets_by_house = {}
     for p in planets:
@@ -33,12 +61,19 @@ def calc_primary_pl_and_loc_pl(houses,planets,isPrimaryPL=1,isLoc=1):
 
     loc_list = {}
 
-    for h in houses:
+    ordered_houses = sorted(houses, key=lambda x: x["house_id"])
+    for index, h in enumerate(ordered_houses):
         
         pl_list = [h['nakshatra_lord'],h['sub_lord'],h['sub_sub_lord']]
         
         #if len(set(pl_list)) < 3:
         pl_list.extend([h['sub_sub_sub_lord']]) #Filtered SNL
+
+        if isDT == 1 and ordered_houses:
+            next_house = ordered_houses[(index + 1) % len(ordered_houses)]
+            pl_list.extend(_dt_planets_between(
+                h['nakshatra_lord'], next_house['nakshatra_lord']
+            ))
 
         pr_pl_list[h['house_id']] = unique_list(pl_list)
 
@@ -98,7 +133,7 @@ def calc_connected_planets(houses,planets):
     #for pl in VIMSHOTTARI_ORDER:
         # Step 2: build presence matrix
 
-def calc_bhava_planet_presence_fn (birth_date,birth_time,lat,lon,tz,isPrimaryPL=1,isLoc=1,isConnectedPL=0,ayan_mode='Lahiri'):
+def calc_bhava_planet_presence_fn (birth_date,birth_time,lat,lon,tz,isPrimaryPL=1,isLoc=1,isDT=1,isConnectedPL=0,ayan_mode='Lahiri'):
 
     if EPHE_PATH:
         swe.set_ephe_path(EPHE_PATH)
@@ -110,7 +145,7 @@ def calc_bhava_planet_presence_fn (birth_date,birth_time,lat,lon,tz,isPrimaryPL=
     if(isConnectedPL == 1):
         bhava_planet_dict = calc_connected_planets(houses,planets)
     else :
-        bhava_planet_dict = calc_primary_pl_and_loc_pl(houses,planets,isPrimaryPL,isLoc)
+        bhava_planet_dict = calc_primary_pl_and_loc_pl(houses,planets,isPrimaryPL,isLoc,isDT)
         
     presence = {}
 
@@ -130,7 +165,7 @@ def compare_with_answer(df,answer_df):
     comparison = (df == answer_df) & mask
 
     # Special 6/8 disease questions
-    answer_disease = (answer_df.iloc[:, 5] | answer_df.iloc[:, 7])
+    answer_disease =  (answer_df.iloc[:, 5] | answer_df.iloc[:, 7])
     df_disease = (df.iloc[:, 5] | df.iloc[:, 7])
 
     disease_match = answer_disease == df_disease
@@ -160,12 +195,12 @@ def compare_with_answer(df,answer_df):
     return(accuracy , mismatch_locations, mismatch_values)
 
 
-def calc_bhava_planet_presence (birth_date:str,birth_time:str,lat:float,lon:float,tz:float,isPrimaryPL=1,isLoc=1,isConnectedPL=0,ayan_mode='Lahiri'):
+def calc_bhava_planet_presence (birth_date:str,birth_time:str,lat:float,lon:float,tz:float,isPrimaryPL=1,isLoc=1,isDT = 1,isConnectedPL=0,ayan_mode='Lahiri'):
 
-    presence,kpjson = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL=1,isLoc=1,isConnectedPL=0,ayan_mode='Lahiri')
+    presence,kpjson = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL,isLoc,isDT,isConnectedPL,ayan_mode)
     return presence,kpjson
 
-def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,answer_chart:str,planet_order:str,must_not_mismatch:str,isPrimaryPL=1,isLoc=1,isConnectedPL=0,ayanamsa='Lahiri'):
+def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,answer_chart:str,planet_order:str,must_not_mismatch:str,isPrimaryPL=1,isLoc=1,isDT = 1,isConnectedPL=0,ayanamsa='Lahiri'):
     birth_date = dateOfBirth
     birth_time = originalBirthTime
     start_time = datetime.datetime.strptime(originalBirthTime, "%H:%M:%S") - datetime.timedelta(minutes=int(time_range))
@@ -193,7 +228,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
         i = i+1
         birth_time = current.strftime("%H:%M:%S")
 
-        presence,_ = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL,isLoc,isConnectedPL,ayan_mode='Lahiri')
+        presence,_ = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL,isLoc,isDT,isConnectedPL,ayan_mode='Lahiri')
         df = pd.DataFrame.from_dict(presence, orient='index')
         percentage ,mismatch_locations, mismatch_values = compare_with_answer(df,answer_df)
         best_birth_time_list.setdefault(i,[]).append((birth_time,mismatch_locations,percentage,mismatch_values))
@@ -265,7 +300,7 @@ def btr_correction(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:
     }
     return(response)
 
-def bhava_planet_presence_for_questions(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,bhava_start:int,bhava_end:int,isPrimaryPL=1,isLoc=1,isConnectedPL=0,ayanamsa='Lahiri'):
+def bhava_planet_presence_for_questions(dateOfBirth:str,originalBirthTime:str,lat:float,lon:float,tz:float,time_delta:int,time_range:int,bhava_start:int,bhava_end:int,isPrimaryPL=1,isLoc=1,isDT = 1,isConnectedPL=0,ayanamsa='Lahiri'):
     if EPHE_PATH:
         swe.set_ephe_path(EPHE_PATH)
   
