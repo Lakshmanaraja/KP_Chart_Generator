@@ -14,6 +14,11 @@ from utils.constants import PLANET_SHORT_NAME_LIST,VIM_ORDER,EPHE_PATH
 _PLANET_NAME_BY_SHORT = dict(zip(PLANET_SHORT_NAME_LIST, VIM_ORDER))
 
 
+def _is_enabled(value):
+    """Accept integer, boolean, or query-string forms of an enabled flag."""
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
 def _planet_name(name):
     """Normalize a planet name or short name to the full name in VIM_ORDER."""
     if name is None:
@@ -28,6 +33,7 @@ def _dt_planets_between(start_lord, end_lord):
     """Return Vimshottari lords after start through end, wrapping as needed."""
     start = _planet_name(start_lord)
     end = _planet_name(end_lord)
+    print(f"Calculating planets between {start} and {end}")
     if start not in VIM_ORDER or end not in VIM_ORDER:
         return []
 
@@ -62,6 +68,7 @@ def calc_primary_pl_and_loc_pl(houses,planets,isPrimaryPL=1,isLoc=1,isDT=1):
     loc_list = {}
 
     ordered_houses = sorted(houses, key=lambda x: x["house_id"])
+    print(f"Ordered Houses: {[h['house_id'] for h in ordered_houses]}")
     for index, h in enumerate(ordered_houses):
         
         pl_list = [h['nakshatra_lord'],h['sub_lord'],h['sub_sub_lord']]
@@ -69,7 +76,9 @@ def calc_primary_pl_and_loc_pl(houses,planets,isPrimaryPL=1,isLoc=1,isDT=1):
         #if len(set(pl_list)) < 3:
         pl_list.extend([h['sub_sub_sub_lord']]) #Filtered SNL
 
-        if isDT == 1 and ordered_houses:
+        print(f"Is DT: {isDT}")
+        
+        if _is_enabled(isDT) and ordered_houses:
             next_house = ordered_houses[(index + 1) % len(ordered_houses)]
             pl_list.extend(_dt_planets_between(
                 h['nakshatra_lord'], next_house['nakshatra_lord']
@@ -317,7 +326,10 @@ def bhava_planet_presence_for_questions(dateOfBirth:str,originalBirthTime:str,la
     while current <= end_time:
         
         birth_time = current.strftime("%H:%M:%S")
-        presence_new,_ = calc_bhava_planet_presence_fn(birth_date,birth_time,lat,lon,tz,isPrimaryPL,isLoc,isConnectedPL,ayan_mode='Lahiri')
+        presence_new,_ = calc_bhava_planet_presence_fn(
+            birth_date, birth_time, lat, lon, tz,
+            isPrimaryPL, isLoc, isDT, isConnectedPL, ayan_mode='Lahiri'
+        )
         print(presence_new)
         if (i == 0) :
             presence = presence_new
