@@ -84,17 +84,19 @@ def build_report(chart: dict, mappings: List[dict], topics: Optional[List[str]] 
 
 def clean_text(text: str) -> str:
     text = text.strip()
-    if re.search(r"[ÂÃâ][\x80-\xbf\u0152-\u2122]", text):
+    for enc in ("cp1252", "latin-1"):
         try:
-            text = text.encode("cp1252").decode("utf-8")
+            text = text.encode(enc).decode("utf-8")
+            break
         except (UnicodeEncodeError, UnicodeDecodeError):
-            pass
+            continue
     text = text.replace("\u00e2", "'")  # stray lossy mojibake
     text = re.sub(r"[\u2018\u2019\u02BC\u2032]", "'", text)
     text = re.sub(r"[\u201C\u201D\u2033]", '"', text)
     text = re.sub(r"[\u2013\u2014\u2212]", "-", text).replace("\u2026", "...")
     text = re.sub(r"[\u200B-\u200D\uFEFF]", "", text)
     text = re.sub(r"[ \t]{2,}", " ", text).rstrip(",;")
+    text = re.sub(r"[\x00-\x08\x0b-\x1f\x7f-\x9f]", "", text)  # control bytes render as black boxes
     if text and text[-1] not in ".!?":
         text += "."
     return text
