@@ -2,6 +2,7 @@
 #from __future__ import annotations
 from fastapi import APIRouter
 from fastapi import Depends, Header, HTTPException, Query
+from fastapi.security import APIKeyHeader
 from fastapi.responses import Response
 from database.seed_loader import load_mappings, reload_mappings
 from models.schemas import ReportRequest
@@ -11,6 +12,13 @@ import os
 import re
 
 router = APIRouter(prefix="/report", tags=["Report"])
+
+
+
+# 1. Define the security scheme for Swagger UI (creates the Authorize button)
+# Change "X-API-Key" to whatever header name your API expects
+# API_KEY_NAME = "X-API-Key"
+# api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 API_KEYS = {k.strip() for k in os.getenv("API_KEYS", "").split(",") if k.strip()}
 

@@ -8,7 +8,9 @@ from database.seed_loader import load_mappings, reload_mappings
 from services.ranker_service import build_report
 from services.chart_service import compute_kp_json
 
-from pdf.mobile_report import render_pdf
+from pdf.mobile_report import render_mobile_pdf
+from pdf.desktop_report import render_desktop_pdf
+
 from models.schemas import ReportRequest
 
 class NoTraitsFoundError(Exception):
@@ -31,7 +33,10 @@ def _pdf(req: ReportRequest):
     tz = req.timezone
     client = {"name": req.name, "date_of_birth": req.date_of_birth, "time_of_birth": req.time_of_birth,
               "place": req.place, "timezone": f"UTC{'+' if tz >= 0 else ''}{tz:g}"}
-    return render_pdf(sections, client)
+    if req.version == "mobile":
+        return render_mobile_pdf(sections, client)
+    else:
+        return render_desktop_pdf(sections, client)
 
 def _trait(date_of_birth, time_of_birth, latitude,
                           longitude, timezone, ayanamsa):

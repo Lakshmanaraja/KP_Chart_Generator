@@ -189,7 +189,7 @@ def _topics(d: _Doc, sections: List[dict]):
         d.y += 3 * mm
 
 
-def render_pdf(sections: List[dict], client: dict) -> bytes:
+def render_mobile_pdf(sections: List[dict], client: dict) -> bytes:
     buf = io.BytesIO()
     d = _Doc(buf)
     _cover(d, client)

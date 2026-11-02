@@ -60,5 +60,6 @@ class ReportRequest(BaseModel):
     topics: Optional[List[str]] = Field(None, description="Explicit topic list; omit for default set")
     extra_tags: Optional[List[str]] = Field(None, description="Already-verified tag names to include")
     chart: Optional[dict] = Field(None, description="Pre-computed KP chart; skips the upstream call")
+    version: str = Field("mobile", description="Version of the report to generate")
 
 ReportRequest.model_rebuild()
