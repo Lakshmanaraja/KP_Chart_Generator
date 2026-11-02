@@ -5,3 +5,11 @@ python-multipart
 pandas
 redis
 supabase
+pydantic>=2.10.0
+requests==2.32.3
+reportlab==4.2.5
+pillow==11.1.0
+pytest==8.3.4
+# optional, only when DATABASE_URL is set (live rules from your database):
+psycopg[binary]>=3.2.3
+proto-plus

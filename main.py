@@ -6,6 +6,7 @@ from routers.btr import router as btr_router
 from routers.dasa import router as dasa_router
 from routers.transit import router as transit_router
 from routers.find_patterns import router as find_patterns_router
+from routers.report import router as report_router
 
 # from dotenv import load_dotenv
 
@@ -28,6 +29,7 @@ app.include_router(btr_router)
 app.include_router(dasa_router)
 app.include_router(transit_router)
 app.include_router(find_patterns_router)
+app.include_router(report_router)
 
 
 @app.get("/")

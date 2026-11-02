@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import List, Optional
 
 class BirthInput(BaseModel):
     year: int
@@ -45,3 +46,19 @@ class FindPatternsRequest(BaseModel):
 #     originalTimeMatrix: List[List[int]]
 #     answerMatrix: List[List[int]]
 #     planetOrder: List[str]
+
+
+class ReportRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    date_of_birth: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$", examples=["1990-05-21"])
+    time_of_birth: str = Field(..., pattern=r"^\d{2}:\d{2}(:\d{2})?$", examples=["14:30:00"])
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+    timezone: float = Field(5.5, description="UTC offset in hours, e.g. 5.5 for IST")
+    place: Optional[str] = None
+    ayanamsa: str = "Lahiri"
+    topics: Optional[List[str]] = Field(None, description="Explicit topic list; omit for default set")
+    extra_tags: Optional[List[str]] = Field(None, description="Already-verified tag names to include")
+    chart: Optional[dict] = Field(None, description="Pre-computed KP chart; skips the upstream call")
+
+ReportRequest.model_rebuild()

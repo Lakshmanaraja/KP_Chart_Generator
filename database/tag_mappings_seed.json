@@ -1,0 +1,3321 @@
+[
+ {
+  "tag": "1 - Personality - Ke - Think from others perspective",
+  "display_name": "Think from others perspective",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Even in difficult situations, makes a conscious effort to understand other peopleâs perspectivesâat times leading to frustration when giving more consideration to others' needs than personal ones.",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Ju - Process Oriented Person",
+  "display_name": "Process Oriented Person",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Adhering strictly to established rules and procedures in professional settings.",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Mo - Mood Oriented",
+  "display_name": "Mood Oriented",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Mo"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Highly driven by feelings, preferring to take action only when mentally and emotionally prepared.",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Me - Friendly",
+  "display_name": "Friendly",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Friendly, approachable, and deeply devoted to personal friendships.",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Ma - Short Tempered",
+  "display_name": "Short Tempered",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Prone to occasional impatience or quick temper when under stress or provocation.",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Ju - Manager in personal life",
+  "display_name": "Manager in personal life",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Prefers delegating personal responsibilities",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Ra - Do Things In Unique Way",
+  "display_name": "Do Things In Unique Way",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Prefers approaching tasks with an innovative mindset, constantly improving workflows at home or work.",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Su - Likes to Execute",
+  "display_name": "Likes to Execute",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Su"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Enjoys executing plans and driving tasks through to completion.",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Mo - Cant Hide Emotions in Face",
+  "display_name": "Cant Hide Emotions in Face",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Mo"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Sometimes finds it difficult to conceal genuine emotions.",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Ma - Calm down - Take Time",
+  "display_name": "Calm down - Take Time",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Takes time to calm down after being hurt, even following a sincere apology.",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Sa - Lazy at home. Hard worker at office",
+  "display_name": "Lazy at home. Hard worker at office",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Laid-back regarding household chores, but exceptionally focused and hardworking in professional roles.",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Sa - Cannot Delegate",
+  "display_name": "Cannot Delegate",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Prefers handling tasks personally at times rather than relying on delegation.",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Ke - Clean Shave",
+  "display_name": "Clean Shave",
+  "pairs": [],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Prefers to shave regularly,",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Su - Leader",
+  "display_name": "Leader",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Su"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Exhibits natural leadership traits, taking on responsibility with confidence while delegating effectively.",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Me - Logical Person",
+  "display_name": "Logical Person",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Relies on logic and analytical reasoning when making decisions or solving problems.",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Ke - Natural Beard",
+  "display_name": "Natural Beard",
+  "pairs": [],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Keeps a beard and maintains it without grooming.",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Ra - Health Conscious",
+  "display_name": "Health Conscious",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Attentive to physical well-being and attuned to natural body responses.",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "1 - Personality - Ve - Dress Sense",
+  "display_name": "Dress Sense",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Maintains a refined sense of style when selecting clothing and accessories,",
+  "section": "Personality",
+  "bhava_no": 1,
+  "section_order": 1
+ },
+ {
+  "tag": "2 - Speaking - Sa - Silent Person",
+  "display_name": "Silent Person",
+  "pairs": [
+   {
+    "bhava": 2,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Employs patience and restraint by remaining quiet during delicate situations.",
+  "section": "Speaking",
+  "bhava_no": 2,
+  "section_order": 1
+ },
+ {
+  "tag": "2 - Speaking - Ra - Talk a long conversation",
+  "display_name": "Talk a long conversation",
+  "pairs": [
+   {
+    "bhava": 2,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Talkative and enthusiastic during conversations, though occasionally prone to interrupting others before they finish speaking.",
+  "section": "Speaking",
+  "bhava_no": 2,
+  "section_order": 1
+ },
+ {
+  "tag": "2 - Speaking - Su - Tone Bossy like a news reader",
+  "display_name": "Tone Bossy like a news reader",
+  "pairs": [
+   {
+    "bhava": 2,
+    "planet": "Su"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Communicates in a firm or authoritative tone when required.",
+  "section": "Speaking",
+  "bhava_no": 2,
+  "section_order": 1
+ },
+ {
+  "tag": "2 - Speaking - Mo - Teary Eyes",
+  "display_name": "Teary Eyes",
+  "pairs": [
+   {
+    "bhava": 2,
+    "planet": "Mo"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Eyes may naturally appear glossy or watery, without experiencing strain or discomfort during prolonged screen time.",
+  "section": "Speaking",
+  "bhava_no": 2,
+  "section_order": 1
+ },
+ {
+  "tag": "2 - Speaking - Ve - Sweet Talk Or Flattery",
+  "display_name": "Sweet Talk Or Flattery",
+  "pairs": [
+   {
+    "bhava": 2,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Speaks in a gentle, warm manner and readily expresses appreciation for others.",
+  "section": "Speaking",
+  "bhava_no": 2,
+  "section_order": 1
+ },
+ {
+  "tag": "2 - Speaking - Me - Sense of Humour",
+  "display_name": "Sense of Humour",
+  "pairs": [
+   {
+    "bhava": 2,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Enjoy making jokes and may have a good sense of humour.",
+  "section": "Speaking",
+  "bhava_no": 2,
+  "section_order": 1
+ },
+ {
+  "tag": "2 - Speaking - Ju - Straight forward tell opinions",
+  "display_name": "Straight forward tell opinions",
+  "pairs": [
+   {
+    "bhava": 2,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Prefers expressing opinions directly and clearly when needed.",
+  "section": "Speaking",
+  "bhava_no": 2,
+  "section_order": 1
+ },
+ {
+  "tag": "2 - Speaking - Ke - Explanation with Example",
+  "display_name": "Explanation with Example",
+  "pairs": [
+   {
+    "bhava": 2,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Excels at explaining ideas through clear examples, while possessing a strong capacity to empathize with others when they share their difficulties or points of view.",
+  "section": "Speaking",
+  "bhava_no": 2,
+  "section_order": 1
+ },
+ {
+  "tag": "2 - Speaking - Ma - Loud",
+  "display_name": "Loud",
+  "pairs": [
+   {
+    "bhava": 2,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Naturally possesses a strong, booming voice, capable of projecting over long distances when necessary.",
+  "section": "Speaking",
+  "bhava_no": 2,
+  "section_order": 1
+ },
+ {
+  "tag": "2 - Languages - Ra - Adaption to New Language",
+  "display_name": "Adaption to New Language",
+  "pairs": [
+   {
+    "bhava": 2,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Adapts easily to new languages and possesses a natural curiosity for learning them.",
+  "section": "Languages",
+  "bhava_no": 2,
+  "section_order": 59
+ },
+ {
+  "tag": "3 - Drive - Ma - Love",
+  "display_name": "Love",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "3 - Mars",
+  "report_text": "Generally finds driving relaxing and enjoyable.",
+  "section": "Drive",
+  "bhava_no": 3,
+  "section_order": 1
+ },
+ {
+  "tag": "3 - Drive - Ma - Fear - Slow - Sometimes",
+  "display_name": "Fear - Slow - Sometimes",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Drives cautiously or slowly at times due to fear",
+  "section": "Drive",
+  "bhava_no": 3,
+  "section_order": 1
+ },
+ {
+  "tag": "3 - Drive - Ma - Fast",
+  "display_name": "Fast",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Capable of driving fast when required while strictly observing traffic rules and road conditions.",
+  "section": "Drive",
+  "bhava_no": 3,
+  "section_order": 1
+ },
+ {
+  "tag": "3 - Entertainment - Ve - Watch - Movies",
+  "display_name": "Watch - Movies",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Enjoys watching films,  and learns best through visual examples.",
+  "section": "Entertainment",
+  "bhava_no": 3,
+  "section_order": 2
+ },
+ {
+  "tag": "3 - Entertainment - Ra - Hearing PodCast",
+  "display_name": "Hearing PodCast",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Enjoy podcasts, interviews, or talks where people discuss ideas and experiences.",
+  "section": "Entertainment",
+  "bhava_no": 3,
+  "section_order": 2
+ },
+ {
+  "tag": "3 - Entertainment - Ra - Hearing Audio Books",
+  "display_name": "Hearing Audio Books",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Ra"
+   },
+   {
+    "bhava": 3,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Enjoy listening to audiobooks.",
+  "section": "Entertainment",
+  "bhava_no": 3,
+  "section_order": 2
+ },
+ {
+  "tag": "3 - Entertainment - Me - Listening - Music",
+  "display_name": "Listening - Music",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Deeply connected to music",
+  "section": "Entertainment",
+  "bhava_no": 3,
+  "section_order": 2
+ },
+ {
+  "tag": "3 - Entertainment - Ra - Watch - Sports",
+  "display_name": "Watch - Sports",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Passionate about watching sports",
+  "section": "Entertainment",
+  "bhava_no": 3,
+  "section_order": 2
+ },
+ {
+  "tag": "3 - Entertainment - Su - Watch - News",
+  "display_name": "Watch - News",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Su"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Keeps up with current events and national news.",
+  "section": "Entertainment",
+  "bhava_no": 3,
+  "section_order": 2
+ },
+ {
+  "tag": "3 - Entertainment - Ve - Watch - Movies - Detective",
+  "display_name": "Watch - Movies - Detective",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Enjoy detective films or stories that involve solving mysteries.",
+  "section": "Entertainment",
+  "bhava_no": 3,
+  "section_order": 2
+ },
+ {
+  "tag": "3 - Mobile Phone - Su - Respond to calls immediately",
+  "display_name": "Respond to calls immediately",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Su"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "3 - Sun",
+  "report_text": "Answers phone calls regularly and finds phone communication convenient",
+  "section": "Mobile Phone",
+  "bhava_no": 3,
+  "section_order": 3
+ },
+ {
+  "tag": "3 - Mobile Phone - Su - Respond to calls immediately - No",
+  "display_name": "Respond to calls immediately - No",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Mo"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": "3 - Moon",
+  "report_text": "Occasionally prefers avoiding calls until in the right mindset to return them.",
+  "section": "Mobile Phone",
+  "bhava_no": 3,
+  "section_order": 3
+ },
+ {
+  "tag": "3 - Travel - Mo - Instant",
+  "display_name": "Instant",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Mo"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Spontaneous about travel, setting off on journeys whenever the mood strikes.",
+  "section": "Travel",
+  "bhava_no": 3,
+  "section_order": 4
+ },
+ {
+  "tag": "3 - Travel - Ju - Planned",
+  "display_name": "Planned",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Highly organized when planning trips or preparing for activities.",
+  "section": "Travel",
+  "bhava_no": 3,
+  "section_order": 4
+ },
+ {
+  "tag": "3 - Daily Activities - Me - Reading or Self Study",
+  "display_name": "Reading or Self Study",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Values quiet reading time from books or digital sources.",
+  "section": "Daily Activities",
+  "bhava_no": 3,
+  "section_order": 5
+ },
+ {
+  "tag": "3 - Daily Activities - Sa - Walking - Relaxed",
+  "display_name": "Walking - Relaxed",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Enjoys both relaxed leisure walks to unwind",
+  "section": "Daily Activities",
+  "bhava_no": 3,
+  "section_order": 5
+ },
+ {
+  "tag": "3 - Daily Activities - Sa - Walking for Health reasons only",
+  "display_name": "Walking for Health reasons only",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Enjoy brisk walking as a form of exercise or a way to support your general wellbeing.",
+  "section": "Daily Activities",
+  "bhava_no": 3,
+  "section_order": 5
+ },
+ {
+  "tag": "3 - Daily Activities - Ma - Careless",
+  "display_name": "Careless",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Occasionally misplaces or handles everyday items carelessly, such as phones, pens, handkerchiefs, or kitchen utensils.",
+  "section": "Daily Activities",
+  "bhava_no": 3,
+  "section_order": 5
+ },
+ {
+  "tag": "3 - Daily Activities - Ma - Brave",
+  "display_name": "Brave",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Courageous and willing to face challenging situations,",
+  "section": "Daily Activities",
+  "bhava_no": 3,
+  "section_order": 5
+ },
+ {
+  "tag": "3 - Daily Activities - Sa - Fear in Travel or Driving",
+  "display_name": "Fear in Travel or Driving",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Prone to general anxiety or specific fears, particularly regarding driving.",
+  "section": "Daily Activities",
+  "bhava_no": 3,
+  "section_order": 5
+ },
+ {
+  "tag": "3 - Daily Activities - Ma - Swing",
+  "display_name": "Swing",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Enjoys swinging",
+  "section": "Daily Activities",
+  "bhava_no": 3,
+  "section_order": 5
+ },
+ {
+  "tag": "3 - Design - Ve - Interior",
+  "display_name": "Interior",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "3 - Design",
+  "report_text": "Possesses a keen eye for interior design and takes pleasure in arranging or transforming spaces.",
+  "section": "Design",
+  "bhava_no": 3,
+  "section_order": 6
+ },
+ {
+  "tag": "4 - Arrangements - Others - Cleanliness - OCD",
+  "display_name": "Cleanliness - OCD",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Ve"
+   },
+   {
+    "bhava": 1,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Values clean, orderly spaces, though cleanliness concerns can occasionally become overwhelming ( OCD ).",
+  "section": "Arrangements",
+  "bhava_no": 4,
+  "section_order": 1
+ },
+ {
+  "tag": "4 - Arrangements - Ve - Clean and Neat",
+  "display_name": "Clean and Neat",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Prefers clean, tidy, and organized surroundings.",
+  "section": "Arrangements",
+  "bhava_no": 4,
+  "section_order": 1
+ },
+ {
+  "tag": "4 - Arrangements - Ve - Clumsy",
+  "display_name": "Clumsy",
+  "pairs": [
+   {
+    "bhava": 4,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Occastionally, surroundings may become cluttered or less organised.",
+  "section": "Arrangements",
+  "bhava_no": 4,
+  "section_order": 1
+ },
+ {
+  "tag": "4 - Education - Others - Education Overall - Good",
+  "display_name": "Education Overall - Good",
+  "pairs": [
+   {
+    "bhava": 4,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Thrives in formal structured educational environments such as schools, universities, or training institutions.",
+  "section": "Education",
+  "bhava_no": 4,
+  "section_order": 2
+ },
+ {
+  "tag": "4 - Places - Ke - Ashram",
+  "display_name": "Ashram",
+  "pairs": [
+   {
+    "bhava": 4,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Feels especially comfortable in peaceful places, such as an ashram. For example, Sri Ramana Ashram in Tiruvannamalai offers a calming or familiar sense of comfort.",
+  "section": "Places",
+  "bhava_no": 4,
+  "section_order": 3
+ },
+ {
+  "tag": "4 - Things - Ve - Glass",
+  "display_name": "Glass",
+  "pairs": [
+   {
+    "bhava": 4,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Drawn to glassware or transparent items.",
+  "section": "Things",
+  "bhava_no": 4,
+  "section_order": 4
+ },
+ {
+  "tag": "4 - Subjects - Others - Mathematics",
+  "display_name": "Mathematics",
+  "pairs": [
+   {
+    "bhava": 4,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Enjoys mathematics, data analysis, and numerical problem-solving.",
+  "section": "Subjects",
+  "bhava_no": 4,
+  "section_order": 5
+ },
+ {
+  "tag": "5 - Creativity - Me - Sociable",
+  "display_name": "Sociable",
+  "pairs": [
+   {
+    "bhava": 5,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Comfortable initiating conversations with strangers and enjoying social gatherings.",
+  "section": "Creativity",
+  "bhava_no": 5,
+  "section_order": 1
+ },
+ {
+  "tag": "5 - Creativity - Me - Musician",
+  "display_name": "Musician",
+  "pairs": [
+   {
+    "bhava": 5,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "5 - Me",
+  "report_text": "Displaying a natural talent for singing, playing instruments, or sound design.",
+  "section": "Creativity",
+  "bhava_no": 5,
+  "section_order": 1
+ },
+ {
+  "tag": "5 - Creativity - Ma - Body Building",
+  "display_name": "Body Building",
+  "pairs": [
+   {
+    "bhava": 5,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Active in fitness, with a strong interest in home workouts, gym training, strength training, or bodybuilding.",
+  "section": "Creativity",
+  "bhava_no": 5,
+  "section_order": 1
+ },
+ {
+  "tag": "5 - Creativity - Me - Sociable - No",
+  "display_name": "Sociable - No",
+  "pairs": [
+   {
+    "bhava": 5,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "It will take time for you to initiate conversation with new people.",
+  "section": "Creativity",
+  "bhava_no": 5,
+  "section_order": 1
+ },
+ {
+  "tag": "5 - Creativity - Me - Sound Design",
+  "display_name": "Sound Design",
+  "pairs": [
+   {
+    "bhava": 5,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "5 - Me",
+  "report_text": "Displaying a natural talent for singing, playing instruments, or sound design.",
+  "section": "Creativity",
+  "bhava_no": 5,
+  "section_order": 1
+ },
+ {
+  "tag": "5 - Creativity - Ve - Painting",
+  "display_name": "Painting",
+  "pairs": [
+   {
+    "bhava": 5,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "Visual Arts",
+  "report_text": "Demonstrates an aptitude for drawing, painting, or photography.",
+  "section": "Creativity",
+  "bhava_no": 5,
+  "section_order": 1
+ },
+ {
+  "tag": "5 - Creativity - Ve - Actor",
+  "display_name": "Actor",
+  "pairs": [
+   {
+    "bhava": 5,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": "5 - Ve",
+  "report_text": "Skilled at communicating emotions through facial expressions, with the ability to deliberately express or suppress themâmaking acting a strong potential interest.",
+  "section": "Creativity",
+  "bhava_no": 5,
+  "section_order": 1
+ },
+ {
+  "tag": "5 - Creativity - Ma - Fitness - Home",
+  "display_name": "Fitness - Home",
+  "pairs": [
+   {
+    "bhava": 5,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Active in fitness, with a strong interest in home workouts, gym training, strength training, or bodybuilding.",
+  "section": "Creativity",
+  "bhava_no": 5,
+  "section_order": 1
+ },
+ {
+  "tag": "5 - Creativity - Ke - Astrology",
+  "display_name": "Astrology",
+  "pairs": [
+   {
+    "bhava": 5,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Tends to develop an interest in astrology, statistics, weather forecasting, or other fields that utilize data and predictive modeling to identify patterns.",
+  "section": "Creativity",
+  "bhava_no": 5,
+  "section_order": 1
+ },
+ {
+  "tag": "5 - Creativity - Ma - Fitness - Gym",
+  "display_name": "Fitness - Gym",
+  "pairs": [
+   {
+    "bhava": 5,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Active in fitness, with a strong interest in home workouts, gym training, strength training, or bodybuilding.",
+  "section": "Creativity",
+  "bhava_no": 5,
+  "section_order": 1
+ },
+ {
+  "tag": "5 - Creativity - Ve - Good at Poses",
+  "display_name": "Good at Poses",
+  "pairs": [
+   {
+    "bhava": 5,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Feels comfortable posing for photographs or appearing on camera,",
+  "section": "Creativity",
+  "bhava_no": 5,
+  "section_order": 1
+ },
+ {
+  "tag": "5 - Creativity - Ve - Photography",
+  "display_name": "Photography",
+  "pairs": [
+   {
+    "bhava": 5,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Demonstrates an aptitude for drawing, painting, or photography.",
+  "section": "Creativity",
+  "bhava_no": 5,
+  "section_order": 1
+ },
+ {
+  "tag": "5 - Creativity - Ve - Drawing",
+  "display_name": "Drawing",
+  "pairs": [
+   {
+    "bhava": 5,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "Visual Arts",
+  "report_text": "Demonstrates an aptitude for drawing, painting, or photography.",
+  "section": "Creativity",
+  "bhava_no": 5,
+  "section_order": 1
+ },
+ {
+  "tag": "6 - Food Preferences - Su - Cheese",
+  "display_name": "Cheese",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Su"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Enjoy cheese.",
+  "section": "Food Preferences",
+  "bhava_no": 6,
+  "section_order": 1
+ },
+ {
+  "tag": "6 - Food Preferences - Me - Taste - Sweets",
+  "display_name": "Taste - Sweets",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Fond of sweet foods",
+  "section": "Food Preferences",
+  "bhava_no": 6,
+  "section_order": 1
+ },
+ {
+  "tag": "6 - Food Preferences - Mo - Liquid Food",
+  "display_name": "Liquid Food",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Mo"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Enjoys liquids and soupsâsuch as juice, porridge, tea, or coffeeâfrequently preferring them over full meals.",
+  "section": "Food Preferences",
+  "bhava_no": 6,
+  "section_order": 1
+ },
+ {
+  "tag": "6 - Food Preferences - Su - Panneer",
+  "display_name": "Panneer",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Su"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Enjoy paneer.",
+  "section": "Food Preferences",
+  "bhava_no": 6,
+  "section_order": 1
+ },
+ {
+  "tag": "6 - Food Preferences - Su - Curd",
+  "display_name": "Curd",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Enjoy curd.",
+  "section": "Food Preferences",
+  "bhava_no": 6,
+  "section_order": 1
+ },
+ {
+  "tag": "6 - Food Preferences - Sa - Leafy Vegetables",
+  "display_name": "Leafy Vegetables",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Enjoys eating vegetables, especially leafy greens.",
+  "section": "Food Preferences",
+  "bhava_no": 6,
+  "section_order": 1
+ },
+ {
+  "tag": "6 - Food Preferences - Ju - Fried Items",
+  "display_name": "Fried Items",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Enjoys fried foods and crispy snacks like fried chicken, appalam, poori, or murukku.",
+  "section": "Food Preferences",
+  "bhava_no": 6,
+  "section_order": 1
+ },
+ {
+  "tag": "6 - Job - Ve - Presentation",
+  "display_name": "Presentation",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "6 - Venus",
+  "report_text": "Excels at presenting information visually,",
+  "section": "Job",
+  "bhava_no": 6,
+  "section_order": 3
+ },
+ {
+  "tag": "6 - Job - Ma - Mood Oriented Cooking",
+  "display_name": "Mood Oriented Cooking",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Enjoys cooking, though active involvement often depends on available learning opportunities.",
+  "section": "Job",
+  "bhava_no": 6,
+  "section_order": 3
+ },
+ {
+  "tag": "6 - Job - Ve - Visuals Handling",
+  "display_name": "Visuals Handling",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "6 - Venus",
+  "report_text": "Enjoys UI/UX design.",
+  "section": "Job",
+  "bhava_no": 6,
+  "section_order": 3
+ },
+ {
+  "tag": "6 - Job - Ve - Visuals Handling - Visual Effects",
+  "display_name": "Visuals Handling - Visual Effects",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "6 - Venus",
+  "report_text": "Shows a natural talent or interest in visual effects (VFX).",
+  "section": "Job",
+  "bhava_no": 6,
+  "section_order": 3
+ },
+ {
+  "tag": "6 - Job - Mo - Plumbing",
+  "display_name": "Plumbing",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Mo"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Gravitates toward work involving liquids, water, emotions, or creative expression, as well as practical technical fields like plumbing.",
+  "section": "Job",
+  "bhava_no": 6,
+  "section_order": 3
+ },
+ {
+  "tag": "6 - Job - Su - Organising",
+  "display_name": "Organising",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Su"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Thrives as part of an organizing committee, bringing people together to coordinate events seamlessly.",
+  "section": "Job",
+  "bhava_no": 6,
+  "section_order": 3
+ },
+ {
+  "tag": "6 - Job - Sa - Manual Work",
+  "display_name": "Manual Work",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Comfortable with practical, physical work.",
+  "section": "Job",
+  "bhava_no": 6,
+  "section_order": 3
+ },
+ {
+  "tag": "6 - Job - Mo - Liquid based",
+  "display_name": "Liquid based",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Mo"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Gravitates toward work involving liquids, water, emotions, or creative expression, as well as practical technical fields like plumbing.",
+  "section": "Job",
+  "bhava_no": 6,
+  "section_order": 3
+ },
+ {
+  "tag": "6 - Job - Ke - Data Handling",
+  "display_name": "Data Handling",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Comfortable using Excel and analyzing data as part of professional duties, with a natural fit for administrative or human resources roles involving employee information management.",
+  "section": "Job",
+  "bhava_no": 6,
+  "section_order": 3
+ },
+ {
+  "tag": "6 - Job - Ma - Cooking",
+  "display_name": "Cooking",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Enjoys cooking, though active involvement often depends on available learning opportunities.",
+  "section": "Job",
+  "bhava_no": 6,
+  "section_order": 3
+ },
+ {
+  "tag": "6 - Job - Me - Document Handling",
+  "display_name": "Document Handling",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "meticulous when organizing documents or submitting paperwork.",
+  "section": "Job",
+  "bhava_no": 6,
+  "section_order": 3
+ },
+ {
+  "tag": "6 - Job - Ra - Medicine Related",
+  "display_name": "Medicine Related",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "With an interest in medicine, nutrition, and dietary science (while leaving medical decisions to certified professionals).",
+  "section": "Job",
+  "bhava_no": 6,
+  "section_order": 3
+ },
+ {
+  "tag": "6 - Job - Ma - Cut Vegetables",
+  "display_name": "Cut Vegetables",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Willingly assists in the kitchen when needed, particularly with food preparation or chopping vegetables.",
+  "section": "Job",
+  "bhava_no": 6,
+  "section_order": 3
+ },
+ {
+  "tag": "7 - Marriage and Partner - Sa - Partner - Lazy or Age Difference",
+  "display_name": "Partner - Lazy or Age Difference",
+  "pairs": [
+   {
+    "bhava": 7,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Be open to a relationship with someone who is bit more older than you.",
+  "section": "Marriage and Partner",
+  "bhava_no": 7,
+  "section_order": 1
+ },
+ {
+  "tag": "7 - Marriage and Partner - Ra - Partner - Outsider",
+  "display_name": "Partner - Outsider",
+  "pairs": [
+   {
+    "bhava": 7,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Open-minded regarding relationships with individuals from different castes, religions, social classes, states, or countries.",
+  "section": "Marriage and Partner",
+  "bhava_no": 7,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ju - Digestive - Bloating",
+  "display_name": "Digestive - Bloating",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Digestive Issues",
+  "report_text": "May experience recurring digestive issues such as bloating, constipation, lactose intolerance, or IBS.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ve - Diabetic - Retinopathy",
+  "display_name": "Diabetic - Retinopathy",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Vision Issues",
+  "report_text": "Regular check-ups with an eye-care professional are advisable if vision changes occur.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ma - Heat Issues - Heat Boils",
+  "display_name": "Heat Issues - Heat Boils",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Prone to heat-related discomfort, excessive sweating, or skin irritation",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Su - Skeleton - Vitamin D Deficiency",
+  "display_name": "Skeleton - Vitamin D Deficiency",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Su"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Skeleton Issues",
+  "report_text": "May experience back, neck, or joint discomfort, requiring attention to bone health and vitamin D levels.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Sa - Integumentary - Rashes",
+  "display_name": "Integumentary - Rashes",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Skin Issues",
+  "report_text": "May experience ongoing skin or scalp issues like acne, dryness, dandruff, hair loss, or irritation.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ma - Other Heat Issues",
+  "display_name": "Other Heat Issues",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Prone to heat-related discomfort, excessive sweating, or skin irritation",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Sa - Integumentary - Brittle Nails",
+  "display_name": "Integumentary - Brittle Nails",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Skin Issues",
+  "report_text": "May experience ongoing skin or scalp issues like acne, dryness, dandruff, hair loss, or irritation.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ma - Heat Issues - Piles",
+  "display_name": "Heat Issues - Piles",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Occasional muscle strain. Persistent pain, spasms, cramps, or suspected muscle injuries warrant medical consultation.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ju - Digestive - Lactose Intolerance",
+  "display_name": "Digestive - Lactose Intolerance",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Digestive Issues",
+  "report_text": "May experience recurring digestive issues such as bloating, constipation, lactose intolerance, or IBS.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ma - Muscle Spasm",
+  "display_name": "Muscle Spasm",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Occasional muscle strain. Persistent pain, spasms, cramps, or suspected muscle injuries warrant medical consultation.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Su - Skeleton - Dental",
+  "display_name": "Skeleton - Dental",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Su"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Skeleton Issues",
+  "report_text": "May experience back, neck, or joint discomfort, requiring attention to bone health and vitamin D levels.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ma - Muscle Cramps",
+  "display_name": "Muscle Cramps",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Occasional muscle strain. Persistent pain, spasms, cramps, or suspected muscle injuries warrant medical consultation.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ma - Muscle Tear",
+  "display_name": "Muscle Tear",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Occasional muscle strain. Persistent pain, spasms, cramps, or suspected muscle injuries warrant medical consultation.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ra - Respiratory - Cold - Weather Change",
+  "display_name": "Respiratory - Cold - Weather Change",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Respiratory Issues",
+  "report_text": "Prone to respiratory difficulties, allergies, throat infections, or persistent breathing symptoms.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ra - Respiratory - Cold",
+  "display_name": "Respiratory - Cold",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Respiratory Issues",
+  "report_text": "Prone to respiratory difficulties, allergies, throat infections, or persistent breathing symptoms.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ra - Respiratory - Pneumonia",
+  "display_name": "Respiratory - Pneumonia",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Respiratory Issues",
+  "report_text": "Prone to respiratory difficulties, allergies, throat infections, or persistent breathing symptoms.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ve - Long Sight",
+  "display_name": "Long Sight",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Vision Issues",
+  "report_text": "Regular check-ups with an eye-care professional are advisable if vision changes occur.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Sa - Integumentary - Scalp",
+  "display_name": "Integumentary - Scalp",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Skin Issues",
+  "report_text": "May experience ongoing skin or scalp issues like acne, dryness, dandruff, hair loss, or irritation.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Sa - Integumentary - Sun burns",
+  "display_name": "Integumentary - Sun burns",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Skin Issues",
+  "report_text": "May experience ongoing skin or scalp issues like acne, dryness, dandruff, hair loss, or irritation.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ke - Cellular - Cyst - Head",
+  "display_name": "Cellular - Cyst - Head",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Ketu",
+  "report_text": "Prone to developing cysts or lumps. If any unusual growth appears, consulting a qualified healthcare professional is recommended,",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ke - Cellular - Cyst - Left Breast",
+  "display_name": "Cellular - Cyst - Left Breast",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Ketu",
+  "report_text": "Prone to developing cysts or lumps. If any unusual growth appears, consulting a qualified healthcare professional is recommended,",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ke - Cellular - Cyst - Uterus",
+  "display_name": "Cellular - Cyst - Uterus",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Ketu",
+  "report_text": "Prone to developing cysts or lumps. If any unusual growth appears, consulting a qualified healthcare professional is recommended,",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ke - Cellular - Cyst - Armpit",
+  "display_name": "Cellular - Cyst - Armpit",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Ketu",
+  "report_text": "Prone to developing cysts or lumps. If any unusual growth appears, consulting a qualified healthcare professional is recommended,",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ke - Cellular - Cyst - Ovarian Cyst",
+  "display_name": "Cellular - Cyst - Ovarian Cyst",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Ketu",
+  "report_text": "Prone to developing cysts or lumps. If any unusual growth appears, consulting a qualified healthcare professional is recommended,",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ke - Cellular - Cyst - Eye Lid",
+  "display_name": "Cellular - Cyst - Eye Lid",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Ketu",
+  "report_text": "Prone to developing cysts or lumps. If any unusual growth appears, consulting a qualified healthcare professional is recommended,",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ke - Cellular - Cyst - Prostate Cyst",
+  "display_name": "Cellular - Cyst - Prostate Cyst",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Ketu",
+  "report_text": "Prone to developing cysts or lumps. If any unusual growth appears, consulting a qualified healthcare professional is recommended,",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ve - Optic Neuristis Vision Loss",
+  "display_name": "Optic Neuristis Vision Loss",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ve"
+   },
+   {
+    "bhava": 5,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Vision Issues",
+  "report_text": "Regular check-ups with an eye-care professional are advisable if vision changes occur.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ra - Respiratory - Throat Infection",
+  "display_name": "Respiratory - Throat Infection",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Respiratory Issues",
+  "report_text": "Prone to respiratory difficulties, allergies, throat infections, or persistent breathing symptoms.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Sa - integumentary - Dry Skin",
+  "display_name": "integumentary - Dry Skin",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Skin Issues",
+  "report_text": "May experience ongoing skin or scalp issues like acne, dryness, dandruff, hair loss, or irritation.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ke - Cellular - Cyst - Pilonidal Cyst",
+  "display_name": "Cellular - Cyst - Pilonidal Cyst",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Ketu",
+  "report_text": "Prone to developing cysts or lumps. If any unusual growth appears, consulting a qualified healthcare professional is recommended,",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ke - Cellular - Cyst - Skin",
+  "display_name": "Cellular - Cyst - Skin",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Ketu",
+  "report_text": "Prone to developing cysts or lumps. If any unusual growth appears, consulting a qualified healthcare professional is recommended,",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ke - Cellular - Cyst - Sebacacious Cyst - Upper Back",
+  "display_name": "Cellular - Cyst - Sebacacious Cyst - Upper Back",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Ketu",
+  "report_text": "Prone to developing cysts or lumps. If any unusual growth appears, consulting a qualified healthcare professional is recommended,",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ju - Digestive - Constipation",
+  "display_name": "Digestive - Constipation",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Digestive Issues",
+  "report_text": "May experience recurring digestive issues such as bloating, constipation, lactose intolerance, or IBS.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Mo - Dehydration - Head ache",
+  "display_name": "Dehydration - Head ache",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Mo"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Susceptible to dehydration symptoms such as dry lips, headaches, or migraines if daily fluid intake is insufficient.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ra - Respiratory - Wheezing",
+  "display_name": "Respiratory - Wheezing",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Respiratory Issues",
+  "report_text": "Prone to respiratory difficulties, allergies, throat infections, or persistent breathing symptoms.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ra - Respiratory - Dust Allergy",
+  "display_name": "Respiratory - Dust Allergy",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Respiratory Issues",
+  "report_text": "Prone to respiratory difficulties, allergies, throat infections, or persistent breathing symptoms.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Su - Skeleton - Neck Pain",
+  "display_name": "Skeleton - Neck Pain",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Su"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Skeleton Issues",
+  "report_text": "May experience back, neck, or joint discomfort, requiring attention to bone health and vitamin D levels.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ke - Cellular - Cyst - Shoulder",
+  "display_name": "Cellular - Cyst - Shoulder",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Ketu",
+  "report_text": "Prone to developing cysts or lumps. If any unusual growth appears, consulting a qualified healthcare professional is recommended,",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ke - Cellular - Cyst",
+  "display_name": "Cellular - Cyst",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": "8 - Ketu",
+  "report_text": "Prone to developing cysts or lumps. If any unusual growth appears, consulting a qualified healthcare professional is recommended,",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ve - Short Sight",
+  "display_name": "Short Sight",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Vision Issues",
+  "report_text": "Regular check-ups with an eye-care professional are advisable if vision changes occur.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Sa - Integumentary - Grey Hair",
+  "display_name": "Integumentary - Grey Hair",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": "8 - Skin Issues",
+  "report_text": "May experience ongoing skin or scalp issues like acne, dryness, dandruff, hair loss, or irritation.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ju - Digestive - IBS",
+  "display_name": "Digestive - IBS",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Digestive Issues",
+  "report_text": "May experience recurring digestive issues such as bloating, constipation, lactose intolerance, or IBS.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Me - Diabetic",
+  "display_name": "Diabetic",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "May present symptoms related to diabetes or pre-diabetes",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ra - Respiratory - Covid",
+  "display_name": "Respiratory - Covid",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Respiratory Issues",
+  "report_text": "Prone to respiratory difficulties, allergies, throat infections, or persistent breathing symptoms.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ra - Respiratory -Severe Cough",
+  "display_name": "Respiratory -Severe Cough",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Respiratory Issues",
+  "report_text": "Prone to respiratory difficulties, allergies, throat infections, or persistent breathing symptoms.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Su - Skeleton - Calcium Issues",
+  "display_name": "Skeleton - Calcium Issues",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Su"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Skeleton Issues",
+  "report_text": "May experience back, neck, or joint discomfort, requiring attention to bone health and vitamin D levels.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Su - Skeleton - Join pain",
+  "display_name": "Skeleton - Join pain",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Su"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Skeleton Issues",
+  "report_text": "May experience back, neck, or joint discomfort, requiring attention to bone health and vitamin D levels.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Me - Nervous - Anxiety",
+  "display_name": "Nervous - Anxiety",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Occasionally experience anxiety.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ke - Cellular - Cyst - Wrist",
+  "display_name": "Cellular - Cyst - Wrist",
+  "pairs": [
+   {
+    "bhava": 6,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Ketu",
+  "report_text": "Prone to developing cysts or lumps. If any unusual growth appears, consulting a qualified healthcare professional is recommended,",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ra - Respiratory - Sneezing",
+  "display_name": "Respiratory - Sneezing",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Respiratory Issues",
+  "report_text": "Prone to respiratory difficulties, allergies, throat infections, or persistent breathing symptoms.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ju - Digestive",
+  "display_name": "Digestive",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": "8 - Digestive Issues",
+  "report_text": "May experience recurring digestive issues such as bloating, constipation, lactose intolerance, or IBS.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ra - Respiratory -Sleep Apnea",
+  "display_name": "Respiratory -Sleep Apnea",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Respiratory Issues",
+  "report_text": "Prone to respiratory difficulties, allergies, throat infections, or persistent breathing symptoms.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Sa - Integumentary - Hair Fall",
+  "display_name": "Integumentary - Hair Fall",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Skin Issues",
+  "report_text": "May experience ongoing skin or scalp issues like acne, dryness, dandruff, hair loss, or irritation.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Ra - Respiratory - Breathlessness",
+  "display_name": "Respiratory - Breathlessness",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Respiratory Issues",
+  "report_text": "Prone to respiratory difficulties, allergies, throat infections, or persistent breathing symptoms.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Sa - Integumentary - Acne",
+  "display_name": "Integumentary - Acne",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Sa"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Skin Issues",
+  "report_text": "May experience ongoing skin or scalp issues like acne, dryness, dandruff, hair loss, or irritation.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Health - Su - Skeleton - Back Pain",
+  "display_name": "Skeleton - Back Pain",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Su"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "8 - Skeleton Issues",
+  "report_text": "May experience back, neck, or joint discomfort, requiring attention to bone health and vitamin D levels.",
+  "section": "Health",
+  "bhava_no": 8,
+  "section_order": 1
+ },
+ {
+  "tag": "8 - Research - Ke - Researcher - Data",
+  "display_name": "Researcher - Data",
+  "pairs": [
+   {
+    "bhava": 8,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Skilled at analyzing information, identifying patterns, and drawing meaningful conclusions. Research work aligns exceptionally well with these strengths and interests.",
+  "section": "Research",
+  "bhava_no": 8,
+  "section_order": 2
+ },
+ {
+  "tag": "9 - Belief - Ju - Teacher",
+  "display_name": "Teacher",
+  "pairs": [
+   {
+    "bhava": 9,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Effective at teaching and passionate about helping others master new skills.",
+  "section": "Belief",
+  "bhava_no": 9,
+  "section_order": 1
+ },
+ {
+  "tag": "10 - Writing - Me - Writer - Document Writing",
+  "display_name": "Writer - Document Writing",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Mercury",
+  "report_text": "Possesses a natural writing talent spanning professional correspondence (emails and notes), creative literature (stories, poetry, and novels), or non-fiction work (blogs, essays, and articles).",
+  "section": "Writing",
+  "bhava_no": 10,
+  "section_order": 1
+ },
+ {
+  "tag": "10 - Writing - Me - Writer - Creative Writing",
+  "display_name": "Writer - Creative Writing",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Possesses a natural writing talent spanning professional correspondence (emails and notes), creative literature (stories, poetry, and novels), or non-fiction work (blogs, essays, and articles).",
+  "section": "Writing",
+  "bhava_no": 10,
+  "section_order": 1
+ },
+ {
+  "tag": "10 - Writing - Me - Writer - Official - Mail",
+  "display_name": "Writer - Official - Mail",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Mercury",
+  "report_text": "Possesses a natural writing talent spanning professional correspondence (emails and notes), creative literature (stories, poetry, and novels), or non-fiction work (blogs, essays, and articles).",
+  "section": "Writing",
+  "bhava_no": 10,
+  "section_order": 1
+ },
+ {
+  "tag": "10 - Writing - Me - Story Writer",
+  "display_name": "Story Writer",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Possesses a natural writing talent spanning professional correspondence (emails and notes), creative literature (stories, poetry, and novels), or non-fiction work (blogs, essays, and articles).",
+  "section": "Writing",
+  "bhava_no": 10,
+  "section_order": 1
+ },
+ {
+  "tag": "10 - Writing - Me - Writer - Official - Taking Notes",
+  "display_name": "Writer - Official - Taking Notes",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": "10 - Mercury",
+  "report_text": "Possesses a natural writing talent spanning professional correspondence (emails and notes), creative literature (stories, poetry, and novels), or non-fiction work (blogs, essays, and articles).",
+  "section": "Writing",
+  "bhava_no": 10,
+  "section_order": 1
+ },
+ {
+  "tag": "10 - Industry or Domain - Ju - Digital Marketing",
+  "display_name": "Digital Marketing",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Well-suited for banking, coaching, marketing, finance, or management,",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Me - Education guidance",
+  "display_name": "Education guidance",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Mercury",
+  "report_text": "Well-suited for careers in education, media, tutoring, schools, colleges, or training institutes.",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ma - Logistics",
+  "display_name": "Logistics",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Mars",
+  "report_text": "Drawn to the automotive, electrical, or energy sectors, with a strong interest in policing, public safety, or defense roles.",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ke - Artificial Intelligence",
+  "display_name": "Artificial Intelligence",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Ketu",
+  "report_text": "Suited for work in artificial intelligence, data science, data analytics, database management, or enterprise resource planning (ERP).",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ma - Electrical",
+  "display_name": "Electrical",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Mars",
+  "report_text": "Drawn to the automotive, electrical, or energy sectors, with a strong interest in policing, public safety, or defense roles.",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ju - Coaching",
+  "display_name": "Coaching",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": "10 - Jupiter",
+  "report_text": "Well-suited for banking, coaching, marketing, finance, or management",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ra - Chemical",
+  "display_name": "Chemical",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Rahu",
+  "report_text": "Interested in industries such as chemicals, food, gaming, sports, healthcare, pharmaceuticals, or insurance.",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ra - Herbal",
+  "display_name": "Herbal",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Rahu",
+  "report_text": "Interested in industries such as chemicals, food, gaming, sports, healthcare, pharmaceuticals, or insurance.",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ju - Finance",
+  "display_name": "Finance",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Jupiter",
+  "report_text": "Well-suited for banking, coaching, marketing, finance, or management,",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ma - Automotive",
+  "display_name": "Automotive",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Mars",
+  "report_text": "Drawn to the automotive, electrical, or energy sectors, with a strong interest in policing, public safety, or defense roles.",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ju - Bank",
+  "display_name": "Bank",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Jupiter",
+  "report_text": "Well-suited for banking, coaching, marketing, finance, or management,",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ra - Health Care - Insurance",
+  "display_name": "Health Care - Insurance",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Rahu",
+  "report_text": "Interested in industries such as chemicals, food, gaming, sports, healthcare, pharmaceuticals, or insurance.",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Me - Work Place  - College",
+  "display_name": "Work Place  - College",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Mercury",
+  "report_text": "Well-suited for careers in education, media, tutoring, schools, colleges, or training institutes.",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ke - Data or Data Base Related",
+  "display_name": "Data or Data Base Related",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": "10 - Ketu",
+  "report_text": "Suited for work in artificial intelligence, data science, data analytics, database management, or enterprise resource planning (ERP).",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ma - Police or Military",
+  "display_name": "Police or Military",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ma"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Mars",
+  "report_text": "Drawn to the automotive, electrical, or energy sectors, with a strong interest in policing, public safety, or defense roles.",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Me - Verbal Media",
+  "display_name": "Verbal Media",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Well-suited for careers in education, media, tutoring, schools, colleges, or training institutes.",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ju - Management",
+  "display_name": "Management",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ju"
+   },
+   {
+    "bhava": 6,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": "10 - Jupiter",
+  "report_text": "Well-suited for banking, coaching, marketing, finance, or management,",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ve - Beauty - Interiors",
+  "display_name": "Beauty - Interiors",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Venus",
+  "report_text": "Naturally gravitates toward visually oriented fields such as beauty, cinema, or interior design.",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ra - Food",
+  "display_name": "Food",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Rahu",
+  "report_text": "Interested in industries such as chemicals, food, gaming, sports, healthcare, pharmaceuticals, or insurance.",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ra - Health Care or Pharma",
+  "display_name": "Health Care or Pharma",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": "10 - Rahu",
+  "report_text": "Interested in industries such as chemicals, food, gaming, sports, healthcare, pharmaceuticals, or insurance.",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ra - Gaming or Sports",
+  "display_name": "Gaming or Sports",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": "10 - Rahu",
+  "report_text": "Interested in industries such as chemicals, food, gaming, sports, healthcare, pharmaceuticals, or insurance.",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Industry or Domain - Ve - Cinema",
+  "display_name": "Cinema",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "10 - Venus",
+  "report_text": "Naturally gravitates toward visually oriented fields such as beauty, cinema, or interior design.",
+  "section": "Industry or Domain",
+  "bhava_no": 10,
+  "section_order": 2
+ },
+ {
+  "tag": "10 - Business - Ve - Beauty",
+  "display_name": "Beauty",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": "10 - Venus",
+  "report_text": "Naturally gravitates toward visually oriented fields such as beauty, cinema, or interior design.",
+  "section": "Business",
+  "bhava_no": 10,
+  "section_order": 3
+ },
+ {
+  "tag": "10 - Business - Me - Education Institution",
+  "display_name": "Education Institution",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Well suited to run Education Institution like School , College or Tuition centers.",
+  "section": "Business",
+  "bhava_no": 10,
+  "section_order": 3
+ },
+ {
+  "tag": "10 - Business - Ju - Coaching Center",
+  "display_name": "Coaching Center",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Well-suited for banking, coaching, marketing, finance, or management",
+  "section": "Business",
+  "bhava_no": 10,
+  "section_order": 3
+ },
+ {
+  "tag": "10 - Business - Su - Leadership in Office",
+  "display_name": "Leadership in Office",
+  "pairs": [
+   {
+    "bhava": 10,
+    "planet": "Su"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": "10 - Sun",
+  "report_text": "Accepts professional responsibility comfortably,",
+  "section": "Business",
+  "bhava_no": 10,
+  "section_order": 3
+ },
+ {
+  "tag": "11 - Social Media - Me - Sharing Comedy Clips",
+  "display_name": "Sharing Comedy Clips",
+  "pairs": [
+   {
+    "bhava": 11,
+    "planet": "Me"
+   },
+   {
+    "bhava": 5,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Enjoys sharing comedy clips to friends or social media.",
+  "section": "Social Media",
+  "bhava_no": 11,
+  "section_order": 1
+ },
+ {
+  "tag": "11 - Social Circle - Su - Networking",
+  "display_name": "Networking",
+  "pairs": [
+   {
+    "bhava": 11,
+    "planet": "Su"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Excels at networking, builds strong connections, and willingly helps others while remaining comfortable asking for assistance when needed.",
+  "section": "Social Circle",
+  "bhava_no": 11,
+  "section_order": 3
+ },
+ {
+  "tag": "11 - Social Circle - Ju - Marketing",
+  "display_name": "Marketing",
+  "pairs": [
+   {
+    "bhava": 11,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Have an aptitude for marketing and communicating the value of products, services, or ideas.",
+  "section": "Social Circle",
+  "bhava_no": 11,
+  "section_order": 3
+ },
+ {
+  "tag": "11 - Social Circle - Me - Friends",
+  "display_name": "Friends",
+  "pairs": [
+   {
+    "bhava": 11,
+    "planet": "Me"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Forms friendships effortlessly and cherishes time spent with close companions.",
+  "section": "Social Circle",
+  "bhava_no": 11,
+  "section_order": 3
+ },
+ {
+  "tag": "11 - Social Circle - Mo - Thought Process Match",
+  "display_name": "Thought Process Match",
+  "pairs": [
+   {
+    "bhava": 11,
+    "planet": "Mo"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Enjoys spending time with like-minded individuals who share compatible ways of thinking.",
+  "section": "Social Circle",
+  "bhava_no": 11,
+  "section_order": 3
+ },
+ {
+  "tag": "12 - Spending - Sa - Spending Money - Frugal",
+  "display_name": "Spending Money - Frugal",
+  "pairs": [],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Prudent with finances and inclined toward modest spending.",
+  "section": "Spending",
+  "bhava_no": 12,
+  "section_order": 1
+ },
+ {
+  "tag": "12 - Isolation - Others - Meditation",
+  "display_name": "Meditation",
+  "pairs": [
+   {
+    "bhava": 12,
+    "planet": "Ke"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Highly receptive to learning meditation and integrating it into daily wellness routines.",
+  "section": "Isolation",
+  "bhava_no": 12,
+  "section_order": 2
+ },
+ {
+  "tag": "12 - Sleep - Ju - Deep Sleep",
+  "display_name": "Deep Sleep",
+  "pairs": [
+   {
+    "bhava": 12,
+    "planet": "Ju"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Sleeps deeply once asleep.",
+  "section": "Sleep",
+  "bhava_no": 12,
+  "section_order": 3
+ },
+ {
+  "tag": "12 - Sleep - Mo - Instantly",
+  "display_name": "Instantly",
+  "pairs": [
+   {
+    "bhava": 12,
+    "planet": "Mo"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Falls asleep quickly",
+  "section": "Sleep",
+  "bhava_no": 12,
+  "section_order": 3
+ },
+ {
+  "tag": "Others - Local Traveller",
+  "display_name": "Local Traveller",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": ""
+   },
+   {
+    "bhava": 3,
+    "planet": ""
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Deeply passionate about travel, viewing the identity of a explorer/traveler as an essential part of self.",
+  "section": null,
+  "bhava_no": null,
+  "section_order": 0
+ },
+ {
+  "tag": "Others - Sports",
+  "display_name": "Sports",
+  "pairs": [
+   {
+    "bhava": 5,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "You may enjoy participating in sports or other physical activities.",
+  "section": null,
+  "bhava_no": null,
+  "section_order": 0
+ },
+ {
+  "tag": "Others - Exercise or Running or Jogging or Yoga",
+  "display_name": "Exercise or Running or Jogging or Yoga",
+  "pairs": [
+   {
+    "bhava": 3,
+    "planet": "Ra"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "or",
+  "group_name": null,
+  "report_text": "Maintains a regular exercise routine through activities such as running, jogging, swimming, or yoga.",
+  "section": null,
+  "bhava_no": null,
+  "section_order": 0
+ },
+ {
+  "tag": "Others - Beauty Conscious",
+  "display_name": "Beauty Conscious",
+  "pairs": [
+   {
+    "bhava": 1,
+    "planet": "Ve"
+   }
+  ],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": null,
+  "report_text": "Pays close attention to personal appearance",
+  "section": null,
+  "bhava_no": null,
+  "section_order": 0
+ },
+ {
+  "tag": "Others - Drawing - Sketches",
+  "display_name": "Drawing - Sketches",
+  "pairs": [],
+  "display_order": 0,
+  "match_mode": "and",
+  "group_name": "Visual Arts",
+  "report_text": "Demonstrates an aptitude for drawing, painting, or photography.",
+  "section": null,
+  "bhava_no": null,
+  "section_order": 0
+ }
+]
