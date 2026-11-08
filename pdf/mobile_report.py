@@ -199,3 +199,11 @@ def render_mobile_pdf(sections: List[dict], client: dict) -> bytes:
     d.c.setAuthor("Time Science")
     d.c.save()
     return buf.getvalue()
+
+def render_mobile_from_chart(chart, mappings, client, topics=None, extra_tags=None,
+                             *, include_sn=False, include_sk=False):
+    """Match enabled columns before ranking; SN and SK are independent opt-ins."""
+    from app.engine.ranker import build_report
+    sections = build_report(chart, mappings, topics, extra_tags,
+                            include_sn=include_sn, include_sk=include_sk)
+    return render_mobile_pdf(sections, client)

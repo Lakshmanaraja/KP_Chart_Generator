@@ -2,7 +2,7 @@
 from __future__ import annotations
 import re
 from typing import Dict, List, Optional
-from services.matcher_service import chart_mapping_matches, character_tier_by_tag
+from services.matcher_service import chart_mapping_matches, CHARACTER_TIER, GENERATION_COLUMNS
 
 OTHERS = "Others"
 DEFAULT_EXCLUDED = re.compile(r"\bindustry\b|\bpartner\b|\bmarriage\b|\bsleep\b", re.I)
@@ -51,15 +51,26 @@ def ordered_traits(tiers: List[List[str]], prefix: str) -> List[dict]:
 
 
 def build_report(chart: dict, mappings: List[dict], topics: Optional[List[str]] = None,
-                 extra_tags: Optional[List[str]] = None) -> List[dict]:
+                 extra_tags: Optional[List[str]] = None, *,
+                 include_sn: bool = False, include_sk: bool = False) -> List[dict]:
     """Returns [{title, traits:[{text, code, kind}]}] in report order."""
-    generated = {t.lower() for t in chart_mapping_matches(chart, mappings)}
-    generated |= {t.lower() for t in (extra_tags or [])}
+    
+    enabled = [c for c in GENERATION_COLUMNS
+               if (c != "SN" or include_sn) and (c != "SK" or include_sk)]
+    matches = chart_mapping_matches(chart, mappings, enabled)
+    all_matches = chart_mapping_matches(chart, mappings)
+    generated = {t.lower() for t in matches}
+    # A saved Generated tag must not bypass a disabled column. Retain genuinely
+    # unmatched verified extras, preserving the existing unclassified behavior.
+    blocked = {t.lower() for t in all_matches if t not in matches}
+    generated |= {t.lower() for t in (extra_tags or []) if t.lower() not in blocked}
+
     cands = [m for m in mappings
              if m.get("is_active", True) and m["tag"].lower() in generated
              and (m.get("report_text") or "").strip()
              and section_allowed(m.get("section") or OTHERS, topics)]
-    tier = character_tier_by_tag(chart, cands)
+    tier = {m["tag"]: min([CHARACTER_TIER[c] for c in matches.get(m["tag"], ())] or [7])
+            for m in cands}
     cands.sort(key=lambda m: (m.get("bhava_no") or 99, tier.get(m["tag"], 7),
                               m.get("section_order") or 0, m.get("display_order") or 0))
     tier_idx = lambda tag: min(max(tier.get(tag, 7) - 1, 0), 6)
@@ -84,19 +95,21 @@ def build_report(chart: dict, mappings: List[dict], topics: Optional[List[str]] 
 
 def clean_text(text: str) -> str:
     text = text.strip()
-    for enc in ("cp1252", "latin-1"):
-        try:
-            text = text.encode(enc).decode("utf-8")
-            break
-        except (UnicodeEncodeError, UnicodeDecodeError):
-            continue
-    text = text.replace("\u00e2", "'")  # stray lossy mojibake
-    text = re.sub(r"[\u2018\u2019\u02BC\u2032]", "'", text)
-    text = re.sub(r"[\u201C\u201D\u2033]", '"', text)
-    text = re.sub(r"[\u2013\u2014\u2212]", "-", text).replace("\u2026", "...")
-    text = re.sub(r"[\u200B-\u200D\uFEFF]", "", text)
-    text = re.sub(r"[ \t]{2,}", " ", text).rstrip(",;")
-    text = re.sub(r"[\x00-\x08\x0b-\x1f\x7f-\x9f]", "", text)  # control bytes render as black boxes
-    if text and text[-1] not in ".!?":
-        text += "."
+    if re.search(r"[ÂÃâ][\x80-\xbf\u0152-\u2122]", text):
+        for enc in ("cp1252", "latin-1"):
+            try:
+                text = text.encode(enc).decode("utf-8")
+                break
+            except (UnicodeEncodeError, UnicodeDecodeError):
+                continue
+        text = text.replace("\u00e2", "'")  # stray lossy mojibake
+        text = re.sub(r"[\u2018\u2019\u02BC\u2032]", "'", text)
+        text = re.sub(r"[\u201C\u201D\u2033]", '"', text)
+        text = re.sub(r"[\u2013\u2014\u2212]", "-", text).replace("\u2026", "...")
+        text = re.sub(r"[\u200B-\u200D\uFEFF]", "", text)
+        #text = re.sub(r"[ \t]{2,}", " ", text).rstrip(",;")
+        text = re.sub(r"[\x00-\x08\x0b-\x1f\x7f-\x9f]", "", text)  # control bytes render as black boxes
+        text = re.sub(r"[ \t]{2,}", " ", text).rstrip(",;")
+        if text and text[-1] not in ".!?":
+            text += "."
     return text

@@ -7,3 +7,4 @@ ephe/
 testing.py
 *.pdf
 chart_client.py
+.DS_Store
