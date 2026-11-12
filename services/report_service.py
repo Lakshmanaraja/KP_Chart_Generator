@@ -24,7 +24,9 @@ def _sections(req: ReportRequest):
     #chart = json.loads(raw)
     chart["planets"] = [p for p in chart.get("planets", []) ] #if p.get("planet_name") not in OUTER
     #chart = req.chart or get_chart(req.date_of_birth, req.time_of_birth, req.latitude,req.longitude, req.timezone, req.ayanamsa)
-    return build_report(chart, load_mappings(), req.topics, req.extra_tags)
+    return build_report(chart, load_mappings(), req.topics, req.extra_tags,
+                        include_sn=req.include_sn, include_sk=req.include_sk,
+                        text_source=req.text_source)
 
 def _pdf(req: ReportRequest):
     sections = _sections(req)
@@ -38,11 +40,8 @@ def _pdf(req: ReportRequest):
     else:
         return render_desktop_pdf(sections, client)
 
-def _trait(date_of_birth, time_of_birth, latitude,
-                          longitude, timezone, ayanamsa):
-    return _sections(date_of_birth, time_of_birth, latitude,
-                          longitude, timezone, ayanamsa)
+def _trait(req: ReportRequest):
+    return _sections(req)
 
 def _topics():
     return sorted({(m.get("section") or "Others").strip() for m in load_mappings()})
-

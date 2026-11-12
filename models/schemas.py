@@ -60,6 +60,9 @@ class ReportRequest(BaseModel):
     topics: Optional[List[str]] = Field(None, description="Explicit topic list; omit for default set")
     extra_tags: Optional[List[str]] = Field(None, description="Already-verified tag names to include")
     chart: Optional[dict] = Field(None, description="Pre-computed KP chart; skips the upstream call")
-    version: str = Field("mobile", description="Version of the report to generate")
+    version: str = Field("mobile", pattern="^(mobile|desktop)$", description="mobile (phone) or desktop (A4)")
+    text_source: str = Field("report", pattern="^(report|child)$", description="report = Report text, child = Child report text")
+    include_sn: bool = Field(True, description="Match the SN column")
+    include_sk: bool = Field(True, description="Match the SK column")
 
 ReportRequest.model_rebuild()

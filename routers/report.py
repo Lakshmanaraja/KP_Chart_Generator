@@ -7,7 +7,7 @@ from fastapi.responses import Response
 from database.seed_loader import load_mappings, reload_mappings
 from models.schemas import ReportRequest
 
-from services.report_service import _sections, _pdf, _trait, _topics
+from services.report_service import _sections, _pdf, _trait, _topics, NoTraitsFoundError
 import os
 import re
 
@@ -40,14 +40,13 @@ def topics():
 
 @router.post("/api/traits", dependencies=[Depends(auth)])
 def traits(req: ReportRequest):
-    return {"name": req.name, "sections": _trait(req.date_of_birth, req.time_of_birth, req.latitude,
-                          req.longitude, req.timezone, req.ayanamsa)}
+    return {"name": req.name, "sections": _trait(req)}
 
 
 @router.post("/api/character", dependencies=[Depends(auth)])
 def character_report(req: ReportRequest, format: str = Query("pdf", pattern="^(pdf|json)$")):
-    pdf = _pdf(req) if format == "pdf" else None
     try:
+        pdf = _pdf(req) if format == "pdf" else None
         sections = _sections(req) if format == "json" else None
     except NoTraitsFoundError:
         raise HTTPException(422, "No matching character traits for this chart")
