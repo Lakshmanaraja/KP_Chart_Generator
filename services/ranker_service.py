@@ -52,8 +52,13 @@ def ordered_traits(tiers: List[List[str]], prefix: str) -> List[dict]:
 
 def build_report(chart: dict, mappings: List[dict], topics: Optional[List[str]] = None,
                  extra_tags: Optional[List[str]] = None, *,
-                 include_sn: bool = False, include_sk: bool = False) -> List[dict]:
-    """Returns [{title, traits:[{text, code, kind}]}] in report order."""
+                 include_sn: bool = False, include_sk: bool = False,
+                 text_source: str = "report") -> List[dict]:
+    """Returns [{title, traits:[{text, code, kind}]}] in report order.
+
+    text_source="child" uses each tag's child_report_text; anything else uses report_text.
+    Tags with blank text for the chosen source are left out."""
+    field = "child_report_text" if (text_source or "").lower() == "child" else "report_text"
     
     enabled = [c for c in GENERATION_COLUMNS
                if (c != "SN" or include_sn) and (c != "SK" or include_sk)]
@@ -67,7 +72,7 @@ def build_report(chart: dict, mappings: List[dict], topics: Optional[List[str]] 
 
     cands = [m for m in mappings
              if m.get("is_active", True) and m["tag"].lower() in generated
-             and (m.get("report_text") or "").strip()
+             and (m.get(field) or "").strip()
              and section_allowed(m.get("section") or OTHERS, topics)]
     tier = {m["tag"]: min([CHARACTER_TIER[c] for c in matches.get(m["tag"], ())] or [7])
             for m in cands}
@@ -81,7 +86,7 @@ def build_report(chart: dict, mappings: List[dict], topics: Optional[List[str]] 
             order.append(t)
     seen, bucket = set(), {}
     for m in sorted(cands, key=lambda m: tier_idx(m["tag"])):  # stable: best tier wins duplicates
-        text = clean_text(m["report_text"])
+        text = clean_text(m[field])
         key = text.lower()
         if not text or key in seen:
             continue
