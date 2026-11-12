@@ -21,7 +21,7 @@ Without Docker: `pip install -r requirements.txt && uvicorn app.main:app --reloa
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/report/character \
-  -H "X-API-Key: partner-key-1" -H "Content-Type: application/json" \
+  -H "X-API-Key: <api-key>" -H "Content-Type: application/json" \
   -d '{"name":"Asha Kumar","date_of_birth":"1990-05-21","time_of_birth":"14:30:00",
        "latitude":13.0827,"longitude":80.2707,"timezone":5.5,"place":"Chennai"}' \
   -o report.pdf
