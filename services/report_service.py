@@ -36,9 +36,9 @@ def _pdf(req: ReportRequest):
     client = {"name": req.name, "date_of_birth": req.date_of_birth, "time_of_birth": req.time_of_birth,
               "place": req.place, "timezone": f"UTC{'+' if tz >= 0 else ''}{tz:g}"}
     if req.version == "mobile":
-        return render_mobile_pdf(sections, client)
+        return render_mobile_pdf(sections, client, req.text_source)
     else:
-        return render_desktop_pdf(sections, client)
+        return render_desktop_pdf(sections, client, req.text_source)
 
 def _trait(req: ReportRequest):
     return _sections(req)

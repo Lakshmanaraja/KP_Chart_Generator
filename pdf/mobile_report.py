@@ -68,7 +68,6 @@ def wrap(s, pt, width, bold=False):
 
 def report_title(text_source: str = "report") -> str:
     """Cover/PDF title: child reports get the parent-guide title."""
-    print(f"report_title called with text_source: {text_source}")
     return ("Understanding Your Child: A Guide for Parents"
             if text_source == "child" else "Character Assessment Report")
 

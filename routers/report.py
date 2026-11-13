@@ -52,7 +52,7 @@ def character_report(req: ReportRequest, format: str = Query("pdf", pattern="^(p
         raise HTTPException(422, "No matching character traits for this chart")
     if format == "json":
         return {"name": req.name, "sections": sections}
-    fname = "character-report-" + re.sub(r"[^a-z0-9]+", "-", req.name.lower()).strip("-") + ".pdf"
+    fname = ("understanding-your-child-" if req.text_source == "child" else "character-report-") + re.sub(r"[^a-z0-9]+", "-", req.name.lower()).strip("-") + ".pdf"
     return Response(pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="{fname}"'})
 
