@@ -72,34 +72,88 @@ def report_title(text_source: str = "report") -> str:
             if text_source == "child" else "Character Assessment Report")
 
 
+def _fit(s, pt, width, bold=True, min_pt=7.0, tracking=0.0):
+    """Largest size <= pt at which s fits on one line."""
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+    font = "Helvetica-Bold" if bold else "Helvetica"
+    while pt > min_pt and stringWidth(s, font, pt) + tracking * max(len(s) - 1, 0) > width:
+        pt -= 0.25
+    return pt
+
+
+def cover_copy(text_source: str = "report"):
+    """(kicker, title, subtitle) for the cover title card."""
+    if text_source == "child":
+        return ("CHILD PERSONALITY & BEHAVIOURAL BLUEPRINT", "Understanding Your Child",
+                "A Comprehensive Guide for Parents")
+    return ("PERSONALITY & BEHAVIOURAL BLUEPRINT", "CHARACTER ASSESSMENT REPORT",
+            "Comprehensive Guide for Yourself")
+
+
 def _cover(d: _Doc, client: dict, text_source: str = "report"):
     d.page()
-    c, inner = d.c, W - 2 * M - 8 * mm
+    c = d.c
+    cw = W - 2 * M
+    x, inner = M + 4 * mm, cw - 8 * mm
     if os.path.exists(LOGO):
-        c.drawImage(LOGO, W / 2 - 5.5 * mm, H - 23 * mm, 11 * mm, 11 * mm, mask="auto")
-    d.text("TIME SCIENCE", W / 2, 31 * mm, 15, True, ACCENT, "center")
-    x = M + 4 * mm
-    y = 62 * mm
-    for l in wrap(report_title(text_source).upper(), 10.5, inner, True):
-        d.text(l, x, y, 10.5, True, ACCENT); y += LH(10.5)
+        c.drawImage(LOGO, W / 2 - 5.5 * mm, H - 21 * mm, 11 * mm, 11 * mm, mask="auto")
+    d.text("TIME SCIENCE", W / 2, 27 * mm, 15, True, ACCENT, "center")
+    kicker, title, subtitle = cover_copy(text_source)
+    # Card 1: report title
+    track = 0.6
+    kpt = _fit(kicker, 8.5, inner * 0.9, True, 6, track)
+    tpt = _fit(title, 18, inner * 0.9, True, 10)
+    spt = 10.5
+    sub_lines = wrap(subtitle, spt, inner)
+    pad = 5 * mm
+    h1 = pad + kpt + 3 * mm + 3 * mm + tpt + 2.5 * mm + LH(spt) * len(sub_lines) + pad - 2 * mm
+    y1 = 32 * mm
+    d.card(M, y1, cw, h1)
+    y = y1 + pad + kpt
+    c.setFont("Helvetica-Bold", kpt); c.setFillColor(MUTED)
+    t = c.beginText(x, H - y); t.setCharSpace(track); t.textOut(kicker); c.drawText(t)
     y += 2.5 * mm
-    for l in wrap("Comprehensive Personality & Behavioural Blueprint", 9.5, inner):
-        d.text(l, x, y, 9.5, False, MUTED); y += LH(9.5)
-    y += 9 * mm
-    for l in wrap(client.get("name", ""), 24, inner, True):
-        d.text(l, x, y, 24, True, ACCENT); y += LH(24)
+    c.setStrokeColor(ACCENT); c.setLineWidth(1.4)
+    c.line(x, H - y, x + 9 * mm, H - y)
+    y += 3.5 * mm + tpt
+    d.text(title, x, y, tpt, True, ACCENT)
+    y += 2 * mm
+    for l in sub_lines:
+        y += spt
+        d.text(l, x, y, spt, False, MUTED); y += LH(spt) - spt
+    # Card 2: subject & metadata
     rows = [("Date of Birth", client.get("date_of_birth")), ("Time of Birth", client.get("time_of_birth")),
             ("Place of Birth", client.get("place")), ("Timezone", client.get("timezone"))]
     rows = [(k, str(v)) for k, v in rows if v not in (None, "")]
+    npt = 20
+    name_lines = wrap(client.get("name", ""), npt, inner, True)
+    val_w = inner - 27 * mm
+    row_lines = [wrap(v, 8.5, val_w) for _, v in rows]
+    h2 = pad + 7.5 + 2.5 * mm + LH(npt) * len(name_lines)
     if rows:
-        y += 3 * mm
-        c.setStrokeColor(rgb(226, 232, 240)); c.setLineWidth(0.4)
-        c.line(x, H - y + 4 * mm, x + inner, H - y + 4 * mm)
-        for k, v in rows:
+        h2 += 3 * mm + sum(LH(8.5) * len(ls) + 1 * mm for ls in row_lines)
+    h2 += pad - 2 * mm
+    y2 = y1 + h1 + 4 * mm
+    d.card(M, y2, cw, h2)
+    y = y2 + pad + 7.5
+    c.setFont("Helvetica", 7.5); c.setFillColor(rgb(148, 163, 184))
+    t = c.beginText(x, H - y); t.setCharSpace(0.8); t.textOut("PREPARED FOR"); c.drawText(t)
+    y += 2.5 * mm
+    for l in name_lines:
+        y += npt
+        d.text(l, x, y, npt, True, ACCENT); y += LH(npt) - npt
+    if rows:
+        y += 1 * mm
+        c.setStrokeColor(rgb(226, 232, 240)); c.setLineWidth(0.5)
+        c.line(x, H - y, x + inner, H - y)
+        y += 2 * mm
+        for (k, _), ls in zip(rows, row_lines):
+            y += 8.5
             d.text(k.upper(), x, y, 6.5, False, rgb(148, 163, 184))
-            for l in wrap(v, 8, inner - 22 * mm):
-                d.text(l, x + 22 * mm, y, 8, False, rgb(71, 85, 105)); y += LH(8)
-            y += 0.6 * mm
+            for i, l in enumerate(ls):
+                if i: y += LH(8.5)
+                d.text(l, x + 27 * mm, y, 8.5, False, rgb(71, 85, 105))
+            y += LH(8.5) - 8.5 + 1 * mm
     # Author footer with clickable actions
     fy, fh = H - 13 * mm - 47 * mm, 47 * mm
     d.card(M, fy, W - 2 * M, fh)
