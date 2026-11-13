@@ -38,14 +38,15 @@ def trait_label(prefix: str, ti: int, n: int) -> str:
     return f"{prefix}{ {3: 'S', 4: 'L', 5: 'LT'}.get(ti, '') }{n}".replace(" ", "")
 
 
-def ordered_traits(tiers: List[List[str]], prefix: str) -> List[dict]:
+def ordered_traits(tiers: list, prefix: str) -> List[dict]:
     counters: Dict[str, int] = {}
     out = []
     for ti in [0, 1, 2, 6, 3, 4, 5]:
-        for text in tiers[ti]:
+        for insight in tiers[ti]:
             series = str(ti) if ti in (3, 4, 5) else "main"
             counters[series] = counters.get(series, 0) + 1
-            out.append({"text": text, "code": trait_label(prefix, ti, counters[series]),
+            content = insight if isinstance(insight, dict) else {"text": insight, "summary_title": ""}
+            out.append({**content, "code": trait_label(prefix, ti, counters[series]),
                         "kind": KIND_BY_TIER_INDEX.get(ti, "primary")})
     return out
 
@@ -92,7 +93,12 @@ def build_report(chart: dict, mappings: List[dict], topics: Optional[List[str]] 
             continue
         seen.add(key)
         sec = (m.get("section") or OTHERS).strip()
-        bucket.setdefault(sec, [[] for _ in range(7)])[tier_idx(m["tag"])].append(text)
+        title = str(m.get("summary_title") or "").strip().rstrip(": ")
+        if not title:
+            title = " ".join(str(m.get("display_name") or "Personality Insight").split()[:3]).rstrip(": ")
+        bucket.setdefault(sec, [[] for _ in range(7)])[tier_idx(m["tag"])].append({
+            "text": text, "summary_title": title,
+        })
     titles = [t for t in order if t in bucket]
     prefixes = topic_prefixes(titles)
     return [{"title": t, "traits": ordered_traits(bucket[t], prefixes[t])} for t in titles]

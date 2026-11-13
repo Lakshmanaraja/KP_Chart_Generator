@@ -9,7 +9,7 @@ SEED = os.path.join(os.path.dirname(__file__), "tag_mappings_seed.json")
 
 SQL = """
 SELECT m.tag, COALESCE(m.display_name, m.tag) AS display_name, m.pairs, m.display_order,
-       m.match_mode, m.group_name, m.report_text, m.child_report_text, q.title AS section, q.bhava_no,
+       m.match_mode, m.group_name, m.report_text, m.child_report_text, m.summary_title, q.title AS section, q.bhava_no,
        COALESCE(q.section_order, 0) AS section_order
 FROM client_tag_mappings m
 LEFT JOIN kp_answer_options_v2 a ON a.client_tag_mapping_id = m.id

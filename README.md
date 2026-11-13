@@ -1,5 +1,17 @@
 # Time Science – Character Report API
 
+## Summary title update
+Deploy this version after copying it into your existing repository. The live database
+loader now reads `client_tag_mappings.summary_title`, shared by child and adult reports.
+The app migration already adds that column. Keep `DATABASE_URL` set on Render so edits
+arrive after the existing rule refresh interval (60 seconds by default).
+Each JSON trait returns `summary_title` separately from `text`. PDFs render the title
+and colon in bold inline at the body font size, with unchanged line spacing and reserved
+right-side badge space. Blank titles fall back to the first three words of the tag's
+display name; set an editorial 2–3 word Summary Title for best results. Body-text ranking,
+deduplication, report source selection and accuracy codes are unchanged.
+Run regression tests with `python -m unittest discover -s tests`.
+
 Standalone Python (FastAPI) service that turns birth details into the phone-friendly
 Character Assessment Report PDF (or JSON traits), using the same rules as timescience.org.
 
