@@ -1,22 +1,13 @@
-"""Shared, measured inline lead-ins for phone and A4 insight cards."""
+"""Shared, measured inline lead-ins for phone and A4 insight cards.
+
+Uses the same standard Helvetica font family as the legend, cover and other
+report pages, with Helvetica-Bold for inline titles and Helvetica for body text.
+"""
 from html import escape
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import Paragraph
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-import os
 
-# DejaVu ships on most Linux hosts; Docker installs it explicitly.
 FONT = "Helvetica"
-for root in ("/usr/share/fonts/truetype/dejavu", "/usr/share/fonts/dejavu"):
-    regular = os.path.join(root, "DejaVuSans.ttf")
-    bold = os.path.join(root, "DejaVuSans-Bold.ttf")
-    if os.path.exists(regular) and os.path.exists(bold):
-        pdfmetrics.registerFont(TTFont("InsightSans", regular))
-        pdfmetrics.registerFont(TTFont("InsightSans-Bold", bold))
-        pdfmetrics.registerFontFamily("InsightSans", normal="InsightSans", bold="InsightSans-Bold")
-        FONT = "InsightSans"
-        break
 
 
 def insight_paragraph(trait, pt, color):
@@ -24,8 +15,13 @@ def insight_paragraph(trait, pt, color):
     lead = f"<b>{escape(title)}:</b> " if title else ""
     body = escape(str(trait.get("text") or "")).replace("\n", "<br/>")
     return Paragraph(lead + body, ParagraphStyle(
-        "insight", fontName=FONT, fontSize=pt, leading=pt * 1.5,
-        textColor=color, spaceBefore=0, spaceAfter=0,
+        "insight",
+        fontName=FONT,
+        fontSize=pt,
+        leading=pt * 1.5,
+        textColor=color,
+        spaceBefore=0,
+        spaceAfter=0,
     ))
 
 
