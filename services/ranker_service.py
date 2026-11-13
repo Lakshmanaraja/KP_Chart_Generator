@@ -90,6 +90,14 @@ def build_report(chart: dict, mappings: List[dict], topics: Optional[List[str]] 
         t = report_section(m)
         if t not in order:
             order.append(t)
+    sec_ord = {}
+    for m in mappings:
+        n = m.get("report_section_order")
+        if isinstance(n, (int, float)):
+            t = report_section(m)
+            sec_ord[t] = min(n, sec_ord.get(t, n))
+    # Report Section order ascending; unnumbered sections last, alphabetically.
+    order.sort(key=lambda t: (sec_ord.get(t, float("inf")), t))
     seen, bucket = set(), {}
     for m in sorted(cands, key=lambda m: tier_idx(m["tag"])):  # stable: best tier wins duplicates
         text = clean_text(m[field])
