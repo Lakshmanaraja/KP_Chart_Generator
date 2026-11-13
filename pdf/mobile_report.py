@@ -66,7 +66,13 @@ def wrap(s, pt, width, bold=False):
     return simpleSplit(s, "Helvetica-Bold" if bold else "Helvetica", pt, width) or [""]
 
 
-def _cover(d: _Doc, client: dict):
+def report_title(text_source: str = "report") -> str:
+    """Cover/PDF title: child reports get the parent-guide title."""
+    return ("Understanding Your Child: A Guide for Parents"
+            if text_source == "child" else "Character Assessment Report")
+
+
+def _cover(d: _Doc, client: dict, text_source: str = "report"):
     d.page()
     c, inner = d.c, W - 2 * M - 8 * mm
     if os.path.exists(LOGO):
@@ -74,7 +80,9 @@ def _cover(d: _Doc, client: dict):
     d.text("TIME SCIENCE", W / 2, 31 * mm, 15, True, ACCENT, "center")
     x = M + 4 * mm
     y = 62 * mm
-    d.text("CHARACTER ASSESSMENT REPORT", x, y, 10.5, True, ACCENT); y += LH(10.5) + 2.5 * mm
+    for l in wrap(report_title(text_source).upper(), 10.5, inner, True):
+        d.text(l, x, y, 10.5, True, ACCENT); y += LH(10.5)
+    y += 2.5 * mm
     for l in wrap("Comprehensive Personality & Behavioural Blueprint", 9.5, inner):
         d.text(l, x, y, 9.5, False, MUTED); y += LH(9.5)
     y += 9 * mm
@@ -189,13 +197,13 @@ def _topics(d: _Doc, sections: List[dict]):
         d.y += 3 * mm
 
 
-def render_mobile_pdf(sections: List[dict], client: dict) -> bytes:
+def render_mobile_pdf(sections: List[dict], client: dict, text_source: str = "report") -> bytes:
     buf = io.BytesIO()
     d = _Doc(buf)
-    _cover(d, client)
+    _cover(d, client, text_source)
     _legend(d)
     _topics(d, sections)
-    d.c.setTitle(f"Character Assessment Report - {client.get('name', '')}")
+    d.c.setTitle(f"{report_title(text_source)} - {client.get('name', '')}")
     d.c.setAuthor("Time Science")
     d.c.save()
     return buf.getvalue()
@@ -207,4 +215,4 @@ def render_mobile_from_chart(chart, mappings, client, topics=None, extra_tags=No
     sections = build_report(chart, mappings, topics, extra_tags,
                             include_sn=include_sn, include_sk=include_sk,
                             text_source=text_source)
-    return render_mobile_pdf(sections, client)
+    return render_mobile_pdf(sections, client, text_source)

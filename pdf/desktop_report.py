@@ -43,6 +43,12 @@ def wrap(s, pt, width, bold=False):
     return simpleSplit(s or "", "Helvetica-Bold" if bold else "Helvetica", pt, width) or [""]
 
 
+def report_title(text_source: str = "report") -> str:
+    """Cover/PDF title: child reports get the parent-guide title."""
+    return ("Understanding Your Child: A Guide for Parents"
+            if text_source == "child" else "Character Assessment Report")
+
+
 class _Doc:
     def __init__(self, buf):
         self.c = canvas.Canvas(buf, pagesize=A4)
@@ -63,15 +69,17 @@ class _Doc:
         (c.drawCentredString if align == "center" else c.drawRightString if align == "right" else c.drawString)(x, yy, s)
 
 
-def _cover(d: _Doc, client: dict):
+def _cover(d: _Doc, client: dict, text_source: str = "report"):
     d.page()
     c = d.c
     if os.path.exists(LOGO):
         c.drawImage(LOGO, W / 2 - 11 * mm, H - 52 * mm, 22 * mm, 22 * mm, mask="auto")
     d.text("TIME SCIENCE", W / 2, 62 * mm, 20, True, BRAND, "center")
-    d.text("Character Assessment Report", W / 2, 95 * mm, 26, True, BRAND, "center")
-    d.text("Comprehensive Personality & Behavioural Blueprint", W / 2, 104 * mm, 12, False, GREY, "center")
-    y = 130 * mm
+    ty = 95 * mm
+    for l in wrap(report_title(text_source), 26, WIDTH, True):
+        d.text(l, W / 2, ty, 26, True, BRAND, "center"); ty += LH(26)
+    d.text("Comprehensive Personality & Behavioural Blueprint", W / 2, ty + 3 * mm, 12, False, GREY, "center")
+    y = max(130 * mm, ty + 16 * mm)
     for l in wrap(client.get("name", ""), 22, WIDTH, True):
         d.text(l, W / 2, y, 22, True, BODY, "center"); y += LH(22)
     rows = [("Date of Birth", client.get("date_of_birth")), ("Time of Birth", client.get("time_of_birth")),
@@ -105,10 +113,10 @@ def _cover(d: _Doc, client: dict):
     d.text(f"Generated on {gen}", W / 2, H - 12 * mm, 9, False, GREY, "center")
 
 
-def _legend(d: _Doc):
+def _legend(d: _Doc, text_source: str = "report"):
     d.page()
     c, y = d.c, TOP
-    d.text("Character Assessment Report", X, y + 6 * mm, 22, True, BRAND); y += 18 * mm
+    d.text(report_title(text_source), X, y + 6 * mm, 22, True, BRAND); y += 18 * mm
     c.setStrokeColor(BORDER); c.setLineWidth(0.85); c.line(X, H - y, X + WIDTH, H - y); y += 12 * mm
     d.text("Read this before proceeding", X, y, 15, True); y += 6 * mm
     intro = wrap("This report is based on 12 years of research. Please read each line carefully, "
@@ -188,13 +196,13 @@ def _topics(d: _Doc, sections: List[dict]):
                 d.y += _card(d, buf) + GAP
 
 
-def render_desktop_pdf(sections: List[dict], client: dict) -> bytes:
+def render_desktop_pdf(sections: List[dict], client: dict, text_source: str = "report") -> bytes:
     buf = io.BytesIO()
     d = _Doc(buf)
-    _cover(d, client)
-    _legend(d)
+    _cover(d, client, text_source)
+    _legend(d, text_source)
     _topics(d, sections)
-    d.c.setTitle(f"Character Assessment Report - {client.get('name', '')}")
+    d.c.setTitle(f"{report_title(text_source)} - {client.get('name', '')}")
     d.c.setAuthor("Time Science")
     d.c.save()
     return buf.getvalue()
@@ -206,4 +214,4 @@ def render_desktop_from_chart(chart, mappings, client, topics=None, extra_tags=N
     sections = build_report(chart, mappings, topics, extra_tags,
                             include_sn=include_sn, include_sk=include_sk,
                             text_source=text_source)
-    return render_desktop_pdf(sections, client)
+    return render_desktop_pdf(sections, client, text_source)
