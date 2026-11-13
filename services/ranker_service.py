@@ -9,6 +9,11 @@ DEFAULT_EXCLUDED = re.compile(r"\bindustry\b|\bpartner\b|\bmarriage\b|\bsleep\b"
 KIND_BY_TIER_INDEX = {3: "secondary", 4: "low", 5: "lowest"}
 
 
+def report_section(mapping: dict) -> str:
+    """Only the independent Report section supplies headings, never hierarchy Section."""
+    return str(mapping.get("report_section") or "").strip() or OTHERS
+
+
 def section_allowed(section: str, selected: Optional[List[str]]) -> bool:
     """Explicit topic selection wins; otherwise default-excluded topics are dropped."""
     sec = (section or OTHERS).strip()
@@ -74,7 +79,7 @@ def build_report(chart: dict, mappings: List[dict], topics: Optional[List[str]] 
     cands = [m for m in mappings
              if m.get("is_active", True) and m["tag"].lower() in generated
              and (m.get(field) or "").strip()
-             and section_allowed(m.get("section") or OTHERS, topics)]
+             and section_allowed(report_section(m), topics)]
     tier = {m["tag"]: min([CHARACTER_TIER[c] for c in matches.get(m["tag"], ())] or [7])
             for m in cands}
     cands.sort(key=lambda m: (m.get("bhava_no") or 99, tier.get(m["tag"], 7),
@@ -82,7 +87,7 @@ def build_report(chart: dict, mappings: List[dict], topics: Optional[List[str]] 
     tier_idx = lambda tag: min(max(tier.get(tag, 7) - 1, 0), 6)
     order: List[str] = []
     for m in cands:
-        t = (m.get("section") or OTHERS).strip()
+        t = report_section(m)
         if t not in order:
             order.append(t)
     seen, bucket = set(), {}
@@ -92,7 +97,7 @@ def build_report(chart: dict, mappings: List[dict], topics: Optional[List[str]] 
         if not text or key in seen:
             continue
         seen.add(key)
-        sec = (m.get("section") or OTHERS).strip()
+        sec = report_section(m)
         title = str(m.get("summary_title") or "").strip().rstrip(": ")
         if not title:
             title = " ".join(str(m.get("display_name") or "Personality Insight").split()[:3]).rstrip(": ")

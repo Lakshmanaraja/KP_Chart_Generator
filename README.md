@@ -1,5 +1,16 @@
 # Time Science – Character Report API
 
+## Report section update
+Copy this archive over your existing repository, commit and push to redeploy Render.
+The app has added `client_tag_mappings.report_section` and copied existing Section names
+once. This version reads **only Report section** for PDF/JSON headings and `/report/api/topics`.
+Original hierarchy Section edits no longer change report headings. Blank Report section
+values group under `Others`, never fall back to the hierarchy. Topic request selections
+must use the new Report section names. Both child and adult reports share these headings.
+Keep `DATABASE_URL` set for live values; the existing 60-second refresh still applies.
+Spreadsheet headers: `Tag ID`, `Report section`, `Summary Title`, `Report text`, `Child report`.
+Omitted spreadsheet columns preserve their saved values.
+
 ## Summary title update
 Deploy this version after copying it into your existing repository. The live database
 loader now reads `client_tag_mappings.summary_title`, shared by child and adult reports.

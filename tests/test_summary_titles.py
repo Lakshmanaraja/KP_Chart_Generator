@@ -5,7 +5,7 @@ from services.ranker_service import build_report
 
 class SummaryTitles(unittest.TestCase):
     def mapping(self, **overrides):
-        return {"tag": "Routine", "display_name": "Structure & Routine", "section": "Personality",
+        return {"tag": "Routine", "display_name": "Structure & Routine", "section": "Personality", "report_section": "Personality",
                 "pairs": [], "report_text": "Adult insight", "child_report_text": "Child insight",
                 "summary_title": "Structure & Routine", **overrides}
 
