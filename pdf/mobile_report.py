@@ -8,6 +8,7 @@ from reportlab.lib.colors import Color
 from reportlab.lib.units import mm
 from reportlab.lib.utils import simpleSplit
 from reportlab.pdfgen import canvas
+from pdf.insight_text import insight_height, draw_insight
 
 W, H, M = 95 * mm, 200 * mm, 4.5 * mm
 LOGO = os.path.join(os.path.dirname(__file__), "logo.png")
@@ -201,11 +202,10 @@ def _topics(d: _Doc, sections: List[dict]):
         return
     d.page()
     w = W - 2 * M
-    PAD, GAP, INDENT, ITEM_GAP, BADGE = 4 * mm, 4 * mm, 6 * mm, 3.5 * mm, 12 * mm
+    PAD, GAP, INDENT, ITEM_GAP, BADGE = 3 * mm, 4 * mm, 5 * mm, 5 * mm, 8 * mm
     tw = w - INDENT - PAD - BADGE
     bottom = H - 10 * mm
-    lines_of = lambda t: wrap(t["text"], BODY_PT, tw)
-    height_of = lambda t: len(lines_of(t)) * LH(BODY_PT)
+    height_of = lambda t: insight_height(t, BODY_PT, tw, TEXT)
     for sec in sections:
         traits = sec["traits"]
         head = wrap(sec["title"], HEAD_PT, w, True)
@@ -238,8 +238,7 @@ def _topics(d: _Doc, sections: List[dict]):
                 d.c.roundRect(M, H - d.y - h, 1.6 * mm, h, 0.8 * mm, stroke=0, fill=1)
                 ty = d.y + PAD
                 for t in chunk:
-                    for j, l in enumerate(lines_of(t)):
-                        d.text(l, M + INDENT, ty + BODY_PT * 0.85 + j * LH(BODY_PT), BODY_PT)
+                    draw_insight(d.c, t, M + INDENT, ty, H, tw, BODY_PT, TEXT)
                     # code pill
                     pill_w = d.c.stringWidth(t["code"], "Helvetica-Bold", 7.5) + 3 * mm
                     px = W - M - PAD - pill_w

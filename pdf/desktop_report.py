@@ -14,6 +14,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.utils import simpleSplit
 from reportlab.pdfgen import canvas
+from pdf.insight_text import insight_height, draw_insight
 
 W, H = A4
 LOGO = os.path.join(os.path.dirname(__file__), "logo.png")
@@ -138,12 +139,8 @@ def _legend(d: _Doc, text_source: str = "report"):
         y += len(dl) * LH(11) + 9 * mm
 
 
-def _lines(t):
-    return wrap(t["text"], BODY_PT, TEXT_W)
-
-
 def _h(t):
-    return len(_lines(t)) * LH(BODY_PT)
+    return insight_height(t, BODY_PT, TEXT_W, BODY)
 
 
 def _card(d: _Doc, items: List[dict]) -> float:
@@ -155,9 +152,13 @@ def _card(d: _Doc, items: List[dict]) -> float:
     c.roundRect(X + 1 * mm, H - top - total + 1.3 * mm, 1.8 * mm, max(2.6 * mm, total - 2.6 * mm), 0.9 * mm, stroke=0, fill=1)
     iy = top + PAD
     for idx, t in enumerate(items):
-        d.text(t.get("code", ""), X + INDENT, iy + BODY_PT * 0.85, 8.5, False, CODE)   # unboxed code column
-        for j, l in enumerate(_lines(t)):
-            d.text(l, X + INDENT + CODE_COL, iy + BODY_PT * 0.85 + j * LH(BODY_PT), BODY_PT)
+        draw_insight(c, t, X + INDENT, iy, H, TEXT_W, BODY_PT, BODY)
+        code = t.get("code", "")
+        pill_w = c.stringWidth(code, "Helvetica-Bold", 8.5) + 3 * mm
+        px = X + WIDTH - PAD - pill_w
+        c.setFillColor(NOTE)
+        c.roundRect(px, H - iy - 4.6 * mm, pill_w, 4.2 * mm, 2.1 * mm, stroke=0, fill=1)
+        d.text(code, px + pill_w / 2, iy + 3.1 * mm, 8.5, True, GREY, "center")
         iy += _h(t) + (ITEM_GAP if idx < len(items) - 1 else 0)
     return total
 
