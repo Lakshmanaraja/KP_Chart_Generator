@@ -223,7 +223,7 @@ def _cover(d: _Doc, client: dict, text_source: str = "report"):
     fy, fh = H - 13 * mm - 47 * mm, 47 * mm
     d.card(M, fy, W - 2 * M, fh)
     d.text("Report Prepared by", x, fy + 6 * mm, 9.5, False, MUTED)
-    d.text("Lakshmanaraja Kannan", x, fy + 12 * mm, 13, True, ACCENT)
+    d.text("Thiru Lakshman", x, fy + 12 * mm, 13, True, ACCENT)
     d.text("Time Science Researcher & Astrologer", x, fy + 17.5 * mm, 9.5, False, MUTED)
     for label, ay, url, primary in [("Chat on WhatsApp", 22.5, "https://wa.me/919176600055", True),
                                     ("Visit Website", 34.5, "https://timescience.org", False)]:
