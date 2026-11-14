@@ -120,7 +120,7 @@ def _legend(d: _Doc, text_source: str = "report"):
     d.text(report_title(text_source), X, y + 6 * mm, 22, True, BRAND); y += 18 * mm
     c.setStrokeColor(BORDER); c.setLineWidth(0.85); c.line(X, H - y, X + WIDTH, H - y); y += 12 * mm
     d.text("Read this before proceeding", X, y, 15, True); y += 6 * mm
-    intro = wrap("This report is based on 12 years of research. Please read each line carefully, "
+    intro = wrap("This report is based on 14 years of research. Please read each line carefully, "
                  "as every detail may be important.", 11, WIDTH - 16 * mm)
     nh = len(intro) * LH(11) + 8 * mm
     c.setFillColor(NOTE); c.roundRect(X, H - y - nh, WIDTH, nh, 2.5 * mm, stroke=0, fill=1)

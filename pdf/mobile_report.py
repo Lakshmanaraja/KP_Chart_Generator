@@ -179,7 +179,7 @@ def _legend(d: _Doc):
     x, inner = M + 4 * mm, w - 8 * mm
     y = 16 * mm
     d.text("Read this before proceeding", x, y, 13, True); y += LH(13) + 2 * mm
-    intro = wrap("This report is based on 12 years of research. Please read each line carefully, "
+    intro = wrap("This report is based on 14 years of research. Please read each line carefully, "
                  "as every detail may be important.", 10.5, inner - 11 * mm)
     nh = len(intro) * LH(10.5) + 5 * mm
     d.card(x, y, inner, nh, 2 * mm, False, NOTE)
