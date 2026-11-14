@@ -1,5 +1,14 @@
 # Time Science – Character Report API
 
+## Gender-aware pronoun update
+Copy this archive over your existing repository, commit and push to redeploy Render.
+`ReportRequest` now accepts optional `gender` (`male`/`female`, with `boy`/`girl` also accepted).
+Before JSON traits or either PDF layout are produced, generic pairs such as `he or she`,
+`his/her`, `him or her`, and `himself or herself` become natural gender-specific wording.
+Blank, omitted or unknown values use singular `they/their/them`, including common verb
+agreement (`they are`, `they have`). Standalone pronouns are not changed because they may
+refer to another person. No tag spreadsheet columns or saved report text are modified.
+
 ## Report section update
 Copy this archive over your existing repository, commit and push to redeploy Render.
 The app has added `client_tag_mappings.report_section` and copied existing Section names

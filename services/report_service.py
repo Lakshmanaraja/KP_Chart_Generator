@@ -5,7 +5,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 #from chart_client import get_chart
 from database.seed_loader import load_mappings, reload_mappings
-from services.ranker_service import build_report
+from services.ranker_service import build_report, report_section
 from services.chart_service import compute_kp_json
 
 from pdf.mobile_report import render_mobile_pdf
@@ -26,7 +26,7 @@ def _sections(req: ReportRequest):
     #chart = req.chart or get_chart(req.date_of_birth, req.time_of_birth, req.latitude,req.longitude, req.timezone, req.ayanamsa)
     return build_report(chart, load_mappings(), req.topics, req.extra_tags,
                         include_sn=req.include_sn, include_sk=req.include_sk,
-                        text_source=req.text_source)
+                        text_source=req.text_source, gender=req.gender)
 
 def _pdf(req: ReportRequest):
     sections = _sections(req)
@@ -44,4 +44,4 @@ def _trait(req: ReportRequest):
     return _sections(req)
 
 def _topics():
-    return sorted({(m.get("section") or "Others").strip() for m in load_mappings()})
+    return sorted({report_section(m) for m in load_mappings()})

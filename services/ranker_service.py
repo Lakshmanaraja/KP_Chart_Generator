@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from typing import Dict, List, Optional
 from services.matcher_service import chart_mapping_matches, CHARACTER_TIER, GENERATION_COLUMNS
+from services.pronoun_service import personalize_pronouns
 
 OTHERS = "Others"
 DEFAULT_EXCLUDED = re.compile(r"\bindustry\b|\bpartner\b|\bmarriage\b|\bsleep\b", re.I)
@@ -59,10 +60,11 @@ def ordered_traits(tiers: list, prefix: str) -> List[dict]:
 def build_report(chart: dict, mappings: List[dict], topics: Optional[List[str]] = None,
                  extra_tags: Optional[List[str]] = None, *,
                  include_sn: bool = False, include_sk: bool = False,
-                 text_source: str = "report") -> List[dict]:
+                 text_source: str = "report", gender: Optional[str] = None) -> List[dict]:
     """Returns [{title, traits:[{text, code, kind}]}] in report order.
 
     text_source="child" uses each tag's child_report_text; anything else uses report_text.
+    Generic pronoun pairs are personalized without changing the saved tag text.
     Tags with blank text for the chosen source are left out."""
     field = "child_report_text" if (text_source or "").lower() == "child" else "report_text"
     
@@ -100,7 +102,7 @@ def build_report(chart: dict, mappings: List[dict], topics: Optional[List[str]] 
     order.sort(key=lambda t: (sec_ord.get(t, float("inf")), t))
     seen, bucket = set(), {}
     for m in sorted(cands, key=lambda m: tier_idx(m["tag"])):  # stable: best tier wins duplicates
-        text = clean_text(m[field])
+        text = personalize_pronouns(clean_text(m[field]), gender)
         key = text.lower()
         if not text or key in seen:
             continue
