@@ -259,26 +259,54 @@ def _topics(d: _Doc, sections: List[dict]):
 
 
 def _parents_note(d: _Doc):
-    """A calm, spacious conclusion reserved for the mobile child report."""
+    """Keep reading guidance and the parent note together on the final child page."""
+    d.page()
     w = W - 2 * M
-    pad, accent_w, gap = 6 * mm, 1.7 * mm, 8 * mm
+    pad, accent_w, gap = 4 * mm, 1.7 * mm, 6 * mm
     x = M + pad + accent_w
     inner = w - 2 * pad - accent_w
-    body_lines = wrap(PARENT_NOTE_BODY, 11, inner)
-    h = pad + LH(14) + 4 * mm + len(body_lines) * LH(11) + pad
-    if d.y + gap + h > H - 10 * mm:
-        d.page()
-    y = d.y + gap
-    d.card(M, y, w, h, 4.2 * mm, True, NOTE)
-    d.c.setFillColor(ACCENT)
-    d.c.roundRect(M + 0.9 * mm, H - y - h + 1.2 * mm,
-                  accent_w, h - 2.4 * mm, 0.85 * mm, stroke=0, fill=1)
-    title_y = y + pad + 14
-    d.text(PARENT_NOTE_TITLE, x, title_y, 14, True, ACCENT)
-    body_y = title_y + 4 * mm + 11
-    for i, line in enumerate(body_lines):
-        d.text(line, x, body_y + i * LH(11), 11, False, TEXT)
-    d.y = y + h
+    cards = [
+        ("How to Read Conflicting Traits", [
+            ("Primary trait + Secondary trait", True),
+            ("The child shows the Primary trait most often. The Secondary trait appears in specific situations or phases and may change over days, months, or longer periods.", False),
+            ("Both traits appear as Primary", True),
+            ("This is uncommon. The child shows both behaviours, and it may be difficult to predict which appears in a given situation.", False),
+        ], SURFACE),
+        (PARENT_NOTE_TITLE, [(PARENT_NOTE_BODY, False)], NOTE),
+    ]
+
+    def measure(pt):
+        result = []
+        for title, blocks, color in cards:
+            heading = wrap(title, 12, inner, True)
+            content = [(wrap(text, pt, inner, bold), bold) for text, bold in blocks]
+            height = 2 * pad + len(heading) * LH(12) + 3 * mm
+            height += sum(len(ls) * LH(pt) + 2 * mm for ls, _ in content)
+            result.append((heading, content, color, height))
+        return result
+
+    pt = 11
+    measured = measure(pt)
+    while sum(card[3] for card in measured) + gap > H - 10 * mm - d.y and pt > 9:
+        pt -= 0.25
+        measured = measure(pt)
+    for heading, content, color, height in measured:
+        y = d.y
+        d.card(M, y, w, height, 4.2 * mm, True, color)
+        d.c.setFillColor(ACCENT)
+        d.c.roundRect(M + 0.9 * mm, H - y - height + 1.2 * mm,
+                      accent_w, height - 2.4 * mm, 0.85 * mm, stroke=0, fill=1)
+        top = y + pad
+        for line in heading:
+            d.text(line, x, top + 12, 12, True, ACCENT)
+            top += LH(12)
+        top += 3 * mm
+        for ls, bold in content:
+            for line in ls:
+                d.text(line, x, top + pt, pt, bold, TEXT)
+                top += LH(pt)
+            top += 2 * mm
+        d.y = y + height + gap
 
 
 def render_mobile_pdf(sections: List[dict], client: dict, text_source: str = "report") -> bytes:
