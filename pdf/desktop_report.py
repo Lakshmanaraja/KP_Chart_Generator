@@ -101,7 +101,7 @@ def _cover(d: _Doc, client: dict, text_source: str = "report"):
     fy = H - 60 * mm
     c.setStrokeColor(BORDER); c.setLineWidth(0.6); c.line(X, H - fy, X + WIDTH, H - fy)
     d.text("Report Prepared by", W / 2, fy + 9 * mm, 10, False, GREY, "center")
-    d.text("Lakshmanaraja Kannan", W / 2, fy + 16 * mm, 14, True, BRAND, "center")
+    d.text("Thiru Lakshman", W / 2, fy + 16 * mm, 14, True, BRAND, "center")
     d.text("Time Science Researcher & Astrologer", W / 2, fy + 22 * mm, 10, False, GREY, "center")
     links = "WhatsApp: +91 91766 00055   |   timescience.org"
     d.text(links, W / 2, fy + 30 * mm, 10, False, BRAND, "center")

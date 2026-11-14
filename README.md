@@ -1,5 +1,25 @@
 # Time Science – Character Report API
 
+## Authorized saved-gender fallback
+When `gender` is blank, null or omitted and `client_id` is supplied, the report API
+retrieves `client_details.gender` before generating traits, JSON or either PDF layout.
+Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` on Render (the project's public anon key,
+not its service-role key). `DATABASE_URL` alone does not enable this lookup.
+Send `Authorization: Bearer <signed-in user's Supabase access token>` and a UUID
+`client_id` in the request body. The existing `X-API-Key`, if configured, is still
+required but does not grant access to saved clients.
+The API validates the sign-in, calls `can_access_assigned_client` under that user's
+identity, then reads only gender under the same identity and row-level security.
+Owners, assigned professionals and staff retain the application's existing access
+rules; a client ID alone never grants access. Invalid sign-in returns 401, inaccessible
+or missing clients return 403, and configuration/network failures return 503 without
+silently guessing gender. Explicit nonblank gender takes precedence and performs no
+lookup. Guests without a client ID still get neutral wording when gender is omitted;
+authorized clients with an empty/unknown saved gender also get neutral wording.
+No frontend changes are required for existing explicit-gender requests. To use this
+fallback, callers must send both the saved client ID and their current user token.
+Run `python -m unittest discover -s tests` after updating and redeploy Render.
+
 ## Gender-aware pronoun update
 Copy this archive over your existing repository, commit and push to redeploy Render.
 `ReportRequest` now accepts optional `gender` (`male`/`female`, with `boy`/`girl` also accepted).

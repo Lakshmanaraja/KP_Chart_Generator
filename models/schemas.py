@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
+from uuid import UUID
 
 class BirthInput(BaseModel):
     year: int
@@ -62,7 +63,8 @@ class ReportRequest(BaseModel):
     chart: Optional[dict] = Field(None, description="Pre-computed KP chart; skips the upstream call")
     version: str = Field("mobile", pattern="^(mobile|desktop)$", description="mobile (phone) or desktop (A4)")
     text_source: str = Field("report", pattern="^(report|child)$", description="report = Report text, child = Child report text")
-    gender: Optional[str] = Field(None, max_length=30, description="male/female (boy/girl accepted); omitted or other values use neutral pronouns")
+    gender: Optional[str] = Field(None, max_length=30, description="male/female (boy/girl accepted); blank/omitted uses saved gender when an authorized client_id is supplied, otherwise neutral pronouns")
+    client_id: Optional[UUID] = Field(None, description="Saved client UUID; gender lookup requires the client's authorized Supabase user Bearer token")
     include_sn: bool = Field(True, description="Match the SN column")
     include_sk: bool = Field(True, description="Match the SK column")
 

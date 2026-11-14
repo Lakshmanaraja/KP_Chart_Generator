@@ -6,6 +6,7 @@ from fastapi.security import APIKeyHeader
 from fastapi.responses import Response
 from database.seed_loader import load_mappings, reload_mappings
 from models.schemas import ReportRequest
+from services.client_gender_service import resolve_report_gender
 
 from services.report_service import _sections, _pdf, _trait, _topics, NoTraitsFoundError
 import os
@@ -38,13 +39,17 @@ def topics():
     return (_topics())
 
 
+def authorized_report_request(req: ReportRequest, authorization: str | None = Header(None)):
+    return resolve_report_gender(req, authorization)
+
+
 @router.post("/api/traits", dependencies=[Depends(auth)])
-def traits(req: ReportRequest):
+def traits(req: ReportRequest = Depends(authorized_report_request)):
     return {"name": req.name, "sections": _trait(req)}
 
 
 @router.post("/api/character", dependencies=[Depends(auth)])
-def character_report(req: ReportRequest, format: str = Query("pdf", pattern="^(pdf|json)$")):
+def character_report(req: ReportRequest = Depends(authorized_report_request), format: str = Query("pdf", pattern="^(pdf|json)$")):
     try:
         pdf = _pdf(req) if format == "pdf" else None
         sections = _sections(req) if format == "json" else None
