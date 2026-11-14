@@ -3,10 +3,11 @@ from pathlib import Path
 from reportlab.lib.units import mm
 from reportlab.lib.colors import Color
 
-TOPICS = {'personality':'personality', 'speaking style':'speaking-style', 'daily life':'daily-life',
-          'education':'education', 'creativity':'creativity', 'skills':'skills',
+TOPICS = {'personality':'personality', 'speaking style':'speaking-style', 'speaking':'speaking-style',
+          'daily life':'daily-life', 'education':'education', 'creativity':'creativity', 'skills':'skills',
           'food preference':'food-preference', 'food preferences':'food-preference',
-          'health issues':'health-issues', 'travel':'travel'}
+          'health issues':'health-issues', 'wellness':'health-issues', 'travel':'travel',
+          'places and things':'places-and-things', 'social circle':'social-circle'}
 
 def topic_inset(title):
     return 9 * mm if title.strip().lower() in TOPICS else 0

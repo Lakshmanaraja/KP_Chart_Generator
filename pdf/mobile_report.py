@@ -28,12 +28,10 @@ LEGEND = [
 BODY_PT, HEAD_PT = 12, 14.5
 LH = lambda pt: pt * 1.5  # points
 PARENT_NOTE_TITLE = "A Note to Parents"
+PARENT_NOTE_LEAD = "This report is built to support understanding, not dictate who your child should be."
 PARENT_NOTE_BODY = (
-    "Time Science does not encourage forcing a child to conform to any set of values—including "
-    "those described in this report. Its purpose is not to replace one kind of pressure with another, "
-    "but to help parents better understand their child and reduce the distress that can arise from "
-    "social trends, outside expectations, or differences between parent and child. The report is "
-    "intended to support understanding, not dictate who a child should be."
+    "Our goal is not to enforce pressure, but to help you better understand your child and reduce "
+    "distress from social trends, outside expectations, or differences."
 )
 
 
@@ -74,6 +72,63 @@ class _Doc:
 
 def wrap(s, pt, width, bold=False):
     return simpleSplit(s, "Helvetica-Bold" if bold else "Helvetica", pt, width) or [""]
+
+
+def rich_wrap(runs, pt, width):
+    """Wrap (text, bold) runs while retaining inline emphasis."""
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+    result, line, line_width = [], [], 0.0
+
+    def push_line():
+        nonlocal line, line_width
+        if line:
+            result.append(line)
+            line, line_width = [], 0.0
+
+    def append(text, bold, text_width):
+        nonlocal line_width
+        if line and line[-1][1] == bold:
+            line[-1] = (line[-1][0] + text, bold)
+        else:
+            line.append((text, bold))
+        line_width += text_width
+
+    import re
+    for text, bold in runs:
+        font = "Helvetica-Bold" if bold else "Helvetica"
+        for token in (t for t in re.split(r"(\s+)", text) if t):
+            if token.isspace():
+                if line and not line[-1][0].endswith(" "):
+                    append(" ", bold, stringWidth(" ", font, pt))
+                continue
+            token_width = stringWidth(token, font, pt)
+            if line and line_width + token_width > width:
+                push_line()
+            append(token, bold, token_width)
+    push_line()
+    return result
+
+
+def draw_rich(d: _Doc, lines, x, y, pt, color=TEXT):
+    for line in lines:
+        dx = x
+        for text, bold in line:
+            d.text(text, dx, y + pt, pt, bold, color)
+            dx += d.c.stringWidth(text, "Helvetica-Bold" if bold else "Helvetica", pt)
+        y += LH(pt)
+    return y
+
+
+def draw_sparkle(d: _Doc, cx, cy, radius, color=ACCENT):
+    d.c.setStrokeColor(color); d.c.setLineWidth(1.25); d.c.setLineCap(1)
+    diagonal = radius * 0.55
+    for x1, y1, x2, y2 in [
+        (cx, cy - radius, cx, cy + radius), (cx - radius, cy, cx + radius, cy),
+        (cx - diagonal, cy - diagonal, cx + diagonal, cy + diagonal),
+        (cx - diagonal, cy + diagonal, cx + diagonal, cy - diagonal),
+    ]:
+        d.c.line(x1, H - y1, x2, H - y2)
+    d.c.setLineCap(0)
 
 
 def report_title(text_source: str = "report") -> str:
@@ -209,13 +264,14 @@ def _legend(d: _Doc):
 def _topics(d: _Doc, sections: List[dict]):
     if not sections:
         return
-    d.page()
     w = W - 2 * M
     PAD, GAP, INDENT, ITEM_GAP, BADGE = 3 * mm, 4 * mm, 5 * mm, 5 * mm, 8 * mm
     tw = w - INDENT - PAD - BADGE
     bottom = H - 10 * mm
     height_of = lambda t: insight_height(t, BODY_PT, tw, TEXT)
     for sec in sections:
+        # Each report section starts cleanly; continuation pages are added only when its traits overflow.
+        d.page()
         traits = sec["traits"]
         head = wrap(sec["title"], HEAD_PT, w - topic_inset(sec["title"]), True)
         head_h = len(head) * LH(HEAD_PT) + 5 * mm
@@ -258,67 +314,133 @@ def _topics(d: _Doc, sections: List[dict]):
 
 
 def _parents_note(d: _Doc):
-    """Keep reading guidance and the parent note together on the final child page."""
+    """Measured, nested reading guidance and an airy two-paragraph parent note."""
     d.page()
     w = W - 2 * M
-    pad, accent_w, gap = 4 * mm, 1.7 * mm, 6 * mm
-    x = M + pad + accent_w
-    inner = w - 2 * pad - accent_w
-    cards = [
-        ("How to Read Conflicting Traits", [
-            ("Primary traits", True, [KIND["primary"]]),
-            ("Other category traits", True, [KIND["secondary"], KIND["low"], KIND["lowest"]]),
-            ("Primary trait + other category trait", True),
-            ("The child shows the Primary trait most often. Other category traits appear in specific situations or phases and may change over days, months, or longer periods.", False),
-            ("Both traits appear as Primary", True),
-            ("This is uncommon. The child shows both behaviours, and it may be difficult to predict which appears in a given situation.", False),
-        ], SURFACE),
-        (PARENT_NOTE_TITLE, [(PARENT_NOTE_BODY, False)], NOTE),
-    ]
+    outer_pad, accent_w, card_gap, title_pt = 3.5 * mm, 1.7 * mm, 5 * mm, 12.5
+    content_x = M + outer_pad + accent_w
+    content_w = w - 2 * outer_pad - accent_w
+    sub_pad = 3 * mm
+    sub_text_x = content_x + sub_pad
+    sub_text_w = content_w - 2 * sub_pad
+    soft_green, soft_warm, soft_blue = rgb(239, 248, 240), rgb(255, 248, 235), rgb(241, 245, 251)
+    amber, amber_bg = rgb(146, 64, 14), rgb(254, 243, 199)
+    other_colors = [KIND["secondary"], KIND["low"], KIND["lowest"]]
 
     def measure(pt):
-        result = []
-        for title, blocks, color in cards:
-            heading = wrap(title, 12, inner, True)
-            content = []
-            for block in blocks:
-                text, bold = block[:2]
-                colors = block[2] if len(block) > 2 else []
-                ls = wrap(text, pt, inner - (5 * mm if colors else 0), bold)
-                bh = max(len(ls) * LH(pt), len(colors) * 4 * mm)
-                content.append((ls, bold, colors, bh))
-            height = 2 * pad + len(heading) * LH(12) + 3 * mm
-            height += sum(bh + 2 * mm for _, _, _, bh in content)
-            result.append((heading, content, color, height))
-        return result
+        primary = rich_wrap([
+            ("Your child will show the ", False), ("Primary trait most often", True), (".", False),
+        ], pt, sub_text_w)
+        secondary = rich_wrap([
+            ("Other traits appear in specific situations and may ", False),
+            ("change over time", True), (".", False),
+        ], pt, sub_text_w - 4 * mm)
+        both = rich_wrap([
+            ("Both ", False), ("behaviors are strong", True), (". It may be ", False),
+            ("difficult to predict", True), (" which appears in a given situation.", False),
+        ], pt, sub_text_w)
+        note_lead = rich_wrap([(PARENT_NOTE_LEAD, True)], pt + 0.75, content_w)
+        note_body = rich_wrap([(PARENT_NOTE_BODY, False)], pt, content_w)
+        scenario_title_width = d.c.stringWidth("Primary + other category traits", "Helvetica-Bold", pt + 0.25)
+        a_height = (2 * sub_pad + LH(pt + 0.25) + 1.5 * mm + len(primary) * LH(pt)
+                    + 1.5 * mm + len(secondary) * LH(pt))
+        b_height = 2 * sub_pad + LH(pt + 0.25) + 1.5 * mm + len(both) * LH(pt)
+        guidance_height = (2 * outer_pad + LH(title_pt) + 2 * mm + 7 * mm + 3 * mm
+                           + a_height + 3 * mm + b_height)
+        note_height = (2 * outer_pad + LH(title_pt) + 2 * mm + len(note_lead) * LH(pt + 0.75)
+                       + 2.5 * mm + len(note_body) * LH(pt))
+        return {
+            "primary": primary, "secondary": secondary, "both": both,
+            "note_lead": note_lead, "note_body": note_body,
+            "scenario_title_width": scenario_title_width, "a_height": a_height,
+            "b_height": b_height, "guidance_height": guidance_height, "note_height": note_height,
+        }
 
-    pt = 11
+    pt = 10.5
     measured = measure(pt)
-    while sum(card[3] for card in measured) + gap > H - 10 * mm - d.y and pt > 9:
+    while measured["guidance_height"] + card_gap + measured["note_height"] > H - 10 * mm - d.y and pt > 9.25:
         pt -= 0.25
         measured = measure(pt)
-    for heading, content, color, height in measured:
-        y = d.y
-        d.card(M, y, w, height, 4.2 * mm, True, color)
+
+    def draw_outer(top, height, color):
+        d.card(M, top, w, height, 4.2 * mm, True, color)
         d.c.setFillColor(ACCENT)
-        d.c.roundRect(M + 0.9 * mm, H - y - height + 1.2 * mm,
+        d.c.roundRect(M + 0.9 * mm, H - top - height + 1.2 * mm,
                       accent_w, height - 2.4 * mm, 0.85 * mm, stroke=0, fill=1)
-        top = y + pad
-        for line in heading:
-            d.text(line, x, top + 12, 12, True, ACCENT)
-            top += LH(12)
-        top += 3 * mm
-        for ls, bold, colors, bh in content:
-            start = top
-            for i, color in enumerate(colors):
-                d.c.setFillColor(color)
-                d.c.roundRect(x, H - start - i * 4 * mm - 3.2 * mm,
-                              1.7 * mm, 3.2 * mm, 0.8 * mm, stroke=0, fill=1)
-            for line in ls:
-                d.text(line, x + (5 * mm if colors else 0), top + pt, pt, bold, TEXT)
-                top += LH(pt)
-            top = start + bh + 2 * mm
-        d.y = y + height + gap
+
+    def legend_width(label, colors, font_pt):
+        return (4.4 * mm + len(colors) * 1.7 * mm + max(0, len(colors) - 1) * mm
+                + 1.2 * mm + d.c.stringWidth(label, "Helvetica-Bold", font_pt) + 2.2 * mm)
+
+    def draw_legend_item(x, top, width, label, colors, bg, font_pt):
+        d.card(x, top, width, 7 * mm, 3.5 * mm, False, bg)
+        pill_x = x + 2.2 * mm
+        for color in colors:
+            d.c.setFillColor(color)
+            d.c.roundRect(pill_x, H - top - 1.9 * mm - 3.2 * mm,
+                          1.7 * mm, 3.2 * mm, 0.8 * mm, stroke=0, fill=1)
+            pill_x += 2.7 * mm
+        d.text(label, pill_x + 1.2 * mm, top + 4.55 * mm, font_pt, True, TEXT)
+
+    guidance_y = d.y
+    draw_outer(guidance_y, measured["guidance_height"], SURFACE)
+    top = guidance_y + outer_pad
+    d.text("How to Read Conflicting Traits", content_x, top + title_pt, title_pt, True, ACCENT)
+    top += LH(title_pt) + 2 * mm
+
+    legend_pt = min(8.5, pt - 1)
+    while (legend_width("Primary traits", [KIND["primary"]], legend_pt)
+           + legend_width("Other category traits", other_colors, legend_pt) + 2 * mm > content_w
+           and legend_pt > 7.25):
+        legend_pt -= 0.25
+    primary_legend_w = legend_width("Primary traits", [KIND["primary"]], legend_pt)
+    other_legend_w = legend_width("Other category traits", other_colors, legend_pt)
+    draw_legend_item(content_x, top, primary_legend_w, "Primary traits", [KIND["primary"]], soft_green, legend_pt)
+    draw_legend_item(content_x + primary_legend_w + 2 * mm, top, other_legend_w,
+                     "Other category traits", other_colors, soft_blue, legend_pt)
+    top += 10 * mm
+
+    # Scenario A: soft green nested card with inline category pills.
+    d.card(content_x, top, content_w, measured["a_height"], 3 * mm, False, soft_green)
+    d.text("Primary + other category traits", sub_text_x, top + sub_pad + pt + 0.25,
+           pt + 0.25, True, TEXT)
+    pill_x = sub_text_x + measured["scenario_title_width"] + 2 * mm
+    for color in [KIND["primary"], *other_colors]:
+        d.c.setFillColor(color)
+        d.c.roundRect(pill_x, H - top - sub_pad - 0.2 * mm - 3.2 * mm,
+                      1.7 * mm, 3.2 * mm, 0.8 * mm, stroke=0, fill=1)
+        pill_x += 2.7 * mm
+    body_top = top + sub_pad + LH(pt + 0.25) + 1.5 * mm
+    body_top = draw_rich(d, measured["primary"], sub_text_x, body_top, pt) + 1.5 * mm
+    d.c.setFillColor(ACCENT)
+    d.c.circle(sub_text_x + 0.8 * mm, H - body_top - 1.4 * mm, 0.65 * mm, stroke=0, fill=1)
+    draw_rich(d, measured["secondary"], sub_text_x + 4 * mm, body_top, pt)
+    top += measured["a_height"] + 3 * mm
+
+    # Scenario B: warm nested card and a compact Uncommon badge.
+    d.card(content_x, top, content_w, measured["b_height"], 3 * mm, False, soft_warm)
+    d.text("Both traits appear as Primary", sub_text_x, top + sub_pad + pt + 0.25,
+           pt + 0.25, True, TEXT)
+    badge_w = d.c.stringWidth("Uncommon", "Helvetica-Bold", 7.5) + 4 * mm
+    badge_x = sub_text_x + sub_text_w - badge_w
+    d.c.setFillColor(amber_bg)
+    d.c.roundRect(badge_x, H - top - sub_pad + 0.5 * mm - 5 * mm,
+                  badge_w, 5 * mm, 2.5 * mm, stroke=0, fill=1)
+    d.text("Uncommon", badge_x + 2 * mm, top + sub_pad + 3.0 * mm, 7.5, True, amber)
+    body_top = top + sub_pad + LH(pt + 0.25) + 1.5 * mm
+    draw_rich(d, measured["both"], sub_text_x, body_top, pt)
+
+    # Parent note: star accents, bold lead paragraph and a regular second paragraph.
+    note_y = guidance_y + measured["guidance_height"] + card_gap
+    draw_outer(note_y, measured["note_height"], NOTE)
+    top = note_y + outer_pad
+    draw_sparkle(d, content_x + 1.6 * mm, top + 2.1 * mm, 1.6 * mm)
+    draw_sparkle(d, content_x + 5.3 * mm, top + 1.1 * mm, 0.9 * mm, KIND["primary"])
+    d.text(PARENT_NOTE_TITLE, content_x + 9 * mm, top + title_pt, title_pt, True, ACCENT)
+    top += LH(title_pt) + 2 * mm
+    top = draw_rich(d, measured["note_lead"], content_x, top, pt + 0.75) + 2.5 * mm
+    draw_rich(d, measured["note_body"], content_x, top, pt)
+    d.y = note_y + measured["note_height"]
 
 
 def render_mobile_pdf(sections: List[dict], client: dict, text_source: str = "report") -> bytes:
