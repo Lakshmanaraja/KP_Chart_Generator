@@ -9,6 +9,7 @@ from reportlab.lib.units import mm
 from reportlab.lib.utils import simpleSplit
 from reportlab.pdfgen import canvas
 from pdf.insight_text import insight_height, draw_insight
+from pdf.topic_headers import topic_inset, draw_topic_header
 
 W, H, M = 95 * mm, 200 * mm, 4.5 * mm
 LOGO = os.path.join(os.path.dirname(__file__), "logo.png")
@@ -216,13 +217,11 @@ def _topics(d: _Doc, sections: List[dict]):
     height_of = lambda t: insight_height(t, BODY_PT, tw, TEXT)
     for sec in sections:
         traits = sec["traits"]
-        head = wrap(sec["title"], HEAD_PT, w, True)
-        head_h = len(head) * LH(HEAD_PT) + 3 * mm
+        head = wrap(sec["title"], HEAD_PT, w - topic_inset(sec["title"]), True)
+        head_h = len(head) * LH(HEAD_PT) + 5 * mm
         if traits and d.y + head_h + 2 * PAD + height_of(traits[0]) > bottom:
             d.page()
-        for l in head:
-            d.text(l, M, d.y + HEAD_PT * 0.8, HEAD_PT, True); d.y += LH(HEAD_PT)
-        d.y += 3 * mm
+        draw_topic_header(d, sec["title"], head, M, w, H, HEAD_PT, LH(HEAD_PT), ACCENT)
         # Group consecutive traits by kind into colored-accent cards, splitting across pages.
         groups: List[List[dict]] = []
         for t in traits:
@@ -267,8 +266,10 @@ def _parents_note(d: _Doc):
     inner = w - 2 * pad - accent_w
     cards = [
         ("How to Read Conflicting Traits", [
-            ("Primary trait + Secondary trait", True),
-            ("The child shows the Primary trait most often. The Secondary trait appears in specific situations or phases and may change over days, months, or longer periods.", False),
+            ("Primary traits", True, [KIND["primary"]]),
+            ("Other category traits", True, [KIND["secondary"], KIND["low"], KIND["lowest"]]),
+            ("Primary trait + other category trait", True),
+            ("The child shows the Primary trait most often. Other category traits appear in specific situations or phases and may change over days, months, or longer periods.", False),
             ("Both traits appear as Primary", True),
             ("This is uncommon. The child shows both behaviours, and it may be difficult to predict which appears in a given situation.", False),
         ], SURFACE),
@@ -279,9 +280,15 @@ def _parents_note(d: _Doc):
         result = []
         for title, blocks, color in cards:
             heading = wrap(title, 12, inner, True)
-            content = [(wrap(text, pt, inner, bold), bold) for text, bold in blocks]
+            content = []
+            for block in blocks:
+                text, bold = block[:2]
+                colors = block[2] if len(block) > 2 else []
+                ls = wrap(text, pt, inner - (5 * mm if colors else 0), bold)
+                bh = max(len(ls) * LH(pt), len(colors) * 4 * mm)
+                content.append((ls, bold, colors, bh))
             height = 2 * pad + len(heading) * LH(12) + 3 * mm
-            height += sum(len(ls) * LH(pt) + 2 * mm for ls, _ in content)
+            height += sum(bh + 2 * mm for _, _, _, bh in content)
             result.append((heading, content, color, height))
         return result
 
@@ -301,11 +308,16 @@ def _parents_note(d: _Doc):
             d.text(line, x, top + 12, 12, True, ACCENT)
             top += LH(12)
         top += 3 * mm
-        for ls, bold in content:
+        for ls, bold, colors, bh in content:
+            start = top
+            for i, color in enumerate(colors):
+                d.c.setFillColor(color)
+                d.c.roundRect(x, H - start - i * 4 * mm - 3.2 * mm,
+                              1.7 * mm, 3.2 * mm, 0.8 * mm, stroke=0, fill=1)
             for line in ls:
-                d.text(line, x, top + pt, pt, bold, TEXT)
+                d.text(line, x + (5 * mm if colors else 0), top + pt, pt, bold, TEXT)
                 top += LH(pt)
-            top += 2 * mm
+            top = start + bh + 2 * mm
         d.y = y + height + gap
 
 

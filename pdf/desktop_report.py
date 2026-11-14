@@ -15,6 +15,7 @@ from reportlab.lib.units import mm
 from reportlab.lib.utils import simpleSplit
 from reportlab.pdfgen import canvas
 from pdf.insight_text import insight_height, draw_insight
+from pdf.topic_headers import topic_inset, draw_topic_header
 
 W, H = A4
 LOGO = os.path.join(os.path.dirname(__file__), "logo.png")
@@ -170,17 +171,14 @@ def _topics(d: _Doc, sections: List[dict]):
     d.page()
     for sec in sections:
         traits = sec["traits"]
-        head = wrap(sec["title"], HEAD_PT, WIDTH, True)
-        head_to_card = max(0, len(head) - 1) * LH(HEAD_PT) + 4.5 * mm
+        head = wrap(sec["title"], HEAD_PT, WIDTH - topic_inset(sec["title"]), True)
+        head_to_card = len(head) * LH(HEAD_PT) + 5 * mm
         gap = 9 * mm if d.y > TOP + 2 else 0
         if d.y + gap + head_to_card + 2 * PAD + _h(traits[0]) > BOTTOM:
             d.page()
         else:
             d.y += gap
-        d.y += LH(HEAD_PT) * 0.6
-        for i, l in enumerate(head):
-            d.text(l, X, d.y + i * LH(HEAD_PT), HEAD_PT, True, BRAND)
-        d.y += head_to_card
+        draw_topic_header(d, sec["title"], head, X, WIDTH, H, HEAD_PT, LH(HEAD_PT), BRAND)
         for kind in ORDER:
             items = [t for t in traits if t.get("kind") == kind]
             if not items:
