@@ -26,6 +26,14 @@ LEGEND = [
 ]
 BODY_PT, HEAD_PT = 12, 14.5
 LH = lambda pt: pt * 1.5  # points
+PARENT_NOTE_TITLE = "A Note to Parents"
+PARENT_NOTE_BODY = (
+    "Time Science does not encourage forcing a child to conform to any set of values—including "
+    "those described in this report. Its purpose is not to replace one kind of pressure with another, "
+    "but to help parents better understand their child and reduce the distress that can arise from "
+    "social trends, outside expectations, or differences between parent and child. The report is "
+    "intended to support understanding, not dictate who a child should be."
+)
 
 
 class _Doc:
@@ -179,7 +187,7 @@ def _legend(d: _Doc):
     x, inner = M + 4 * mm, w - 8 * mm
     y = 16 * mm
     d.text("Read this before proceeding", x, y, 13, True); y += LH(13) + 2 * mm
-    intro = wrap("This report is based on 14 years of research. Please read each line carefully, "
+    intro = wrap("This report is based on 12 years of research. Please read each line carefully, "
                  "as every detail may be important.", 10.5, inner - 11 * mm)
     nh = len(intro) * LH(10.5) + 5 * mm
     d.card(x, y, inner, nh, 2 * mm, False, NOTE)
@@ -250,12 +258,37 @@ def _topics(d: _Doc, sections: List[dict]):
         d.y += 3 * mm
 
 
+def _parents_note(d: _Doc):
+    """A calm, spacious conclusion reserved for the mobile child report."""
+    w = W - 2 * M
+    pad, accent_w, gap = 6 * mm, 1.7 * mm, 8 * mm
+    x = M + pad + accent_w
+    inner = w - 2 * pad - accent_w
+    body_lines = wrap(PARENT_NOTE_BODY, 11, inner)
+    h = pad + LH(14) + 4 * mm + len(body_lines) * LH(11) + pad
+    if d.y + gap + h > H - 10 * mm:
+        d.page()
+    y = d.y + gap
+    d.card(M, y, w, h, 4.2 * mm, True, NOTE)
+    d.c.setFillColor(ACCENT)
+    d.c.roundRect(M + 0.9 * mm, H - y - h + 1.2 * mm,
+                  accent_w, h - 2.4 * mm, 0.85 * mm, stroke=0, fill=1)
+    title_y = y + pad + 14
+    d.text(PARENT_NOTE_TITLE, x, title_y, 14, True, ACCENT)
+    body_y = title_y + 4 * mm + 11
+    for i, line in enumerate(body_lines):
+        d.text(line, x, body_y + i * LH(11), 11, False, TEXT)
+    d.y = y + h
+
+
 def render_mobile_pdf(sections: List[dict], client: dict, text_source: str = "report") -> bytes:
     buf = io.BytesIO()
     d = _Doc(buf)
     _cover(d, client, text_source)
     _legend(d)
     _topics(d, sections)
+    if text_source == "child":
+        _parents_note(d)
     d.c.setTitle(f"{report_title(text_source)} - {client.get('name', '')}")
     d.c.setAuthor("Time Science")
     d.c.save()

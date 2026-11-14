@@ -1,5 +1,12 @@
 # Time Science – Character Report API
 
+## Parent closing note
+Mobile PDFs requested with `text_source: "child"` now end with a calming blue-tinted
+"A Note to Parents" card after the final topic. The card has generous padding and a
+corporate-blue left accent. Adult (`text_source: "report"`) and desktop PDFs are unchanged.
+Copy this archive over the existing repository, run `python -m unittest discover -s tests`,
+then commit, push and redeploy Render.
+
 ## Authorized saved-gender fallback
 When `gender` is blank, null or omitted and `client_id` is supplied, the report API
 retrieves `client_details.gender` before generating traits, JSON or either PDF layout.
