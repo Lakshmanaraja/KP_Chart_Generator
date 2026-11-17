@@ -26,7 +26,8 @@ def _sections(req: ReportRequest):
     #chart = req.chart or get_chart(req.date_of_birth, req.time_of_birth, req.latitude,req.longitude, req.timezone, req.ayanamsa)
     return build_report(chart, load_mappings(), req.topics, req.extra_tags,
                         include_sn=req.include_sn, include_sk=req.include_sk,
-                        text_source=req.text_source, gender=req.gender)
+                        text_source=req.text_source, gender=req.gender,
+                        report_type=req.report_type)
 
 def _pdf(req: ReportRequest):
     sections = _sections(req)

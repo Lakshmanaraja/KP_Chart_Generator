@@ -7,6 +7,21 @@ from typing import List
 
 SEED = os.path.join(os.path.dirname(__file__), "tag_mappings_seed.json")
 
+# Report Content (report_tag_contents): one row per tag per report type.
+CONTENT_SQL = """
+SELECT m.tag, COALESCE(m.display_name, m.tag) AS display_name, m.pairs, m.display_order,
+       m.match_mode, m.group_name, c.report_type, c.report_text, c.guidance, c.summary_title,
+       s.name AS report_section, s.section_order AS report_section_order, q.bhava_no,
+       COALESCE(q.section_order, 0) AS section_order
+FROM report_tag_contents c
+JOIN client_tag_mappings m ON m.id = c.tag_mapping_id
+LEFT JOIN report_sections s ON s.id = c.section_id
+LEFT JOIN kp_answer_options_v2 a ON a.client_tag_mapping_id = m.id
+LEFT JOIN kp_questions_v2 q ON q.id = a.question_id
+WHERE m.is_active AND trim(coalesce(c.report_text, '')) <> ''
+"""
+
+# Legacy columns, used only if the Report Content tables are unavailable.
 SQL = """
 SELECT m.tag, COALESCE(m.display_name, m.tag) AS display_name, m.pairs, m.display_order,
        m.match_mode, m.group_name, m.report_text, m.child_report_text, m.report_section, m.report_section_order, m.summary_title, q.bhava_no,
@@ -41,7 +56,11 @@ def _fetch() -> List[dict]:
     if url:
         import psycopg  # optional dependency
         with psycopg.connect(url) as conn, conn.cursor() as cur:
-            cur.execute(SQL)
+            try:
+                cur.execute(CONTENT_SQL)
+            except Exception:
+                conn.rollback()
+                cur.execute(SQL)
             cols = [c.name for c in cur.description]
             rows = [dict(zip(cols, r)) for r in cur.fetchall()]
     else:

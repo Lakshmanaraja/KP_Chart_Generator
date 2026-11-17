@@ -14,6 +14,9 @@ def insight_paragraph(trait, pt, color):
     title = str(trait.get("summary_title") or "").strip().rstrip(": ")
     lead = f"<b>{escape(title)}:</b> " if title else ""
     body = escape(str(trait.get("text") or "")).replace("\n", "<br/>")
+    guidance = str(trait.get("guidance") or "").strip()
+    if guidance:
+        body += "<br/><i><b>Guidance:</b> " + escape(guidance).replace("\n", "<br/>") + "</i>"
     return Paragraph(lead + body, ParagraphStyle(
         "insight",
         fontName=FONT,

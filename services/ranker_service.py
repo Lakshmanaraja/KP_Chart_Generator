@@ -10,6 +10,13 @@ DEFAULT_EXCLUDED = re.compile(r"\bindustry\b|\bpartner\b|\bmarriage\b|\bsleep\b"
 KIND_BY_TIER_INDEX = {3: "secondary", 4: "low", 5: "lowest"}
 
 
+def resolve_report_type(text_source: str = "report", report_type: Optional[str] = None) -> str:
+    """Explicit report_type wins; otherwise child -> understanding_child, else character_assessment."""
+    if report_type and report_type.strip():
+        return report_type.strip()
+    return "understanding_child" if (text_source or "").lower() == "child" else "character_assessment"
+
+
 def report_section(mapping: dict) -> str:
     """Only the independent Report section supplies headings, never hierarchy Section."""
     return str(mapping.get("report_section") or "").strip() or OTHERS
@@ -60,13 +67,19 @@ def ordered_traits(tiers: list, prefix: str) -> List[dict]:
 def build_report(chart: dict, mappings: List[dict], topics: Optional[List[str]] = None,
                  extra_tags: Optional[List[str]] = None, *,
                  include_sn: bool = False, include_sk: bool = False,
-                 text_source: str = "report", gender: Optional[str] = None) -> List[dict]:
+                 text_source: str = "report", gender: Optional[str] = None,
+                 report_type: Optional[str] = None) -> List[dict]:
     """Returns [{title, traits:[{text, code, kind}]}] in report order.
 
     text_source="child" uses each tag's child_report_text; anything else uses report_text.
     Generic pronoun pairs are personalized without changing the saved tag text.
     Tags with blank text for the chosen source are left out."""
     field = "child_report_text" if (text_source or "").lower() == "child" else "report_text"
+    if any("report_type" in m for m in mappings):
+        # Report Content rows: keep only the requested report's content.
+        rt = resolve_report_type(text_source, report_type)
+        mappings = [m for m in mappings if m.get("report_type") == rt]
+        field = "report_text"
     
     enabled = [c for c in GENERATION_COLUMNS
                if (c != "SN" or include_sn) and (c != "SK" or include_sk)]
@@ -113,6 +126,7 @@ def build_report(chart: dict, mappings: List[dict], topics: Optional[List[str]] 
             title = " ".join(str(m.get("display_name") or "Personality Insight").split()[:3]).rstrip(": ")
         bucket.setdefault(sec, [[] for _ in range(7)])[tier_idx(m["tag"])].append({
             "text": text, "summary_title": title,
+            "guidance": personalize_pronouns(clean_text(m.get("guidance") or ""), gender),
         })
     titles = [t for t in order if t in bucket]
     prefixes = topic_prefixes(titles)
