@@ -36,7 +36,7 @@ WIDTH = min(W - 36 * mm, 150 * mm)          # constrained editorial column (~680
 X = (W - WIDTH) / 2
 BODY_PT, HEAD_PT = 12, 17
 LH = lambda pt: pt * 1.5                     # line height in points
-PAD, GAP, ITEM_GAP, CODE_COL = 5 * mm, 5 * mm, 6.4 * mm, 12 * mm
+PAD, GAP, CODE_COL = 5 * mm, 5 * mm, 12 * mm
 INDENT = PAD + 3 * mm
 TEXT_W = WIDTH - INDENT - CODE_COL - PAD
 
@@ -144,23 +144,24 @@ def _h(t):
     return insight_height(t, BODY_PT, TEXT_W, BODY)
 
 
-def _card(d: _Doc, items: List[dict]) -> float:
+def _card(d: _Doc, t: dict) -> float:
+    """One trait per card: white surface, soft shadow, kind-coloured left accent."""
     c, top = d.c, d.y
-    total = 2 * PAD + sum(_h(t) for t in items) + ITEM_GAP * (len(items) - 1)
+    total = 2 * PAD + _h(t)
+    c.setFillColor(rgb(229, 233, 239))
+    c.roundRect(X, H - top - total - 0.6 * mm, WIDTH, total, 2.6 * mm, stroke=0, fill=1)
     c.setFillColor(WHITE); c.setStrokeColor(BORDER); c.setLineWidth(0.7)
     c.roundRect(X, H - top - total, WIDTH, total, 2.6 * mm, stroke=1, fill=1)
-    c.setFillColor(KIND[items[0]["kind"]])
+    c.setFillColor(KIND[t["kind"]])
     c.roundRect(X + 1 * mm, H - top - total + 1.3 * mm, 1.8 * mm, max(2.6 * mm, total - 2.6 * mm), 0.9 * mm, stroke=0, fill=1)
     iy = top + PAD
-    for idx, t in enumerate(items):
-        draw_insight(c, t, X + INDENT, iy, H, TEXT_W, BODY_PT, BODY)
-        code = t.get("code", "")
-        pill_w = c.stringWidth(code, "Helvetica-Bold", 8.5) + 3 * mm
-        px = X + WIDTH - PAD - pill_w
-        c.setFillColor(NOTE)
-        c.roundRect(px, H - iy - 4.6 * mm, pill_w, 4.2 * mm, 2.1 * mm, stroke=0, fill=1)
-        d.text(code, px + pill_w / 2, iy + 3.1 * mm, 8.5, True, GREY, "center")
-        iy += _h(t) + (ITEM_GAP if idx < len(items) - 1 else 0)
+    draw_insight(c, t, X + INDENT, iy, H, TEXT_W, BODY_PT, BODY)
+    code = t.get("code", "")
+    pill_w = c.stringWidth(code, "Helvetica-Bold", 8.5) + 3 * mm
+    px = X + WIDTH - PAD - pill_w
+    c.setFillColor(NOTE)
+    c.roundRect(px, H - iy - 4.6 * mm, pill_w, 4.2 * mm, 2.1 * mm, stroke=0, fill=1)
+    d.text(code, px + pill_w / 2, iy + 3.1 * mm, 8.5, True, GREY, "center")
     return total
 
 
@@ -170,7 +171,7 @@ def _topics(d: _Doc, sections: List[dict]):
         return
     d.page()
     for sec in sections:
-        traits = sec["traits"]
+        traits = sorted(sec["traits"], key=lambda t: ORDER.index(t.get("kind", "primary")))
         head = wrap(sec["title"], HEAD_PT, WIDTH - topic_inset(sec["title"]), True)
         head_to_card = len(head) * LH(HEAD_PT) + 5 * mm
         gap = 9 * mm if d.y > TOP + 2 else 0
@@ -179,20 +180,11 @@ def _topics(d: _Doc, sections: List[dict]):
         else:
             d.y += gap
         draw_topic_header(d, sec["title"], head, X, WIDTH, H, HEAD_PT, LH(HEAD_PT), BRAND)
-        for kind in ORDER:
-            items = [t for t in traits if t.get("kind") == kind]
-            if not items:
-                continue
-            if d.y + 2 * PAD + _h(items[0]) > BOTTOM:
+        # Each trait is its own card with clear vertical space between cards.
+        for t in traits:
+            if d.y + 2 * PAD + _h(t) > BOTTOM:
                 d.page()
-            buf: List[dict] = []
-            for t in items:
-                content = sum(_h(b) for b in buf) + ITEM_GAP * len(buf) + _h(t)
-                if buf and d.y + 2 * PAD + content > BOTTOM:
-                    _card(d, buf); d.page(); buf = []
-                buf.append(t)
-            if buf:
-                d.y += _card(d, buf) + GAP
+            d.y += _card(d, t) + GAP
 
 
 def render_desktop_pdf(sections: List[dict], client: dict, text_source: str = "report") -> bytes:

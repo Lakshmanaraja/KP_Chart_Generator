@@ -1,7 +1,9 @@
-"""Shared, measured inline lead-ins for phone and A4 insight cards.
+"""Shared, measured trait cards for phone and A4 insight lists.
 
-Uses the same standard Helvetica font family as the legend, cover and other
-report pages, with Helvetica-Bold for inline titles and Helvetica for body text.
+Each trait renders as: a bold title row (when a summary title exists), the
+prediction paragraph in regular weight, then — only when guidance exists — a
+softly tinted "How You Can Help" callout separated by clear vertical space.
+Uses the same standard Helvetica family as the rest of the report.
 """
 from html import escape
 from reportlab.lib.styles import ParagraphStyle
@@ -12,25 +14,45 @@ FONT = "Helvetica"
 
 from reportlab.lib import colors
 from reportlab.lib.units import mm
+from reportlab.lib.utils import simpleSplit
 
 BOX_BG = colors.HexColor("#FFF7E6")
 BOX_BORDER = colors.HexColor("#F5DFAE")
 BOX_ACCENT = colors.HexColor("#B7791F")
 BOX_TEXT = colors.HexColor("#3D3523")
 BOX_HEAD = "How You Can Help"
-BOX_GAP, BOX_PAD, BOX_HEAD_GAP = 2.6 * mm, 3 * mm, 1.6 * mm
+BOX_GAP, BOX_PAD, BOX_HEAD_GAP = 4 * mm, 3 * mm, 1.6 * mm
+TITLE_GAP = 1.4 * mm
+TITLE_LEADING = 1.35
 
 
 def _guidance(trait):
     return str(trait.get("guidance") or "").strip()
 
 
+def insight_title(trait):
+    """Bold lead-in title shown on its own row above the prediction."""
+    return str(trait.get("summary_title") or "").strip().rstrip(": ")
+
+
+def title_lines(trait, pt, width):
+    title = insight_title(trait)
+    if not title:
+        return []
+    return simpleSplit(title, "Helvetica-Bold", pt + 0.5, width) or [title]
+
+
+def title_height(trait, pt, width):
+    lines = title_lines(trait, pt, width)
+    if not lines:
+        return 0.0
+    return len(lines) * (pt + 0.5) * TITLE_LEADING + TITLE_GAP
+
+
 def insight_paragraph(trait, pt, color):
-    """Bold summary-title lead-in followed directly by the description (guidance excluded)."""
-    title = str(trait.get("summary_title") or "").strip().rstrip(": ")
-    lead = f"<b>{escape(title)}:</b> " if title else ""
+    """The prediction text alone; the title is drawn on its own row above."""
     body = escape(str(trait.get("text") or "")).replace("\n", "<br/>")
-    return Paragraph(lead + body, ParagraphStyle(
+    return Paragraph(body, ParagraphStyle(
         "insight", fontName=FONT, fontSize=pt, leading=pt * 1.5,
         textColor=color, spaceBefore=0, spaceAfter=0,
     ))
@@ -52,7 +74,8 @@ def _box_metrics(trait, pt, width):
 
 
 def insight_height(trait, pt, width, color):
-    h = insight_paragraph(trait, pt, color).wrap(width, 100000)[1]
+    h = title_height(trait, pt, width)
+    h += insight_paragraph(trait, pt, color).wrap(width, 100000)[1]
     if _guidance(trait):
         h += BOX_GAP + _box_metrics(trait, pt, width)[3]
     return h
@@ -69,13 +92,22 @@ def _bulb(c, cx, cy, r):
 
 
 def draw_insight(c, trait, x, top, page_height, width, pt, color):
+    y = top
+    for line in title_lines(trait, pt, width):
+        c.setFont("Helvetica-Bold", pt + 0.5)
+        c.setFillColor(color)
+        c.drawString(x, page_height - y - (pt + 0.5), line)
+        y += (pt + 0.5) * TITLE_LEADING
+    if y > top:
+        y += TITLE_GAP
     paragraph = insight_paragraph(trait, pt, color)
     _, height = paragraph.wrap(width, 100000)
-    paragraph.drawOn(c, x, page_height - top - height)
+    paragraph.drawOn(c, x, page_height - y - height)
+    y += height
     if not _guidance(trait):
-        return height
+        return y - top
     g, gh, head_h, box_h = _box_metrics(trait, pt, width)
-    btop = top + height + BOX_GAP
+    btop = y + BOX_GAP
     c.saveState()
     c.setFillColor(BOX_BG); c.setStrokeColor(BOX_BORDER); c.setLineWidth(0.6)
     c.roundRect(x, page_height - btop - box_h, width, box_h, 2.4 * mm, stroke=1, fill=1)
@@ -86,4 +118,4 @@ def draw_insight(c, trait, x, top, page_height, width, pt, color):
     c.drawString(x + BOX_PAD + r * 4.6, page_height - hy - head_h * 0.8, BOX_HEAD)
     c.restoreState()
     g.drawOn(c, x + BOX_PAD, page_height - hy - head_h - BOX_HEAD_GAP - gh)
-    return height + BOX_GAP + box_h
+    return y - top + BOX_GAP + box_h

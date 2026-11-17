@@ -265,7 +265,7 @@ def _topics(d: _Doc, sections: List[dict]):
     if not sections:
         return
     w = W - 2 * M
-    PAD, GAP, INDENT, ITEM_GAP, BADGE = 3 * mm, 4 * mm, 5 * mm, 6.4 * mm, 8 * mm
+    PAD, GAP, INDENT, BADGE = 3 * mm, 5 * mm, 5 * mm, 8 * mm
     tw = w - INDENT - PAD - BADGE
     bottom = H - 10 * mm
     height_of = lambda t: insight_height(t, BODY_PT, tw, TEXT)
@@ -278,38 +278,24 @@ def _topics(d: _Doc, sections: List[dict]):
         if traits and d.y + head_h + 2 * PAD + height_of(traits[0]) > bottom:
             d.page()
         draw_topic_header(d, sec["title"], head, M, w, H, HEAD_PT, LH(HEAD_PT), ACCENT)
-        # Group consecutive traits by kind into colored-accent cards, splitting across pages.
-        groups: List[List[dict]] = []
+        # Each trait is its own white card: soft shadow, kind-coloured left accent,
+        # generous vertical gap so parents can scan one prediction at a time.
         for t in traits:
-            if groups and groups[-1][0]["kind"] == t["kind"]:
-                groups[-1].append(t)
-            else:
-                groups.append([t])
-        for g in groups:
-            i = 0
-            while i < len(g):
-                if d.y + 2 * PAD + height_of(g[i]) > bottom:
-                    d.page()
-                chunk, h = [], 2 * PAD
-                while i < len(g) and d.y + h + height_of(g[i]) + (ITEM_GAP if chunk else 0) <= bottom:
-                    h += height_of(g[i]) + (ITEM_GAP if chunk else 0)
-                    chunk.append(g[i]); i += 1
-                if not chunk:  # single trait taller than a page: force it
-                    chunk = [g[i]]; h = 2 * PAD + height_of(g[i]); i += 1
-                d.card(M, d.y, w, h, 3 * mm)
-                d.c.setFillColor(KIND[g[0]["kind"]])
-                d.c.roundRect(M, H - d.y - h, 1.6 * mm, h, 0.8 * mm, stroke=0, fill=1)
-                ty = d.y + PAD
-                for t in chunk:
-                    draw_insight(d.c, t, M + INDENT, ty, H, tw, BODY_PT, TEXT)
-                    # code pill
-                    pill_w = d.c.stringWidth(t["code"], "Helvetica-Bold", 7.5) + 3 * mm
-                    px = W - M - PAD - pill_w
-                    d.c.setFillColor(BG)
-                    d.c.roundRect(px, H - ty - 4.6 * mm, pill_w, 4.2 * mm, 2.1 * mm, stroke=0, fill=1)
-                    d.text(t["code"], px + pill_w / 2, ty + 3.1 * mm, 7.5, True, MUTED, "center")
-                    ty += height_of(t) + ITEM_GAP
-                d.y += h + GAP
+            h = 2 * PAD + height_of(t)
+            if d.y + h > bottom and d.y > 12 * mm + 1:
+                d.page()
+            d.card(M, d.y, w, h, 3 * mm)
+            d.c.setFillColor(KIND[t["kind"]])
+            d.c.roundRect(M, H - d.y - h, 1.6 * mm, h, 0.8 * mm, stroke=0, fill=1)
+            ty = d.y + PAD
+            draw_insight(d.c, t, M + INDENT, ty, H, tw, BODY_PT, TEXT)
+            # Priority badge aligned with the title row, top right.
+            pill_w = d.c.stringWidth(t["code"], "Helvetica-Bold", 7.5) + 3 * mm
+            px = W - M - PAD - pill_w
+            d.c.setFillColor(BG)
+            d.c.roundRect(px, H - ty - 4.6 * mm, pill_w, 4.2 * mm, 2.1 * mm, stroke=0, fill=1)
+            d.text(t["code"], px + pill_w / 2, ty + 3.1 * mm, 7.5, True, MUTED, "center")
+            d.y += h + GAP
         d.y += 3 * mm
 
 
