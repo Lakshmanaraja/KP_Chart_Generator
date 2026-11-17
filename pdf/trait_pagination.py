@@ -32,7 +32,7 @@ def draw_page_header(d, section, name, x, width, page_height, top, pt, color, bo
 
 
 def card_pages(traits, available, height_of, base_pt=12, min_pt=10, gap=12,
-               first_available=None, first_count=2):
+               first_available=None, first_count=3):
     """Return batches with the exact measured size used by drawing."""
     # Reserve room for card shadows so no card edge ever touches the margin.
     available -= SAFETY
