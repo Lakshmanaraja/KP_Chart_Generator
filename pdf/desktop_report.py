@@ -36,7 +36,7 @@ WIDTH = min(W - 36 * mm, 150 * mm)          # constrained editorial column (~680
 X = (W - WIDTH) / 2
 BODY_PT, HEAD_PT = 12, 17
 LH = lambda pt: pt * 1.5                     # line height in points
-PAD, GAP, ITEM_GAP, CODE_COL = 5 * mm, 5 * mm, 3.5 * mm, 12 * mm
+PAD, GAP, ITEM_GAP, CODE_COL = 5 * mm, 5 * mm, 6.4 * mm, 12 * mm
 INDENT = PAD + 3 * mm
 TEXT_W = WIDTH - INDENT - CODE_COL - PAD
 

@@ -265,7 +265,7 @@ def _topics(d: _Doc, sections: List[dict]):
     if not sections:
         return
     w = W - 2 * M
-    PAD, GAP, INDENT, ITEM_GAP, BADGE = 3 * mm, 4 * mm, 5 * mm, 5 * mm, 8 * mm
+    PAD, GAP, INDENT, ITEM_GAP, BADGE = 3 * mm, 4 * mm, 5 * mm, 6.4 * mm, 8 * mm
     tw = w - INDENT - PAD - BADGE
     bottom = H - 10 * mm
     height_of = lambda t: insight_height(t, BODY_PT, tw, TEXT)

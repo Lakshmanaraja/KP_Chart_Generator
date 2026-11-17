@@ -24,8 +24,11 @@ class ReportContentTests(unittest.TestCase):
         self.assertEqual(self.run_for(report_type="marriage_prospect"), [])
 
     def test_guidance_is_printed(self):
+        from pdf.insight_text import insight_height
         p = insight_paragraph({"text": "x", "guidance": "Be patient"}, 10, colors.black)
-        self.assertIn("Guidance:", p.text)
+        self.assertNotIn("Be patient", p.text)
+        self.assertGreater(insight_height({"text": "x", "guidance": "Be patient"}, 10, 300, colors.black),
+                           insight_height({"text": "x"}, 10, 300, colors.black))
 
 if __name__ == "__main__":
     unittest.main()
