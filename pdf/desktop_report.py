@@ -37,7 +37,7 @@ WIDTH = W - 32 * mm
 X = (W - WIDTH) / 2
 BODY_PT, HEAD_PT = 14, 17
 LH = lambda pt: pt * 1.5                     # line height in points
-PAD, GAP, CODE_COL = 3.5 * mm, 4 * mm, 12 * mm
+PAD, GAP, CODE_COL = 3.5 * mm, 5 * mm, 12 * mm
 INDENT = PAD + 3 * mm
 TEXT_W = WIDTH - INDENT - CODE_COL - PAD
 
@@ -160,8 +160,7 @@ def _card(d: _Doc, t: dict, pt=BODY_PT, total=None) -> float:
     c.roundRect(X, H - top - total, WIDTH, total, 2.6 * mm, stroke=1, fill=1)
     c.setFillColor(KIND[t["kind"]])
     c.roundRect(X + 1 * mm, H - top - total + 1.3 * mm, 1.8 * mm, max(2.6 * mm, total - 2.6 * mm), 0.9 * mm, stroke=0, fill=1)
-    slack = total - 2 * PAD - insight_height(t, pt, TEXT_W, BODY)
-    iy = top + PAD + max(0, slack) / 2
+    iy = top + PAD
     draw_insight(c, t, X + INDENT, iy, H, TEXT_W, pt, BODY)
     code = t.get("code", "")
     pill_w = c.stringWidth(code, "Helvetica-Bold", 8.5) + 3 * mm

@@ -271,7 +271,7 @@ def _topics(d: _Doc, sections: List[dict]):
     if not sections:
         return
     w = W - 2 * M
-    PAD, GAP, INDENT, BADGE = 2.5 * mm, 4 * mm, 5 * mm, 8 * mm
+    PAD, GAP, INDENT, BADGE = 2.5 * mm, 5 * mm, 5 * mm, 8 * mm
     tw = w - INDENT - PAD - BADGE
     bottom = H - 10 * mm
     for sec in sections:
@@ -291,8 +291,7 @@ def _topics(d: _Doc, sections: List[dict]):
                 d.card(M, d.y, w, h, 3 * mm)
                 d.c.setFillColor(KIND[t["kind"]])
                 d.c.roundRect(M, H - d.y - h, 1.6 * mm, h, 0.8 * mm, stroke=0, fill=1)
-                slack = h - 2 * PAD - insight_height(t, pt, tw, TEXT)
-                ty = d.y + PAD + max(0, slack) / 2
+                ty = d.y + PAD
                 draw_insight(d.c, t, M + INDENT, ty, H, tw, pt, TEXT)
                 pill_w = d.c.stringWidth(t["code"], "Helvetica-Bold", 7.5) + 3 * mm
                 px = W - M - PAD - pill_w

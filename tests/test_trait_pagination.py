@@ -7,15 +7,20 @@ from pdf.desktop_report import render_desktop_pdf
 
 
 class TraitPagination(unittest.TestCase):
-    def test_three_cards_no_fourth_and_full_height(self):
+    def test_three_cards_keep_natural_height(self):
         pages = list(card_pages(list(range(7)), 600, lambda t, pt: 100, gap=12))
         self.assertEqual([len(p[0]) for p in pages], [3, 3, 1])
-        self.assertAlmostEqual(sum(pages[0][2]) + 24, 600)
+        self.assertEqual(pages[0][2], [100, 100, 100])
+
+    def test_card_that_does_not_fit_moves_to_next_page(self):
+        pages = list(card_pages(list(range(3)), 330, lambda t, pt: 100 if pt <= 10 else 150, gap=14))
+        for _, _, heights in pages:
+            self.assertLessEqual(sum(heights) + 14 * (len(heights) - 1), 330)
 
     def test_opening_reserves_header_space_and_two_cards(self):
         pages = list(card_pages(list(range(8)), 600, lambda t, pt: 100, gap=12, first_available=480))
         self.assertEqual([len(p[0]) for p in pages], [2, 3, 3])
-        self.assertAlmostEqual(sum(pages[0][2]) + 12, 480)
+        self.assertEqual(pages[0][2], [100, 100])
 
     def test_single_trait_section_does_not_invent_a_second_card(self):
         pages = list(card_pages([1], 600, lambda t, pt: 100, first_available=480))

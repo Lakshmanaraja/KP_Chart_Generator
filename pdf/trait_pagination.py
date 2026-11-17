@@ -3,7 +3,10 @@
 Keep readable font floors; exceptionally long content uses fewer cards rather
 than clipping or silently dropping text. Section-ending pages may have 1–2.
 """
+from reportlab.lib.units import mm
 from reportlab.pdfbase.pdfmetrics import stringWidth
+
+SAFETY = 2 * mm
 
 
 def fit_label(text, width, font, pt):
@@ -31,6 +34,10 @@ def draw_page_header(d, section, name, x, width, page_height, top, pt, color, bo
 def card_pages(traits, available, height_of, base_pt=12, min_pt=10, gap=12,
                first_available=None, first_count=2):
     """Return batches with the exact measured size used by drawing."""
+    # Reserve room for card shadows so no card edge ever touches the margin.
+    available -= SAFETY
+    if first_available is not None:
+        first_available -= SAFETY
     pending = list(traits)
     opening = first_available is not None
     while pending:
@@ -49,10 +56,9 @@ def card_pages(traits, available, height_of, base_pt=12, min_pt=10, gap=12,
                     break
                 pt = max(min_pt, pt - 0.25)
             if used <= capacity:
-                # Distribute surplus inside cards rather than leaving a large
-                # empty footer. Do not inflate incomplete section-ending pages.
-                extra = (capacity - used) / count if count == target else 0
-                yield batch, pt, [h + extra for h in heights]
+                # Cards keep their natural height and stack from the top with a
+                # fixed gap; leftover space stays at the bottom of the page.
+                yield batch, pt, heights
                 pending = pending[count:]
                 opening = False
                 break
