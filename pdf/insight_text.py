@@ -1,8 +1,9 @@
 """Shared, measured trait cards for phone and A4 insight lists.
 
 Each trait renders as: a bold title row (when a summary title exists), the
-prediction paragraph in regular weight, then — only when guidance exists — a
-softly tinted "How You Can Help" callout separated by clear vertical space.
+prediction paragraph in a slightly larger, prominent size, then — only when
+guidance exists — a clean divider and a soft, neutral "How You Can Help"
+callout so both halves carry equal visual weight.
 Uses the same standard Helvetica family as the rest of the report.
 """
 from html import escape
@@ -16,14 +17,19 @@ from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.lib.utils import simpleSplit
 
-BOX_BG = colors.HexColor("#FFF7E6")
-BOX_BORDER = colors.HexColor("#F5DFAE")
-BOX_ACCENT = colors.HexColor("#B7791F")
-BOX_TEXT = colors.HexColor("#3D3523")
+# Guidance callout: soft neutral tint, quiet border, warm but muted accents so
+# it supports the prediction instead of overpowering it.
+BOX_BG = colors.HexColor("#FAF8F3")
+BOX_BORDER = colors.HexColor("#E8E2D5")
+BOX_ACCENT = colors.HexColor("#A08048")
+BOX_TEXT = colors.HexColor("#45413A")
+DIVIDER = colors.HexColor("#E5E1D8")
 BOX_HEAD = "How You Can Help"
 BOX_GAP, BOX_PAD, BOX_HEAD_GAP = 4 * mm, 3 * mm, 1.6 * mm
 TITLE_GAP = 1.4 * mm
 TITLE_LEADING = 1.35
+BODY_BOOST = 0.5          # prediction text renders slightly larger than base
+BODY_LEADING = 1.55
 
 
 def _guidance(trait):
@@ -52,8 +58,9 @@ def title_height(trait, pt, width):
 def insight_paragraph(trait, pt, color):
     """The prediction text alone; the title is drawn on its own row above."""
     body = escape(str(trait.get("text") or "")).replace("\n", "<br/>")
+    size = pt + BODY_BOOST
     return Paragraph(body, ParagraphStyle(
-        "insight", fontName=FONT, fontSize=pt, leading=pt * 1.5,
+        "insight", fontName=FONT, fontSize=size, leading=size * BODY_LEADING,
         textColor=color, spaceBefore=0, spaceAfter=0,
     ))
 
@@ -109,7 +116,10 @@ def draw_insight(c, trait, x, top, page_height, width, pt, color):
     g, gh, head_h, box_h = _box_metrics(trait, pt, width)
     btop = y + BOX_GAP
     c.saveState()
-    c.setFillColor(BOX_BG); c.setStrokeColor(BOX_BORDER); c.setLineWidth(0.6)
+    # Clean divider separating the prediction from the guidance callout.
+    c.setStrokeColor(DIVIDER); c.setLineWidth(0.5)
+    c.line(x, page_height - btop + 1.2 * mm, x + width, page_height - btop + 1.2 * mm)
+    c.setFillColor(BOX_BG); c.setStrokeColor(BOX_BORDER); c.setLineWidth(0.5)
     c.roundRect(x, page_height - btop - box_h, width, box_h, 2.4 * mm, stroke=1, fill=1)
     hy = btop + BOX_PAD
     r = pt * 0.22
