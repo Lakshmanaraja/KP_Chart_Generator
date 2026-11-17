@@ -7,22 +7,22 @@ from pdf.desktop_report import render_desktop_pdf
 
 
 class TraitPagination(unittest.TestCase):
-    def test_three_cards_keep_natural_height(self):
+    def test_uncapped_pages_take_every_card_that_fits(self):
         pages = list(card_pages(list(range(7)), 600, lambda t, pt: 100, gap=12))
-        self.assertEqual([len(p[0]) for p in pages], [3, 3, 1])
-        self.assertEqual(pages[0][2], [100, 100, 100])
+        self.assertEqual([len(p[0]) for p in pages], [5, 2])
+        self.assertEqual(pages[0][2], [100, 100, 100, 100, 100])
 
     def test_card_that_does_not_fit_moves_to_next_page(self):
         pages = list(card_pages(list(range(3)), 330, lambda t, pt: 100 if pt <= 10 else 150, gap=14))
         for _, _, heights in pages:
             self.assertLessEqual(sum(heights) + 14 * (len(heights) - 1), 330)
 
-    def test_opening_reserves_header_space_and_two_cards(self):
+    def test_opening_reserves_header_space_and_fills_uncapped(self):
         pages = list(card_pages(list(range(8)), 600, lambda t, pt: 100, gap=12, first_available=480))
-        self.assertEqual([len(p[0]) for p in pages], [3, 3, 2])
-        self.assertEqual(pages[0][2], [100, 100, 100])
+        self.assertEqual([len(p[0]) for p in pages], [4, 4])
+        self.assertEqual(pages[0][2], [100, 100, 100, 100])
 
-    def test_opening_page_takes_two_when_third_does_not_fit(self):
+    def test_opening_page_takes_only_cards_that_fit_whole(self):
         pages = list(card_pages(list(range(5)), 600, lambda t, pt: 150, gap=12, first_available=340, min_pt=12))
         self.assertEqual([len(p[0]) for p in pages], [2, 3])
 
@@ -35,14 +35,14 @@ class TraitPagination(unittest.TestCase):
         self.assertEqual([len(p[0]) for p in pages], [2, 1])
         self.assertGreaterEqual(pages[0][1], 10)
 
-    def test_both_formats_open_with_two_then_three_cards(self):
+    def test_both_formats_fit_cards_without_clipping(self):
         traits = [{"summary_title": "Careful Observer", "text": "Your child notices details and enjoys simple routines.",
                    "guidance": "Offer a calm routine and praise steady effort." if i % 2 == 0 else "",
                    "kind": "primary", "code": f"P{i+1}"} for i in range(7)]
         for render in (render_mobile_pdf, render_desktop_pdf):
             pdf = render([{"title": "Personality", "traits": traits}], {"name": "Aarav"})
             pages = PdfReader(io.BytesIO(pdf)).pages[2:]
-            self.assertGreaterEqual(len(pages), 3)
+            self.assertGreaterEqual(len(pages), 2)
             for i, page in enumerate(pages):
                 text = page.extract_text()
                 self.assertIn("Personality", text)

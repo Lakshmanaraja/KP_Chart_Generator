@@ -1,7 +1,7 @@
-"""Shared measured pagination: three cards per full page, never a fourth.
+"""Shared measured pagination: as many cards per page as fit, uncapped.
 
 Keep readable font floors; exceptionally long content uses fewer cards rather
-than clipping or silently dropping text. Section-ending pages may have 1–2.
+than clipping or silently dropping text. Section-ending pages may be short.
 """
 from reportlab.lib.units import mm
 from reportlab.pdfbase.pdfmetrics import stringWidth
@@ -32,7 +32,7 @@ def draw_page_header(d, section, name, x, width, page_height, top, pt, color, bo
 
 
 def card_pages(traits, available, height_of, base_pt=12, min_pt=10, gap=12,
-               first_available=None, first_count=3):
+               first_available=None):
     """Return batches with the exact measured size used by drawing."""
     # Reserve room for card shadows so no card edge ever touches the margin.
     available -= SAFETY
@@ -42,8 +42,8 @@ def card_pages(traits, available, height_of, base_pt=12, min_pt=10, gap=12,
     opening = first_available is not None
     while pending:
         capacity = first_available if opening else available
-        target = first_count if opening else 3
-        count = min(target, len(pending))
+        # No card cap: take every card that fits whole on the page.
+        count = len(pending)
         while count:
             batch = pending[:count]
             pt = base_pt
