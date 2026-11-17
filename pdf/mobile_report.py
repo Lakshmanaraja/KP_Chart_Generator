@@ -9,7 +9,7 @@ from reportlab.lib.units import mm
 from reportlab.lib.utils import simpleSplit
 from reportlab.pdfgen import canvas
 from pdf.insight_text import insight_height, draw_insight
-from pdf.topic_headers import topic_inset, draw_topic_header
+from pdf.topic_headers import section_starter_layout, draw_section_starter
 from pdf.trait_pagination import card_pages, draw_page_header
 
 W, H, M = 95 * mm, 200 * mm, 4.5 * mm
@@ -278,15 +278,21 @@ def _topics(d: _Doc, sections: List[dict]):
         if not sec.get("traits"):
             continue
         d.section = sec["title"]
-        for batch, pt, heights in card_pages(sec["traits"], bottom - 12 * mm,
+        starter_height = section_starter_layout(sec["title"], w, 21, 10 * mm)[3]
+        pages = card_pages(sec["traits"], bottom - 12 * mm,
                 lambda t, size: 2 * PAD + insight_height(t, size, tw, TEXT),
-                base_pt=BODY_PT, min_pt=10, gap=GAP):
+                base_pt=BODY_PT, min_pt=10, gap=GAP,
+                first_available=bottom - 12 * mm - starter_height)
+        for page_index, (batch, pt, heights) in enumerate(pages):
             d.page()
+            if page_index == 0:
+                draw_section_starter(d, sec["title"], M, w, H, 21, 10 * mm, ACCENT, BORDER)
             for t, h in zip(batch, heights):
                 d.card(M, d.y, w, h, 3 * mm)
                 d.c.setFillColor(KIND[t["kind"]])
                 d.c.roundRect(M, H - d.y - h, 1.6 * mm, h, 0.8 * mm, stroke=0, fill=1)
-                ty = d.y + PAD
+                slack = h - 2 * PAD - insight_height(t, pt, tw, TEXT)
+                ty = d.y + PAD + max(0, slack) / 2
                 draw_insight(d.c, t, M + INDENT, ty, H, tw, pt, TEXT)
                 pill_w = d.c.stringWidth(t["code"], "Helvetica-Bold", 7.5) + 3 * mm
                 px = W - M - PAD - pill_w

@@ -28,28 +28,33 @@ def draw_page_header(d, section, name, x, width, page_height, top, pt, color, bo
     d.c.line(x, page_height - top - 3, x + width, page_height - top - 3)
 
 
-def card_pages(traits, available, height_of, base_pt=12, min_pt=10, gap=12):
+def card_pages(traits, available, height_of, base_pt=12, min_pt=10, gap=12,
+               first_available=None, first_count=2):
     """Return batches with the exact measured size used by drawing."""
     pending = list(traits)
+    opening = first_available is not None
     while pending:
-        count = min(3, len(pending))
+        capacity = first_available if opening else available
+        target = first_count if opening else 3
+        count = min(target, len(pending))
         while count:
             batch = pending[:count]
             pt = base_pt
             while True:
                 heights = [height_of(t, pt) for t in batch]
                 used = sum(heights) + gap * (count - 1)
-                if used <= available:
+                if used <= capacity:
                     break
                 if pt <= min_pt:
                     break
                 pt = max(min_pt, pt - 0.25)
-            if used <= available:
+            if used <= capacity:
                 # Distribute surplus inside cards rather than leaving a large
                 # empty footer. Do not inflate incomplete section-ending pages.
-                extra = (available - used) / count if count == 3 else 0
+                extra = (capacity - used) / count if count == target else 0
                 yield batch, pt, [h + extra for h in heights]
                 pending = pending[count:]
+                opening = False
                 break
             if count == 1:
                 raise ValueError("Trait content exceeds one readable PDF page; shorten the prediction or guidance.")

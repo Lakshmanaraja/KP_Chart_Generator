@@ -1,6 +1,6 @@
 # API architecture
 
-- Measure and paginate trait pages with pdf/trait_pagination.py, capped at three cards with readable font floors and repeated section/client/page headers; exceptional long traits never clip or disappear.
+- Measure and paginate trait pages with pdf/trait_pagination.py, with a measured icon/title opener and two cards on each section’s first page, then up to three cards with readable font floors and repeated section/client/page headers; exceptional long traits never clip or disappear.
 
 - Share topic artwork and heading layout in pdf/topic_headers.py across mobile and desktop PDFs; reserve the header, divider and full first trait together to avoid orphaned titles.
 
