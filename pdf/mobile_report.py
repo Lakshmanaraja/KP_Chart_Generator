@@ -10,6 +10,7 @@ from reportlab.lib.utils import simpleSplit
 from reportlab.pdfgen import canvas
 from pdf.insight_text import insight_height, draw_insight
 from pdf.topic_headers import topic_inset, draw_topic_header
+from pdf.trait_pagination import card_pages, draw_page_header
 
 W, H, M = 95 * mm, 200 * mm, 4.5 * mm
 LOGO = os.path.join(os.path.dirname(__file__), "logo.png")
@@ -36,10 +37,12 @@ PARENT_NOTE_BODY = (
 
 
 class _Doc:
-    def __init__(self, buf):
+    def __init__(self, buf, client=None):
         self.c = canvas.Canvas(buf, pagesize=(W, H))
         self.y = 0.0  # distance from top, in points
         self.started = False
+        self.client = client or {}
+        self.section = "Reading Guide"
 
     def page(self):
         if self.started:
@@ -48,6 +51,9 @@ class _Doc:
         self.c.setFillColor(BG)
         self.c.rect(0, 0, W, H, stroke=0, fill=1)
         self.y = 12 * mm
+        if self.c.getPageNumber() > 1:
+            draw_page_header(self, self.section, self.client.get("name", ""), M, W - 2 * M,
+                             H, 6 * mm, 7, MUTED, BORDER)
 
     def text(self, s, x, y_top, pt, bold=False, color=TEXT, align="left"):
         c = self.c
@@ -239,7 +245,7 @@ def _cover(d: _Doc, client: dict, text_source: str = "report"):
 def _legend(d: _Doc):
     d.page()
     w = W - 2 * M
-    d.card(M, 5 * mm, w, H - 10 * mm, shadow=False)
+    d.card(M, 12 * mm, w, H - 17 * mm, shadow=False)
     x, inner = M + 4 * mm, w - 8 * mm
     y = 16 * mm
     d.text("Read this before proceeding", x, y, 13, True); y += LH(13) + 2 * mm
@@ -265,42 +271,34 @@ def _topics(d: _Doc, sections: List[dict]):
     if not sections:
         return
     w = W - 2 * M
-    PAD, GAP, INDENT, BADGE = 3 * mm, 5 * mm, 5 * mm, 8 * mm
+    PAD, GAP, INDENT, BADGE = 2.5 * mm, 4 * mm, 5 * mm, 8 * mm
     tw = w - INDENT - PAD - BADGE
     bottom = H - 10 * mm
-    height_of = lambda t: insight_height(t, BODY_PT, tw, TEXT)
     for sec in sections:
-        # Each report section starts cleanly; continuation pages are added only when its traits overflow.
-        d.page()
-        traits = sec["traits"]
-        head = wrap(sec["title"], HEAD_PT, w - topic_inset(sec["title"]), True)
-        head_h = len(head) * LH(HEAD_PT) + 5 * mm
-        if traits and d.y + head_h + 2 * PAD + height_of(traits[0]) > bottom:
+        if not sec.get("traits"):
+            continue
+        d.section = sec["title"]
+        for batch, pt, heights in card_pages(sec["traits"], bottom - 12 * mm,
+                lambda t, size: 2 * PAD + insight_height(t, size, tw, TEXT),
+                base_pt=BODY_PT, min_pt=10, gap=GAP):
             d.page()
-        draw_topic_header(d, sec["title"], head, M, w, H, HEAD_PT, LH(HEAD_PT), ACCENT)
-        # Each trait is its own white card: soft shadow, kind-coloured left accent,
-        # generous vertical gap so parents can scan one prediction at a time.
-        for t in traits:
-            h = 2 * PAD + height_of(t)
-            if d.y + h > bottom and d.y > 12 * mm + 1:
-                d.page()
-            d.card(M, d.y, w, h, 3 * mm)
-            d.c.setFillColor(KIND[t["kind"]])
-            d.c.roundRect(M, H - d.y - h, 1.6 * mm, h, 0.8 * mm, stroke=0, fill=1)
-            ty = d.y + PAD
-            draw_insight(d.c, t, M + INDENT, ty, H, tw, BODY_PT, TEXT)
-            # Priority badge aligned with the title row, top right.
-            pill_w = d.c.stringWidth(t["code"], "Helvetica-Bold", 7.5) + 3 * mm
-            px = W - M - PAD - pill_w
-            d.c.setFillColor(BG)
-            d.c.roundRect(px, H - ty - 4.6 * mm, pill_w, 4.2 * mm, 2.1 * mm, stroke=0, fill=1)
-            d.text(t["code"], px + pill_w / 2, ty + 3.1 * mm, 7.5, True, MUTED, "center")
-            d.y += h + GAP
-        d.y += 3 * mm
+            for t, h in zip(batch, heights):
+                d.card(M, d.y, w, h, 3 * mm)
+                d.c.setFillColor(KIND[t["kind"]])
+                d.c.roundRect(M, H - d.y - h, 1.6 * mm, h, 0.8 * mm, stroke=0, fill=1)
+                ty = d.y + PAD
+                draw_insight(d.c, t, M + INDENT, ty, H, tw, pt, TEXT)
+                pill_w = d.c.stringWidth(t["code"], "Helvetica-Bold", 7.5) + 3 * mm
+                px = W - M - PAD - pill_w
+                d.c.setFillColor(BG)
+                d.c.roundRect(px, H - ty - 4.6 * mm, pill_w, 4.2 * mm, 2.1 * mm, stroke=0, fill=1)
+                d.text(t["code"], px + pill_w / 2, ty + 3.1 * mm, 7.5, True, MUTED, "center")
+                d.y += h + GAP
 
 
 def _parents_note(d: _Doc):
     """Measured, nested reading guidance and an airy two-paragraph parent note."""
+    d.section = "A Note to Parents"
     d.page()
     w = W - 2 * M
     outer_pad, accent_w, card_gap, title_pt = 3.5 * mm, 1.7 * mm, 5 * mm, 12.5
@@ -431,7 +429,7 @@ def _parents_note(d: _Doc):
 
 def render_mobile_pdf(sections: List[dict], client: dict, text_source: str = "report") -> bytes:
     buf = io.BytesIO()
-    d = _Doc(buf)
+    d = _Doc(buf, client)
     _cover(d, client, text_source)
     _legend(d)
     _topics(d, sections)

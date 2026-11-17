@@ -16,6 +16,7 @@ from reportlab.lib.utils import simpleSplit
 from reportlab.pdfgen import canvas
 from pdf.insight_text import insight_height, draw_insight
 from pdf.topic_headers import topic_inset, draw_topic_header
+from pdf.trait_pagination import card_pages, draw_page_header
 
 W, H = A4
 LOGO = os.path.join(os.path.dirname(__file__), "logo.png")
@@ -32,11 +33,11 @@ LEGEND = [
     ("lowest", "Lowest possibility", "A character trait that may appear only if the recorded birth time is accurate to within 1 second. Results at this level are highly sensitive to birth-time accuracy and have a high chance of error."),
 ]
 TOP, BOTTOM = 20 * mm, H - 18 * mm
-WIDTH = min(W - 36 * mm, 150 * mm)          # constrained editorial column (~680px), centred
+WIDTH = W - 32 * mm
 X = (W - WIDTH) / 2
-BODY_PT, HEAD_PT = 12, 17
+BODY_PT, HEAD_PT = 14, 17
 LH = lambda pt: pt * 1.5                     # line height in points
-PAD, GAP, CODE_COL = 5 * mm, 5 * mm, 12 * mm
+PAD, GAP, CODE_COL = 3.5 * mm, 4 * mm, 12 * mm
 INDENT = PAD + 3 * mm
 TEXT_W = WIDTH - INDENT - CODE_COL - PAD
 
@@ -52,16 +53,21 @@ def report_title(text_source: str = "report") -> str:
 
 
 class _Doc:
-    def __init__(self, buf):
+    def __init__(self, buf, client=None):
         self.c = canvas.Canvas(buf, pagesize=A4)
         self.y = TOP          # distance from top, in points
         self.started = False
+        self.client = client or {}
+        self.section = "Reading Guide"
 
     def page(self):
         if self.started:
             self.c.showPage()
         self.started = True
         self.y = TOP
+        if self.c.getPageNumber() > 1:
+            draw_page_header(self, self.section, self.client.get("name", ""), X, WIDTH, H,
+                             10 * mm, 9, GREY, BORDER)
 
     def text(self, s, x, y_top, pt, bold=False, color=BODY, align="left"):
         c = self.c
@@ -144,18 +150,19 @@ def _h(t):
     return insight_height(t, BODY_PT, TEXT_W, BODY)
 
 
-def _card(d: _Doc, t: dict) -> float:
+def _card(d: _Doc, t: dict, pt=BODY_PT, total=None) -> float:
     """One trait per card: white surface, soft shadow, kind-coloured left accent."""
     c, top = d.c, d.y
-    total = 2 * PAD + _h(t)
+    total = total or 2 * PAD + insight_height(t, pt, TEXT_W, BODY)
     c.setFillColor(rgb(229, 233, 239))
     c.roundRect(X, H - top - total - 0.6 * mm, WIDTH, total, 2.6 * mm, stroke=0, fill=1)
     c.setFillColor(WHITE); c.setStrokeColor(BORDER); c.setLineWidth(0.7)
     c.roundRect(X, H - top - total, WIDTH, total, 2.6 * mm, stroke=1, fill=1)
     c.setFillColor(KIND[t["kind"]])
     c.roundRect(X + 1 * mm, H - top - total + 1.3 * mm, 1.8 * mm, max(2.6 * mm, total - 2.6 * mm), 0.9 * mm, stroke=0, fill=1)
-    iy = top + PAD
-    draw_insight(c, t, X + INDENT, iy, H, TEXT_W, BODY_PT, BODY)
+    slack = total - 2 * PAD - insight_height(t, pt, TEXT_W, BODY)
+    iy = top + PAD + max(0, slack) / 2
+    draw_insight(c, t, X + INDENT, iy, H, TEXT_W, pt, BODY)
     code = t.get("code", "")
     pill_w = c.stringWidth(code, "Helvetica-Bold", 8.5) + 3 * mm
     px = X + WIDTH - PAD - pill_w
@@ -169,27 +176,20 @@ def _topics(d: _Doc, sections: List[dict]):
     sections = [s for s in sections if s.get("traits")]
     if not sections:
         return
-    d.page()
     for sec in sections:
         traits = sorted(sec["traits"], key=lambda t: ORDER.index(t.get("kind", "primary")))
-        head = wrap(sec["title"], HEAD_PT, WIDTH - topic_inset(sec["title"]), True)
-        head_to_card = len(head) * LH(HEAD_PT) + 5 * mm
-        gap = 9 * mm if d.y > TOP + 2 else 0
-        if d.y + gap + head_to_card + 2 * PAD + _h(traits[0]) > BOTTOM:
+        d.section = sec["title"]
+        for batch, pt, heights in card_pages(traits, BOTTOM - TOP,
+                lambda t, size: 2 * PAD + insight_height(t, size, TEXT_W, BODY),
+                base_pt=BODY_PT, min_pt=10, gap=GAP):
             d.page()
-        else:
-            d.y += gap
-        draw_topic_header(d, sec["title"], head, X, WIDTH, H, HEAD_PT, LH(HEAD_PT), BRAND)
-        # Each trait is its own card with clear vertical space between cards.
-        for t in traits:
-            if d.y + 2 * PAD + _h(t) > BOTTOM:
-                d.page()
-            d.y += _card(d, t) + GAP
+            for t, height in zip(batch, heights):
+                d.y += _card(d, t, pt, height) + GAP
 
 
 def render_desktop_pdf(sections: List[dict], client: dict, text_source: str = "report") -> bytes:
     buf = io.BytesIO()
-    d = _Doc(buf)
+    d = _Doc(buf, client)
     _cover(d, client, text_source)
     _legend(d, text_source)
     _topics(d, sections)
