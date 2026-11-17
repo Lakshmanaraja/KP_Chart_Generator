@@ -46,15 +46,15 @@ def card_pages(traits, available, height_of, base_pt=12, min_pt=10, gap=12,
         count = len(pending)
         while count:
             batch = pending[:count]
+            # One fixed font size for every page; shrink only as a last resort
+            # for a single card too tall to fit a whole page.
             pt = base_pt
-            while True:
-                heights = [height_of(t, pt) for t in batch]
-                used = sum(heights) + gap * (count - 1)
-                if used <= capacity:
-                    break
-                if pt <= min_pt:
-                    break
+            heights = [height_of(t, pt) for t in batch]
+            used = sum(heights) + gap * (count - 1)
+            while count == 1 and used > capacity and pt > min_pt:
                 pt = max(min_pt, pt - 0.25)
+                heights = [height_of(t, pt) for t in batch]
+                used = heights[0]
             if used <= capacity:
                 # Cards keep their natural height and stack from the top with a
                 # fixed gap; leftover space stays at the bottom of the page.
