@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 # redis_url = os.getenv("REDIS_URL")
 
+
 if not redis_url:
 
     raise ValueError("REDIS_URL environment variable is missing")
