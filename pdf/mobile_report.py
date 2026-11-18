@@ -278,7 +278,7 @@ def _topics(d: _Doc, sections: List[dict]):
         if not sec.get("traits"):
             continue
         d.section = sec["title"]
-        starter_height = section_starter_layout(sec["title"], w, 21, 10 * mm)[3]
+        starter_height = section_starter_layout(sec["title"], w, 14.5, 6 * mm)[3]
         pages = card_pages(sec["traits"], bottom - 12 * mm,
                 lambda t, size: 2 * PAD + insight_height(t, size, tw, TEXT),
                 base_pt=BODY_PT, min_pt=10, gap=GAP,
@@ -286,7 +286,7 @@ def _topics(d: _Doc, sections: List[dict]):
         for page_index, (batch, pt, heights) in enumerate(pages):
             d.page()
             if page_index == 0:
-                draw_section_starter(d, sec["title"], M, w, H, 21, 10 * mm, ACCENT, BORDER)
+                draw_section_starter(d, sec["title"], M, w, H, 14.5, 6 * mm, ACCENT, BORDER)
             for t, h in zip(batch, heights):
                 d.card(M, d.y, w, h, 3 * mm)
                 d.c.setFillColor(KIND[t["kind"]])

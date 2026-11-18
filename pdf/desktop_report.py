@@ -178,7 +178,7 @@ def _topics(d: _Doc, sections: List[dict]):
     for sec in sections:
         traits = sorted(sec["traits"], key=lambda t: ORDER.index(t.get("kind", "primary")))
         d.section = sec["title"]
-        starter_height = section_starter_layout(sec["title"], WIDTH, 26, 12 * mm)[3]
+        starter_height = section_starter_layout(sec["title"], WIDTH, 17, 6 * mm)[3]
         pages = card_pages(traits, BOTTOM - TOP,
                 lambda t, size: 2 * PAD + insight_height(t, size, TEXT_W, BODY),
                 base_pt=BODY_PT, min_pt=10, gap=GAP,
@@ -186,7 +186,7 @@ def _topics(d: _Doc, sections: List[dict]):
         for page_index, (batch, pt, heights) in enumerate(pages):
             d.page()
             if page_index == 0:
-                draw_section_starter(d, sec["title"], X, WIDTH, H, 26, 12 * mm, BRAND, BORDER)
+                draw_section_starter(d, sec["title"], X, WIDTH, H, 17, 6 * mm, BRAND, BORDER)
             for t, height in zip(batch, heights):
                 d.y += _card(d, t, pt, height) + GAP
 
