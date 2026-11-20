@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from services.transit_service import get_planet_between_degrees
 from services.transit_service import get_planet_star_transit_dates
+from services.transit_service import get_client_star_transits_for_year
 
 router = APIRouter(prefix="/transit", tags=["Transit"])
 
@@ -11,3 +12,7 @@ def get_planet_between_degrees_endpoint(planet: str, start_degree: float, end_de
 @router.get("/api/planet_star_transit_dates")
 def get_planet_star_transit_dates_endpoint(planet:str,star_lord:str,start_date:str,end_date:str):
     return get_planet_star_transit_dates(planet,star_lord,start_date,end_date)
+
+@router.get("/api/client_star_transits_for_year")
+def get_client_star_transits_for_year_endpoint(client_id: str, from_year: int, to_year: int):
+    return get_client_star_transits_for_year(client_id, from_year, to_year)
