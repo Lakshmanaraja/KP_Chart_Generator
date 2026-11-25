@@ -71,6 +71,10 @@ class TransitDatabase:
         """Return star transit intervals overlapping the requested calendar years."""
         start_date = f"{from_year}-01-01T00:00:00"
         end_date = f"{to_year}-12-31T23:59:59"
+        return self.get_star_transits_for_date_range(start_date, end_date)
+
+    def get_star_transits_for_date_range(self, start_date: str, end_date: str):
+        """Return star transit intervals overlapping an exact inclusive date window."""
         page_size = 1000
         offset = 0
         rows = []

@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from datetime import date
 from typing import List, Optional
 from uuid import UUID
 
@@ -34,6 +35,47 @@ class FindPatternsRequest(BaseModel):
         "sub_sub_lord",
         "sub_sub_sub_lord",
     ]
+
+
+class PlanetLordSummaryRequest(BaseModel):
+    date_of_birth: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    time_of_birth: str = Field(..., pattern=r"^\d{2}:\d{2}(:\d{2})?$")
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+    timezone: float = Field(5.5, description="UTC offset in hours")
+    ayanamsa: str = "Lahiri"
+    location_include: bool = False
+    moon_override_enabled: bool = False
+    moon_override: dict[str, str | None] | None = None
+    include_original_moon: bool = False
+
+
+class PredictionBirthDetails(BaseModel):
+    date_of_birth: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    time_of_birth: str = Field(..., pattern=r"^\d{2}:\d{2}(:\d{2})?$")
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+    timezone: float = Field(5.5, ge=-14, le=14, description="Birth timezone offset in hours")
+    ayanamsa: str = "Lahiri"
+
+
+class PredictionPeriodsRequest(PredictionBirthDetails):
+    from_date: Optional[date] = None
+    duration_years: int = Field(3, ge=1, le=120)
+    bhava_number: int = Field(..., ge=1, le=12)
+
+
+class PredictionReportRequest(PredictionBirthDetails):
+    name: str = Field(..., min_length=1, max_length=100)
+    place: Optional[str] = None
+    from_date: Optional[date] = None
+    duration_years: int = Field(3, ge=1, le=120)
+    version: str = Field("mobile", pattern="^(mobile|desktop)$")
+    gender: Optional[str] = Field(None, max_length=30)
+    extra_tags: Optional[List[str]] = None
+    topics: Optional[List[str]] = None
+    include_sn: bool = False
+    include_sk: bool = False
 # class BTRSubmission(BaseModel):
 #     dateOfBirth: str
 #     originalBirthTime: str

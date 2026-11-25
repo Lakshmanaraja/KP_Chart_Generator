@@ -78,6 +78,30 @@ Without Docker: `pip install -r requirements.txt && uvicorn app.main:app --reloa
 | POST | /api/v1/report/character/traits | JSON sections for partner apps |
 | POST | /api/v1/admin/reload-rules | reload rules (after DB changes) |
 
+## Planet Lord Summary API
+`POST /chart/api/planet_lord_summary` authenticates with `X-API-Key` from `API_KEYS`
+and accepts birth details (`date_of_birth`, `time_of_birth`, `latitude`, `longitude`,
+`timezone`, and optional `ayanamsa`) to calculate the chart in the API. It does not
+read `client_chart_index` or require a user Supabase Bearer token. Store the same API
+key in the Supabase Edge Function secret `PLANET_LORD_SUMMARY_API_KEY`; never embed
+it in browser code.
+
+## Prediction APIs
+All prediction routes require `X-API-Key` from `API_KEYS`. Generic period requests
+accept birth details plus optional `from_date` (defaults to today in the birth
+timezone), `duration_years` (defaults to 3), and `bhava_number`.
+
+| Method | Path | Result |
+|---|---|---|
+| POST | `/predict/api/dba-periods` | Overlapping Bhukthi and Antara periods |
+| POST | `/predict/api/transit-periods` | Transit intervals in the requested bhava group |
+| POST | `/predict/api/marriage` | Character Report cover plus prediction pages for bhava 7 |
+| POST | `/predict/api/child-birth` | Character Report cover plus prediction pages for bhava 5 |
+
+The frontend calls the prediction report routes through the authenticated
+`prediction-report` Supabase Edge Function. Set its `PREDICTION_API_KEY` secret to
+the same value as one of the API's `API_KEYS`; do not put the key in browser code.
+
 ```bash
 curl -X POST http://localhost:8000/api/v1/report/character \
   -H "X-API-Key: partner-key-1" -H "Content-Type: application/json" \
