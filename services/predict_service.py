@@ -712,18 +712,19 @@ class MarriageSummaryRow(Flowable):
 
     def draw(self):
         canvas = self.canv
+        date_baseline = self.height - self.date_size - 3
+        canvas.setStrokeColor(colors.HexColor(self.item["tick_color"]))
+        canvas.setLineWidth(1.6)
+        canvas.line(0, date_baseline + self.date_size * .25 + 2, 2.3, date_baseline + self.date_size * .25)
+        canvas.line(2.3, date_baseline + self.date_size * .25, 6.8, date_baseline + self.date_size * .25 + 5)
         canvas.setFillColor(colors.HexColor("#072A7D"))
         canvas.setFont("Courier-Bold", self.date_size)
-        canvas.drawString(0, self.height - self.date_size - 3, f"{self.item['start']} to {self.item['end']}")
+        canvas.drawString(12, date_baseline, f"{self.item['start']} to {self.item['end']}")
 
         detail_y = 5
-        canvas.setStrokeColor(colors.HexColor(self.item["tick_color"]))
-        canvas.setLineWidth(1.5)
-        canvas.line(0, detail_y + 2, 2.2, detail_y)
-        canvas.line(2.2, detail_y, 6.5, detail_y + 5)
         canvas.setFillColor(colors.HexColor("#64748B"))
         canvas.setFont("Helvetica", self.detail_size)
-        canvas.drawString(11, detail_y, f"{self.item['planet']} · {self.item['kind']}")
+        canvas.drawString(0, detail_y, f"{self.item['planet']} · {self.item['kind']}")
 
         canvas.setStrokeColor(colors.HexColor("#E2E8F0"))
         canvas.setLineWidth(0.55)
@@ -731,13 +732,14 @@ class MarriageSummaryRow(Flowable):
 
 
 class SummaryLegendRow(Flowable):
-    """Compact colored legend bar with its accuracy label."""
+    """Client-facing strength badge and meter for the summary legend."""
 
-    def __init__(self, label: str, tick_color: str, font_size: float):
+    def __init__(self, label: str, tick_color: str, font_size: float, strength: float):
         super().__init__()
         self.label = label
         self.tick_color = tick_color
         self.font_size = font_size
+        self.strength = strength
         self.height = font_size + 5
 
     def wrap(self, avail_width, avail_height):
@@ -746,11 +748,20 @@ class SummaryLegendRow(Flowable):
 
     def draw(self):
         canvas = self.canv
+        center_y = self.height / 2 + 1
         canvas.setFillColor(colors.HexColor(self.tick_color))
-        canvas.roundRect(0, self.height / 2 - 1.2, 16, 2.4, 1.2, stroke=0, fill=1)
+        canvas.circle(4, center_y, 4, stroke=0, fill=1)
+        canvas.setStrokeColor(colors.white)
+        canvas.setLineWidth(1.2)
+        canvas.line(1.8, center_y, 3.4, center_y - 1.6)
+        canvas.line(3.4, center_y - 1.6, 6.2, center_y + 1.9)
+        canvas.setFillColor(colors.HexColor("#E2E8F0"))
+        canvas.roundRect(13, center_y - 1.2, 22, 2.4, 1.2, stroke=0, fill=1)
+        canvas.setFillColor(colors.HexColor(self.tick_color))
+        canvas.roundRect(13, center_y - 1.2, 22 * self.strength, 2.4, 1.2, stroke=0, fill=1)
         canvas.setFillColor(colors.HexColor("#475569"))
         canvas.setFont("Helvetica", self.font_size)
-        canvas.drawString(22, 1, self.label)
+        canvas.drawString(41, 1, self.label)
 
 
 def _merge_transit_periods(
@@ -1103,17 +1114,17 @@ def _marriage_summary_story(
 
     green_items = [row for row in items if row["tick_color"] == "#16A34A"]
     orange_items = [row for row in items if row["tick_color"] != "#16A34A"]
-    append_tick_section("Green tick", "#16A34A", green_items)
-    append_tick_section("Orange tick", "#D4A017", orange_items)
+    append_tick_section("Stronger Alignment Windows", "#16A34A", green_items)
+    append_tick_section("Supporting Timing Windows", "#D4A017", orange_items)
 
     legend_title_style = ParagraphStyle(
         "MarriageLegendTitle", parent=small_style, fontName="Helvetica-Bold",
         fontSize=body_size + 1, leading=body_size + 3,
         textColor=colors.HexColor("#334155"), keepWithNext=True,
     )
-    story.append(Paragraph("Legends", legend_title_style))
-    story.append(SummaryLegendRow("Green tick accuracy - above 70%", "#16A34A", body_size))
-    story.append(SummaryLegendRow("Orange tick accuracy - above 50%", "#D4A017", body_size))
+    story.append(Paragraph("Timing Guide", legend_title_style))
+    story.append(SummaryLegendRow("Stronger timing alignment", "#16A34A", body_size, .88))
+    story.append(SummaryLegendRow("Supporting timing alignment", "#D4A017", body_size, .62))
     return story
 
 def _prediction_pdf_page(
