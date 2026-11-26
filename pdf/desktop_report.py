@@ -90,7 +90,7 @@ def _cover(d: _Doc, client: dict, text_source: str = "report"):
         d.text("MARRIAGE TIMING & PARTNER ALIGNMENT", W / 2, 84 * mm, 10, True, GREY, "center")
     for l in wrap(report_title(text_source), 26, WIDTH, True):
         d.text(l, W / 2, ty, 26, True, BRAND, "center"); ty += LH(26)
-    subtitle = ("Marriage timing and partner compatibility"
+    subtitle = ("Key periods and partner insights"
                 if text_source == "marriage" else "Comprehensive Personality & Behavioural Blueprint")
     subtitle_lines = wrap(subtitle, 12, WIDTH - (12 * mm if text_source == "marriage" else 0))
     for index, line in enumerate(subtitle_lines):

@@ -158,7 +158,7 @@ def cover_copy(text_source: str = "report"):
     """(kicker, title, subtitle) for the cover title card."""
     if text_source == "marriage":
         return ("MARRIAGE TIMING & PARTNER ALIGNMENT", "PROSPECT OF MARRIAGE REPORT",
-                "Marriage timing and partner compatibility")
+                "Key periods and partner insights")
     if text_source == "child":
         return ("CHILD PERSONALITY & BEHAVIOURAL BLUEPRINT", "Understanding Your Child",
                 "A Comprehensive Guide for Parents")
