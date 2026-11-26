@@ -476,17 +476,7 @@ class DBAHierarchyRow(Flowable):
         if not self.row.get("show_dates", True):
             return
 
-        try:
-            start_date = date.fromisoformat(self.row["start"])
-            end_date = date.fromisoformat(self.row["end"])
-            month_index = start_date.year * 12 + start_date.month - 1 + 6
-            threshold_year, month0 = divmod(month_index, 12)
-            threshold_month = month0 + 1
-            threshold_day = min(start_date.day, monthrange(threshold_year, threshold_month)[1])
-            six_month_threshold = date(threshold_year, threshold_month, threshold_day)
-        except (KeyError, TypeError, ValueError):
-            six_month_threshold = None
-        if six_month_threshold is not None and end_date > six_month_threshold:
+        if _period_exceeds_six_months(self.row.get("start"), self.row.get("end")):
             tick_x = label_x + canvas.stringWidth(label, "Helvetica", self.font_size) + 3
             tick_y = baseline + self.font_size * 0.35
             canvas.setStrokeColor(colors.HexColor("#16A34A"))
@@ -549,6 +539,46 @@ def _parse_event_date(value: Any) -> date | None:
     return parsed.date()
 
 
+def _period_exceeds_six_months(start_value: Any, end_value: Any) -> bool:
+    start_date = _parse_event_date(start_value)
+    end_date = _parse_event_date(end_value)
+    if start_date is None or end_date is None:
+        return False
+    month_index = start_date.year * 12 + start_date.month - 1 + 6
+    threshold_year, month0 = divmod(month_index, 12)
+    threshold_month = month0 + 1
+    threshold_day = min(start_date.day, monthrange(threshold_year, threshold_month)[1])
+    return end_date > date(threshold_year, threshold_month, threshold_day)
+
+
+class TransitPlanetCell(Flowable):
+    """Planet cell with a small green check for transit periods over six months."""
+
+    def __init__(self, planet: str, start: Any, end: Any, font_size: float):
+        super().__init__()
+        self.planet = planet
+        self.long_period = _period_exceeds_six_months(start, end)
+        self.font_size = font_size
+        self.height = font_size + 2
+
+    def wrap(self, avail_width, avail_height):
+        self.width = avail_width
+        return self.width, self.height
+
+    def draw(self):
+        canvas = self.canv
+        canvas.setFillColor(colors.HexColor("#1E293B"))
+        canvas.setFont("Helvetica", self.font_size)
+        canvas.drawString(0, 1, self.planet)
+        if self.long_period:
+            x = canvas.stringWidth(self.planet, "Helvetica", self.font_size) + 3
+            y = self.height / 2 + 1
+            canvas.setStrokeColor(colors.HexColor("#16A34A"))
+            canvas.setLineWidth(1.5)
+            canvas.line(x, y, x + 2, y - 2)
+            canvas.line(x + 2, y - 2, x + 6, y + 3)
+
+
 def _merge_transit_periods(
     rows: list[dict[str, Any]],
     bhava: int,
@@ -597,11 +627,27 @@ def _merge_transit_periods(
     return sorted(merged, key=lambda row: (row["start"], row["planet"], row["end"]))
 
 
-def _render_period_table(entries: list[dict[str, str]], headers: list[str], columns: list[str], widths: list[float], usable_width: float, cell, small_style):
+def _render_period_table(
+    entries: list[dict[str, str]],
+    headers: list[str],
+    columns: list[str],
+    widths: list[float],
+    usable_width: float,
+    cell,
+    small_style,
+    mark_long_periods: bool = False,
+    mark_font_size: float = 7,
+):
     if not entries:
         return Paragraph("No matching periods.", small_style)
     data = [[cell(header) for header in headers]]
-    data.extend([[cell(row.get(column, "")) for column in columns] for row in entries])
+    for row in entries:
+        data.append([
+            TransitPlanetCell(str(row.get(column, "")), row.get("start"), row.get("end"), mark_font_size)
+            if mark_long_periods and column == "planet"
+            else cell(row.get(column, ""))
+            for column in columns
+        ])
     table = LongTable(data, colWidths=[width * usable_width for width in widths], repeatRows=1, hAlign="LEFT")
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F0FA")),
@@ -648,7 +694,17 @@ def _marriage_significator_story(significators, dba, transits, section_style, ce
         other = [row for row in transit_entries if row not in slow]
         for subheading, group in (("Slow-moving planets", slow), ("Other planets", other)):
             story.append(Paragraph(subheading, small_style))
-            story.append(_render_period_table(group, ["Planet", "From", "To"], ["planet", "start", "end"], [0.30, 0.35, 0.35], usable_width, cell, small_style))
+            story.append(_render_period_table(
+                group,
+                ["Planet", "From", "To"],
+                ["planet", "start", "end"],
+                [0.30, 0.35, 0.35],
+                usable_width,
+                cell,
+                small_style,
+                mark_long_periods=True,
+                mark_font_size=body_size,
+            ))
         story.append(Spacer(1, 2 * mm))
 
     story.append(Paragraph("Primary Significators", section_style))
