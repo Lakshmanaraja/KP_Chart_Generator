@@ -48,6 +48,8 @@ def wrap(s, pt, width, bold=False):
 
 def report_title(text_source: str = "report") -> str:
     """Cover/PDF title: child reports get the parent-guide title."""
+    if text_source == "marriage":
+        return "PROSPECT OF MARRIAGE REPORT"
     return ("Understanding Your Child: A Guide for Parents"
             if text_source == "child" else "Character Assessment Report")
 
@@ -84,9 +86,13 @@ def _cover(d: _Doc, client: dict, text_source: str = "report"):
         c.drawImage(LOGO, W / 2 - 11 * mm, H - 52 * mm, 22 * mm, 22 * mm, mask="auto")
     d.text("TIME SCIENCE", W / 2, 62 * mm, 20, True, BRAND, "center")
     ty = 95 * mm
+    if text_source == "marriage":
+        d.text("MARRIAGE TIMING & PARTNER ALIGNMENT", W / 2, 84 * mm, 10, True, GREY, "center")
     for l in wrap(report_title(text_source), 26, WIDTH, True):
         d.text(l, W / 2, ty, 26, True, BRAND, "center"); ty += LH(26)
-    d.text("Comprehensive Personality & Behavioural Blueprint", W / 2, ty + 3 * mm, 12, False, GREY, "center")
+    subtitle = ("Right Timing for Marriage & What to Look For in a Partner"
+                if text_source == "marriage" else "Comprehensive Personality & Behavioural Blueprint")
+    d.text(subtitle, W / 2, ty + 3 * mm, 12, False, GREY, "center")
     y = max(130 * mm, ty + 16 * mm)
     for l in wrap(client.get("name", ""), 22, WIDTH, True):
         d.text(l, W / 2, y, 22, True, BODY, "center"); y += LH(22)

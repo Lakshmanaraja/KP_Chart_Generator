@@ -271,7 +271,7 @@ def _consolidate_bhava_transits(
 
     return sorted(merged, key=lambda row: (_as_utc_datetime(row["date"]), row["planet"], row["actual_bhava"]))
 
-def _report_cover(request: PredictionReportRequest) -> bytes:
+def _report_cover(request: PredictionReportRequest, kind: str = "report") -> bytes:
     client = {
         "name": request.name,
         "date_of_birth": request.date_of_birth,
@@ -279,6 +279,11 @@ def _report_cover(request: PredictionReportRequest) -> bytes:
         "place": request.place,
         "timezone": f"UTC{'+' if request.timezone >= 0 else ''}{request.timezone:g}",
     }
+    if kind == "marriage":
+        if request.version == "desktop":
+            return render_desktop_pdf([], client, "marriage")
+        return render_mobile_pdf([], client, "marriage")
+
     report_request = ReportRequest(
         name=request.name,
         date_of_birth=request.date_of_birth,
@@ -830,7 +835,7 @@ def create_prediction_pdf(request: PredictionReportRequest, kind: str, bhava_num
     title = "Marriage Date Prediction" if kind == "marriage" else "Child Birth Prediction"
     significators = _prediction_significators(request, (7, 3, 11)) if kind == "marriage" else None
     prediction_pdf = _prediction_pdf_page(dba, transit, title, request.version, significators)
-    base_pdf = _report_cover(request)
+    base_pdf = _report_cover(request, kind)
 
     try:
         cover = PdfReader(BytesIO(base_pdf)).pages[0]

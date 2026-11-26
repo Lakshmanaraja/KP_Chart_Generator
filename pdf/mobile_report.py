@@ -139,6 +139,8 @@ def draw_sparkle(d: _Doc, cx, cy, radius, color=ACCENT):
 
 def report_title(text_source: str = "report") -> str:
     """Cover/PDF title: child reports get the parent-guide title."""
+    if text_source == "marriage":
+        return "PROSPECT OF MARRIAGE REPORT"
     return ("Understanding Your Child: A Guide for Parents"
             if text_source == "child" else "Character Assessment Report")
 
@@ -154,6 +156,9 @@ def _fit(s, pt, width, bold=True, min_pt=7.0, tracking=0.0):
 
 def cover_copy(text_source: str = "report"):
     """(kicker, title, subtitle) for the cover title card."""
+    if text_source == "marriage":
+        return ("MARRIAGE TIMING & PARTNER ALIGNMENT", "PROSPECT OF MARRIAGE REPORT",
+                "Right Timing for Marriage & What to Look For in a Partner")
     if text_source == "child":
         return ("CHILD PERSONALITY & BEHAVIOURAL BLUEPRINT", "Understanding Your Child",
                 "A Comprehensive Guide for Parents")
