@@ -695,15 +695,16 @@ class TransitPlanetCell(Flowable):
             canvas.line(x + 2, y - 2, x + 6, y + 3)
 
 
-class SummaryPlanetCell(Flowable):
-    """Planet label preceded by a colored vector checkmark."""
+class MarriageSummaryRow(Flowable):
+    """Date-first stacked summary row with a tick and a subtle divider."""
 
-    def __init__(self, planet: str, tick_color: str, font_size: float):
+    def __init__(self, item: dict[str, str], is_mobile: bool):
         super().__init__()
-        self.planet = planet
-        self.tick_color = tick_color
-        self.font_size = font_size
-        self.height = font_size + 4
+        self.item = item
+        self.is_mobile = is_mobile
+        self.date_size = 9.2 if is_mobile else 11
+        self.detail_size = 7.6 if is_mobile else 8.5
+        self.height = self.date_size + self.detail_size + 17
 
     def wrap(self, avail_width, avail_height):
         self.width = avail_width
@@ -711,14 +712,45 @@ class SummaryPlanetCell(Flowable):
 
     def draw(self):
         canvas = self.canv
-        y = self.height / 2 + 1
-        canvas.setStrokeColor(colors.HexColor(self.tick_color))
-        canvas.setLineWidth(1.6)
-        canvas.line(0, y, 2.2, y - 2.2)
-        canvas.line(2.2, y - 2.2, 6.7, y + 3.4)
-        canvas.setFillColor(colors.HexColor("#1E293B"))
+        canvas.setFillColor(colors.HexColor("#072A7D"))
+        canvas.setFont("Courier-Bold", self.date_size)
+        canvas.drawString(0, self.height - self.date_size - 3, f"{self.item['start']} to {self.item['end']}")
+
+        detail_y = 5
+        canvas.setStrokeColor(colors.HexColor(self.item["tick_color"]))
+        canvas.setLineWidth(1.5)
+        canvas.line(0, detail_y + 2, 2.2, detail_y)
+        canvas.line(2.2, detail_y, 6.5, detail_y + 5)
+        canvas.setFillColor(colors.HexColor("#64748B"))
+        canvas.setFont("Helvetica", self.detail_size)
+        canvas.drawString(11, detail_y, f"{self.item['planet']} · {self.item['kind']}")
+
+        canvas.setStrokeColor(colors.HexColor("#E2E8F0"))
+        canvas.setLineWidth(0.55)
+        canvas.line(0, 0, self.width, 0)
+
+
+class SummaryLegendRow(Flowable):
+    """Compact colored legend bar with its accuracy label."""
+
+    def __init__(self, label: str, tick_color: str, font_size: float):
+        super().__init__()
+        self.label = label
+        self.tick_color = tick_color
+        self.font_size = font_size
+        self.height = font_size + 5
+
+    def wrap(self, avail_width, avail_height):
+        self.width = avail_width
+        return self.width, self.height
+
+    def draw(self):
+        canvas = self.canv
+        canvas.setFillColor(colors.HexColor(self.tick_color))
+        canvas.roundRect(0, self.height / 2 - 1.2, 16, 2.4, 1.2, stroke=0, fill=1)
+        canvas.setFillColor(colors.HexColor("#475569"))
         canvas.setFont("Helvetica", self.font_size)
-        canvas.drawString(10, 1, self.planet)
+        canvas.drawString(22, 1, self.label)
 
 
 def _merge_transit_periods(
@@ -1035,18 +1067,25 @@ def _marriage_summary_items(significators, dba, transits) -> list[dict[str, str]
 
 
 def _marriage_summary_story(
-    items, dba, title_style, cell_style, small_style, usable_width, cell, body_size, is_mobile
+    items, dba, title_style, small_style, body_size, is_mobile
 ):
     story = [Paragraph("Marriage Date Prediction", title_style)]
 
     period_end = date.fromisoformat(dba["end_date_exclusive"]) - timedelta(days=1)
+    research_style = ParagraphStyle(
+        "MarriageResearchWindow", parent=small_style,
+        fontName="Helvetica-Bold", fontSize=body_size,
+        leading=body_size + 2.5, textColor=colors.HexColor("#072A7D"),
+        backColor=colors.HexColor("#EFF6FF"), borderColor=colors.HexColor("#BFDBFE"),
+        borderWidth=.6, borderPadding=6, spaceAfter=3 * mm,
+    )
     story.append(Paragraph(
         f"Research period: {dba['from_date']} to {period_end.isoformat()}",
-        small_style,
+        research_style,
     ))
     story.append(Spacer(1, 3 * mm))
 
-    def append_tick_table(label: str, tick_color: str, rows: list[dict[str, str]]) -> None:
+    def append_tick_section(label: str, tick_color: str, rows: list[dict[str, str]]) -> None:
         heading_style = ParagraphStyle(
             f"Marriage{label.replace(' ', '')}Heading", parent=small_style,
             fontName="Helvetica-Bold", fontSize=body_size + 1,
@@ -1058,41 +1097,14 @@ def _marriage_summary_story(
             story.append(Paragraph("No matching periods.", small_style))
             story.append(Spacer(1, 2 * mm))
             return
-        data = [[cell("Planet"), cell("Type"), cell("Period")]]
         for row in rows:
-            period = f"{row['start']} to {row['end']}"
-            data.append([
-                SummaryPlanetCell(row["planet"], row["tick_color"], body_size),
-                cell(row["kind"]),
-                cell(period, ParagraphStyle(
-                    "MarriageSummaryDates", parent=cell_style,
-                    fontName="Courier", fontSize=7.1 if is_mobile else 8.2,
-                    leading=9.2 if is_mobile else 10.5, alignment=2,
-                )),
-            ])
-        table = LongTable(
-            data,
-            colWidths=[usable_width * .21, usable_width * .24, usable_width * .55],
-            repeatRows=1,
-            hAlign="LEFT",
-        )
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F0FA")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#072A7D")),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("GRID", (0, 0), (-1, -1), .35, colors.HexColor("#CBD5E1")),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 5 if is_mobile else 4),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 5 if is_mobile else 4),
-            ("TOPPADDING", (0, 0), (-1, -1), 5 if is_mobile else 4),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 5 if is_mobile else 4),
-        ]))
-        story.extend([table, Spacer(1, 4 * mm)])
+            story.append(MarriageSummaryRow(row, is_mobile))
+            story.append(Spacer(1, 2.2 * mm if is_mobile else 2.8 * mm))
 
     green_items = [row for row in items if row["tick_color"] == "#16A34A"]
     orange_items = [row for row in items if row["tick_color"] != "#16A34A"]
-    append_tick_table("Green tick", "#16A34A", green_items)
-    append_tick_table("Orange tick", "#D4A017", orange_items)
+    append_tick_section("Green tick", "#16A34A", green_items)
+    append_tick_section("Orange tick", "#D4A017", orange_items)
 
     legend_title_style = ParagraphStyle(
         "MarriageLegendTitle", parent=small_style, fontName="Helvetica-Bold",
@@ -1100,8 +1112,8 @@ def _marriage_summary_story(
         textColor=colors.HexColor("#334155"), keepWithNext=True,
     )
     story.append(Paragraph("Legends", legend_title_style))
-    story.append(SummaryPlanetCell("Green tick accuracy - above 70%", "#16A34A", body_size))
-    story.append(SummaryPlanetCell("Orange tick accuracy - above 50%", "#D4A017", body_size))
+    story.append(SummaryLegendRow("Green tick accuracy - above 70%", "#16A34A", body_size))
+    story.append(SummaryLegendRow("Orange tick accuracy - above 50%", "#D4A017", body_size))
     return story
 
 def _prediction_pdf_page(
@@ -1180,8 +1192,7 @@ def _prediction_pdf_page(
         story.append(PageBreak())
         story.extend(_marriage_summary_story(
             _marriage_summary_items(significators, dba, transits),
-            dba, title_style, cell_style, small_style, usable_width, cell,
-            body_size, is_mobile,
+            dba, title_style, small_style, body_size, is_mobile,
         ))
     else:
         story.extend(_generic_period_story(dba, transits, section_style, cell_style, small_style, usable_width, cell))
