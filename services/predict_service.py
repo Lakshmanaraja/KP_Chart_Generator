@@ -4,6 +4,7 @@ from __future__ import annotations
 from calendar import monthrange
 from datetime import date, datetime, time, timedelta, timezone
 from io import BytesIO
+import re
 from typing import Any
 
 from fastapi import HTTPException
@@ -567,6 +568,9 @@ class DBAHierarchyRow(Flowable):
             canvas.line(depth * self.INDENT - 4, 1, depth * self.INDENT - 4, self.height - 1)
 
         emphasis_color = colors.HexColor("#0B0F19") if long_period else colors.HexColor("#1E293B")
+        show_dates = self.row.get("show_dates", True)
+        if not show_dates:
+            emphasis_color = colors.HexColor("#64748B")
         label_font = "Helvetica-Bold" if long_period else "Helvetica"
         canvas.setFillColor(emphasis_color)
         canvas.setFont(label_font, self.font_size)
@@ -577,7 +581,10 @@ class DBAHierarchyRow(Flowable):
             canvas.setFillColor(colors.HexColor("#64748B"))
             canvas.setFont("Helvetica", self.summary_font_size)
             canvas.drawString(label_x, 1, self.combined_value)
-        if not self.row.get("show_dates", True):
+        if not show_dates:
+            canvas.setFillColor(colors.HexColor("#64748B"))
+            canvas.setFont("Helvetica", self.font_size)
+            canvas.drawRightString(self.width - 2, baseline, "—")
             return
 
         if long_period:
@@ -781,7 +788,7 @@ def _render_period_table(
                 ))
             elif column in {"start", "end"} and row.get(f"{column}_combined_value"):
                 summary_size = boundary_font_size or max(4.8, mark_font_size - 1.4)
-                summary = row[f"{column}_combined_value"]
+                summary = re.sub(r"(\([^)]*\))", r"<nobr>\1</nobr>", str(row[f"{column}_combined_value"]))
                 rendered_row.append(cell(
                     f"{row.get(column, '')}<br/><font size=\"{summary_size}\" color=\"#64748B\">{summary}</font>"
                 ))
@@ -802,7 +809,10 @@ def _render_period_table(
     return table
 
 
-def _marriage_significator_story(significators, dba, transits, section_style, cell_style, small_style, usable_width, body_size, cell):
+def _marriage_significator_story(
+    significators, dba, transits, level1_style, level2_style, level3_style,
+    subheading_style, cell_style, small_style, usable_width, body_size, cell,
+):
     story = []
     bhava_significators = significators["bhavas"]
     combined_values = significators["combined_values"]
@@ -815,12 +825,12 @@ def _marriage_significator_story(significators, dba, transits, section_style, ce
     def add_category(bhava: int, label: str, planets: list[str]):
         tick_color = "#16A34A" if bhava == 7 else "#D4A017"
         is_cuspal_interlink = label == "Cuspal Interlink"
-        story.append(Paragraph(f"Bhava {bhava} — {label}", section_style))
+        story.append(Paragraph(f"Bhava {bhava} — {label}", level2_style))
         if not planets:
             story.append(Paragraph("No planets in this category.", small_style))
             return
         selected = set(planets)
-        story.append(Paragraph("Transit", section_style))
+        story.append(Paragraph("Transit", level3_style))
         # Slow-moving transits are included by actual bhava and requested
         # window even when that planet is not among the natal signifiers for
         # this Location/Cuspal Interlink subsection.
@@ -867,7 +877,7 @@ def _marriage_significator_story(significators, dba, transits, section_style, ce
         slow = [row for row in transit_entries if row["planet"] in {PLANET_ABBREVIATIONS.get(name, name) for name in slow_planets}]
         other = [row for row in transit_entries if row not in slow]
         for subheading, group in (("Slow-moving planets", slow), ("Other planets", other)):
-            story.append(Paragraph(subheading, small_style))
+            story.append(Paragraph(subheading, subheading_style))
             story.append(_render_period_table(
                 group,
                 ["Planet", "From", "To"],
@@ -884,7 +894,7 @@ def _marriage_significator_story(significators, dba, transits, section_style, ce
             ))
         story.append(Spacer(1, 2 * mm))
 
-        story.append(Paragraph("Vimshottari Dasa", section_style))
+        story.append(Paragraph("Vimshottari Dasa", level3_style))
         entries = _dba_planet_periods(
             dba,
             selected,
@@ -893,11 +903,11 @@ def _marriage_significator_story(significators, dba, transits, section_style, ce
         story.extend(_render_dba_tree(entries, body_size, small_style, tick_color))
         story.append(Spacer(1, 1.5 * mm))
 
-    story.append(Paragraph("Primary Significators", section_style))
+    story.append(Paragraph("Primary Significators", level1_style))
     for category in ("location", "cuspal_interlink"):
         label = "Location" if category == "location" else "Cuspal Interlink"
         add_category(7, label, bhava_significators[7][category])
-    story.append(Paragraph("Secondary Significators", section_style))
+    story.append(Paragraph("Secondary Significators", level1_style))
     for bhava in target_bhavas[1:]:
         for category in ("location", "cuspal_interlink"):
             label = "Location" if category == "location" else "Cuspal Interlink"
@@ -959,11 +969,28 @@ def _prediction_pdf_page(
         "PredictionTitle", parent=styles["Title"], fontName="Helvetica-Bold",
         fontSize=14.5 if is_mobile else 17, leading=17 if is_mobile else 20,
         textColor=colors.HexColor("#072A7D"), alignment=1, spaceAfter=5 * mm,
+        keepWithNext=True,
     )
     section_style = ParagraphStyle(
         "PredictionSection", parent=styles["Heading2"], fontName="Helvetica-Bold",
         fontSize=10.5 if is_mobile else 12, leading=13 if is_mobile else 14,
         textColor=colors.HexColor("#1A659E"), spaceBefore=2 * mm, spaceAfter=1.5 * mm,
+        keepWithNext=True,
+    )
+    level1_style = ParagraphStyle(
+        "MarriageLevel1", parent=section_style, fontSize=body_size + (3.2 if is_mobile else 4),
+        leading=body_size + (5.2 if is_mobile else 6), textColor=colors.HexColor("#072A7D"),
+        spaceBefore=3.5 * mm, spaceAfter=1.5 * mm, keepWithNext=True,
+    )
+    level2_style = ParagraphStyle(
+        "MarriageLevel2", parent=section_style, fontSize=body_size + (1.2 if is_mobile else 1.5),
+        leading=body_size + (3.2 if is_mobile else 3.5), textColor=colors.HexColor("#1E40AF"),
+        spaceBefore=2.5 * mm, spaceAfter=1 * mm, keepWithNext=True,
+    )
+    level3_style = ParagraphStyle(
+        "MarriageLevel3", parent=section_style, fontSize=body_size + (0.2 if is_mobile else 0.5),
+        leading=body_size + (2.2 if is_mobile else 2.5), textColor=colors.HexColor("#0F766E"),
+        spaceBefore=2 * mm, spaceAfter=1 * mm, keepWithNext=True,
     )
     cell_style = ParagraphStyle(
         "PredictionCell", parent=styles["BodyText"], fontName="Helvetica",
@@ -974,6 +1001,10 @@ def _prediction_pdf_page(
         fontSize=7.6 if is_mobile else body_size - 0.3,
         leading=9.6 if is_mobile else body_size + 0.4,
         textColor=colors.HexColor("#475569"),
+    )
+    subheading_style = ParagraphStyle(
+        "MarriageLevel4", parent=small_style, fontName="Helvetica-Bold",
+        keepWithNext=True, spaceAfter=0.7 * mm,
     )
     story = [
         Paragraph(title, title_style),
@@ -988,7 +1019,11 @@ def _prediction_pdf_page(
         return Paragraph(str(value if value is not None else "—"), style)
 
     if significators is not None:
-        story.extend(_marriage_significator_story(significators, dba, transits, section_style, cell_style, small_style, usable_width, body_size, cell))
+        story.extend(_marriage_significator_story(
+            significators, dba, transits, level1_style, level2_style,
+            level3_style, subheading_style, cell_style, small_style,
+            usable_width, body_size, cell,
+        ))
     else:
         story.extend(_generic_period_story(dba, transits, section_style, cell_style, small_style, usable_width, cell))
 
