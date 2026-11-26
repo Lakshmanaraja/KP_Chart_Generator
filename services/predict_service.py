@@ -146,7 +146,7 @@ def _as_utc_datetime(value: Any) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
-def get_transit_periods(request: PredictionPeriodsRequest) -> dict[str, Any]:
+def get_transit_periods(request: PredictionPeriodsRequest, *, consolidate_house_periods: bool = False) -> dict[str, Any]:
     start_date, end_date = _window(request)
     try:
         chart = compute_kp_json(
@@ -169,12 +169,18 @@ def get_transit_periods(request: PredictionPeriodsRequest) -> dict[str, Any]:
         raise HTTPException(422, "Could not calculate all 12 natal cusps")
 
     interval_start, interval_end = _transit_window(start_date, end_date, request.timezone)
-    rows = get_star_transits_for_cusps(cusps, interval_start, interval_end)
+    requested_start = datetime.fromisoformat(interval_start).astimezone(timezone.utc)
+    requested_end = datetime.fromisoformat(interval_end).astimezone(timezone.utc)
+    # Marriage reports need the beginning of a continuous bhava transit even
+    # when its nakshatra rows started before the selected report window.
+    query_start = interval_start
+    if consolidate_house_periods:
+        history_start = add_calendar_years(start_date, -5)
+        query_start, _ = _transit_window(history_start, end_date, request.timezone)
+    rows = get_star_transits_for_cusps(cusps, query_start, interval_end)
     group = bhava_group(request.bhava_number)
     secondary = [bhava for bhava in group if bhava != request.bhava_number]
-    start_utc = datetime.fromisoformat(interval_start)
-    end_utc = datetime.fromisoformat(interval_end)
-    filtered = []
+    candidates = []
     for row in rows:
         actual_bhava = row.get("bhava")
         if actual_bhava not in group:
@@ -184,21 +190,22 @@ def get_transit_periods(request: PredictionPeriodsRequest) -> dict[str, Any]:
             row_end = _as_utc_datetime(row["exit_date"])
         except (KeyError, TypeError, ValueError):
             continue
-        window_start_utc = start_utc.astimezone(timezone.utc)
-        window_end_utc = end_utc.astimezone(timezone.utc)
-        overlap_start = max(row_start, window_start_utc)
-        overlap_end = min(row_end, window_end_utc)
-        if overlap_start >= overlap_end:
-            continue
-        filtered.append({
+        if row_start >= requested_end or row_end <= requested_start:
+            # Keep pre-window rows during the history scan; they may join a
+            # continuous bhava period that overlaps the requested window.
+            if not (consolidate_house_periods and row_end <= requested_start):
+                continue
+        candidates.append({
             **row,
-            # Keep the original transit boundaries for display. The overlap
-            # above controls inclusion without replacing a pre-window start.
             "actual_bhava": actual_bhava,
             "bhava_type": "primary" if actual_bhava == request.bhava_number else "secondary",
             "primary_bhava": request.bhava_number,
             "secondary_bhavas": secondary,
         })
+    filtered = (
+        _consolidate_bhava_transits(candidates, requested_start, requested_end)
+        if consolidate_house_periods else candidates
+    )
     return {
         "from_date": start_date.isoformat(),
         "end_date_exclusive": end_date.isoformat(),
@@ -209,6 +216,59 @@ def get_transit_periods(request: PredictionPeriodsRequest) -> dict[str, Any]:
         "transit_periods": filtered,
     }
 
+
+
+def _consolidate_bhava_transits(
+    rows: list[dict[str, Any]], window_start: datetime, window_end: datetime
+) -> list[dict[str, Any]]:
+    """Join adjacent nakshatra rows into continuous planet-in-bhava periods."""
+    grouped: dict[tuple[str, int], list[tuple[datetime, datetime, dict[str, Any]]]] = {}
+    for row in rows:
+        try:
+            start = _as_utc_datetime(row["date"])
+            end = _as_utc_datetime(row["exit_date"])
+            house = int(row["actual_bhava"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if end > start:
+            grouped.setdefault((str(row.get("planet") or ""), house), []).append((start, end, row))
+
+    merged: list[dict[str, Any]] = []
+    for (planet, house), intervals in grouped.items():
+        intervals.sort(key=lambda item: (item[0], item[1]))
+        current_start = current_end = None
+        current = None
+        stars: set[str] = set()
+
+        def append_current():
+            if current_start is None or current_end is None or current is None:
+                return
+            if current_start < window_end and current_end > window_start:
+                merged.append({
+                    **current,
+                    "planet": planet,
+                    "actual_bhava": house,
+                    "date": current_start.isoformat(),
+                    "exit_date": current_end.isoformat(),
+                    "stars": sorted(stars),
+                })
+
+        for start, end, row in intervals:
+            if current_start is None:
+                current_start, current_end, current = start, end, row
+                stars = {str(row.get("star"))} if row.get("star") else set()
+            elif start <= current_end:
+                if end > current_end:
+                    current_end = end
+                if row.get("star"):
+                    stars.add(str(row["star"]))
+            else:
+                append_current()
+                current_start, current_end, current = start, end, row
+                stars = {str(row.get("star"))} if row.get("star") else set()
+        append_current()
+
+    return sorted(merged, key=lambda row: (_as_utc_datetime(row["date"]), row["planet"], row["actual_bhava"]))
 
 def _report_cover(request: PredictionReportRequest) -> bytes:
     client = {
@@ -641,7 +701,7 @@ def create_prediction_pdf(request: PredictionReportRequest, kind: str, bhava_num
         bhava_number=bhava_number,
     )
     dba = get_dba_periods(period_request)
-    transit = get_transit_periods(period_request)
+    transit = get_transit_periods(period_request, consolidate_house_periods=(kind == "marriage"))
     title = "Marriage Date Prediction" if kind == "marriage" else "Child Birth Prediction"
     significators = _prediction_significators(request, (7, 3, 11)) if kind == "marriage" else None
     prediction_pdf = _prediction_pdf_page(dba, transit, title, request.version, significators)
