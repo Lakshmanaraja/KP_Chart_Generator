@@ -184,10 +184,20 @@ def get_transit_periods(request: PredictionPeriodsRequest) -> dict[str, Any]:
             row_end = _as_utc_datetime(row["exit_date"])
         except (KeyError, TypeError, ValueError):
             continue
-        if row_start >= end_utc.astimezone(timezone.utc) or row_end <= start_utc.astimezone(timezone.utc):
+        window_start_utc = start_utc.astimezone(timezone.utc)
+        window_end_utc = end_utc.astimezone(timezone.utc)
+        overlap_start = max(row_start, window_start_utc)
+        overlap_end = min(row_end, window_end_utc)
+        if overlap_start >= overlap_end:
             continue
         filtered.append({
             **row,
+            # Report the portion inside the requested window so an interval
+            # that began in an earlier year still appears with its active dates.
+            "date": overlap_start.isoformat(),
+            "exit_date": overlap_end.isoformat(),
+            "original_date": row.get("date"),
+            "original_exit_date": row.get("exit_date"),
             "actual_bhava": actual_bhava,
             "bhava_type": "primary" if actual_bhava == request.bhava_number else "secondary",
             "primary_bhava": request.bhava_number,
