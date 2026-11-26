@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import date
-from typing import List, Optional
+from typing import Any, List, Literal, Optional
 from uuid import UUID
 
 class BirthInput(BaseModel):
@@ -48,6 +48,9 @@ class PlanetLordSummaryRequest(BaseModel):
     moon_override_enabled: bool = False
     moon_override: dict[str, str | None] | None = None
     include_original_moon: bool = False
+    calculation_mode: Literal["birth", "transit"] = "birth"
+    transit_planets: list[dict[str, Any]] | None = None
+    bhava_cusps: list[dict[str, Any]] | None = None
 
 
 class PredictionBirthDetails(BaseModel):

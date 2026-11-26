@@ -50,7 +50,10 @@ def _star_bhavas(item: dict[str, Any], houses: list[dict[str, Any]]) -> list[int
 
 def _calculate(extras: dict[str, Any], options: PlanetLordSummaryRequest) -> dict[str, Any]:
     houses = sorted(extras.get("cusps") or [], key=lambda item: item.get("house_id", 0))
-    planets = [item for item in (extras.get("planets") or []) if item.get("name") != "Ascendant"]
+    planets = [
+        item for item in (extras.get("planets") or [])
+        if item.get("name", item.get("planet_name")) != "Ascendant"
+    ]
     if len(houses) != 12 or not planets:
         raise HTTPException(422, "Indexed chart is incomplete")
 
@@ -135,22 +138,28 @@ def _calculate(extras: dict[str, Any], options: PlanetLordSummaryRequest) -> dic
 
 
 def get_planet_lord_summary(options: PlanetLordSummaryRequest) -> dict[str, Any]:
-    # The API accepts both HH:MM and HH:MM:SS; the chart parser expects seconds.
-    time_of_birth = options.time_of_birth
-    if len(time_of_birth.split(":")) == 2:
-        time_of_birth = f"{time_of_birth}:00"
-    try:
-        chart = compute_kp_json(
-            options.date_of_birth,
-            time_of_birth,
-            options.latitude,
-            options.longitude,
-            options.timezone,
-            options.ayanamsa,
-        )
-    except (ValueError, TypeError) as exc:
-        raise HTTPException(422, f"Invalid birth details: {exc}") from None
-    result = _calculate({"cusps": chart["houses"], "planets": chart["planets"]}, options)
+    if options.calculation_mode == "transit":
+        if not options.bhava_cusps or not options.transit_planets:
+            raise HTTPException(422, "Transit summary requires main-chart bhava cusps and transit planets")
+        extras = {"cusps": options.bhava_cusps, "planets": options.transit_planets}
+    else:
+        # The API accepts both HH:MM and HH:MM:SS; the chart parser expects seconds.
+        time_of_birth = options.time_of_birth
+        if len(time_of_birth.split(":")) == 2:
+            time_of_birth = f"{time_of_birth}:00"
+        try:
+            chart = compute_kp_json(
+                options.date_of_birth,
+                time_of_birth,
+                options.latitude,
+                options.longitude,
+                options.timezone,
+                options.ayanamsa,
+            )
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(422, f"Invalid birth details: {exc}") from None
+        extras = {"cusps": chart["houses"], "planets": chart["planets"]}
+    result = _calculate(extras, options)
     for row in result["rows"]:
         for field in ("planet_name", "nl_lord", "su_lord", "ss_lord", "sk_lord"):
             name = row[field]
