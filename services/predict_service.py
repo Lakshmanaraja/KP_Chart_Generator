@@ -505,34 +505,74 @@ def _render_dba_tree(entries: list[dict[str, str]], font_size: float, small_styl
     flatten(_nest_dba_periods(entries))
     return rows
 
-def _merge_transit_periods(rows: list[dict[str, Any]], bhava: int, selected_planets: set[str]) -> list[dict[str, str]]:
-    """Merge adjacent star-segment rows for the same planet within one bhava."""
-    grouped: dict[str, list[tuple[datetime, datetime]]] = {}
+def _parse_event_date(value: Any) -> date | None:
+    """Normalize date, datetime, or ISO text to a calendar date in UTC."""
+    if isinstance(value, datetime):
+        if value.tzinfo is not None:
+            value = value.astimezone(timezone.utc)
+        return value.date()
+    if isinstance(value, date):
+        return value
+    if not isinstance(value, str) or not value.strip():
+        return None
+    text = value.strip()
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        try:
+            return date.fromisoformat(text)
+        except ValueError:
+            return None
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone(timezone.utc)
+    return parsed.date()
+
+
+def _merge_transit_periods(
+    rows: list[dict[str, Any]],
+    bhava: int,
+    selected_planets: set[str],
+    window_start: date | None = None,
+    window_end_exclusive: date | None = None,
+) -> list[dict[str, str]]:
+    """Merge adjacent calendar-day intervals for the same planet and bhava."""
+    grouped: dict[str, list[tuple[date, date]]] = {}
     for row in rows:
-        planet = str(row.get("planet") or "")
+        planet = row.get("planet")
         if planet not in selected_planets or row.get("actual_bhava", row.get("bhava")) != bhava:
             continue
-        try:
-            start, end = _as_utc_datetime(row["date"]), _as_utc_datetime(row["exit_date"])
-        except (KeyError, TypeError, ValueError):
+        start = _parse_event_date(row.get("date"))
+        end = _parse_event_date(row.get("exit_date"))
+        if start is None or end is None or end < start:
             continue
-        if end > start:
-            grouped.setdefault(planet, []).append((start, end))
+        if window_end_exclusive is not None and start >= window_end_exclusive:
+            continue
+        if window_start is not None and end < window_start:
+            continue
+        grouped.setdefault(planet, []).append((start, end))
 
     merged: list[dict[str, str]] = []
     for planet, intervals in grouped.items():
-        intervals.sort()
+        intervals.sort(key=lambda interval: (interval[0], interval[1]))
         current_start = current_end = None
         for start, end in intervals:
             if current_start is None:
                 current_start, current_end = start, end
-            elif start <= current_end:
+            elif start <= current_end + timedelta(days=1):
                 current_end = max(current_end, end)
             else:
-                merged.append({"planet": PLANET_ABBREVIATIONS.get(planet, planet), "start": current_start.date().isoformat(), "end": current_end.date().isoformat()})
+                merged.append({
+                    "planet": PLANET_ABBREVIATIONS.get(planet, planet),
+                    "start": current_start.isoformat(),
+                    "end": current_end.isoformat(),
+                })
                 current_start, current_end = start, end
         if current_start is not None:
-            merged.append({"planet": PLANET_ABBREVIATIONS.get(planet, planet), "start": current_start.date().isoformat(), "end": current_end.date().isoformat()})
+            merged.append({
+                "planet": PLANET_ABBREVIATIONS.get(planet, planet),
+                "start": current_start.isoformat(),
+                "end": current_end.isoformat(),
+            })
     return sorted(merged, key=lambda row: (row["start"], row["planet"], row["end"]))
 
 
@@ -574,7 +614,15 @@ def _marriage_significator_story(significators, dba, transits, section_style, ce
         # Slow-moving transits are included by actual bhava and requested
         # window even when that planet is not among the natal signifiers for
         # this Location/Cuspal Interlink subsection.
-        transit_entries = _merge_transit_periods(transit_rows, bhava, selected | slow_planets)
+        win_start = _parse_event_date(transits.get("from_date"))
+        win_end_excl = _parse_event_date(transits.get("end_date_exclusive"))
+        transit_entries = _merge_transit_periods(
+            transit_rows,
+            bhava,
+            selected | slow_planets,
+            window_start=win_start,
+            window_end_exclusive=win_end_excl,
+        )
         slow = [row for row in transit_entries if row["planet"] in {PLANET_ABBREVIATIONS.get(name, name) for name in slow_planets}]
         other = [row for row in transit_entries if row not in slow]
         for subheading, group in (("Slow-moving planets", slow), ("Other planets", other)):
