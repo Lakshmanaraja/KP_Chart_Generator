@@ -1027,11 +1027,30 @@ def _marriage_summary_items(significators, dba, transits) -> list[dict[str, str]
     ))
 
 
-def _marriage_summary_story(items, title_style, cell_style, small_style, usable_width, cell, body_size):
+def _marriage_summary_story(items, dba, title_style, small_style, usable_width, cell, body_size):
     story = [Paragraph("Marriage Date Prediction", title_style)]
-    if items:
+
+    period_end = date.fromisoformat(dba["end_date_exclusive"]) - timedelta(days=1)
+    story.append(Paragraph(
+        f"Research period: {dba['from_date']} to {period_end.isoformat()}",
+        small_style,
+    ))
+    story.append(Spacer(1, 3 * mm))
+
+    def append_tick_table(label: str, tick_color: str, rows: list[dict[str, str]]) -> None:
+        heading_style = ParagraphStyle(
+            f"Marriage{label.replace(' ', '')}Heading", parent=small_style,
+            fontName="Helvetica-Bold", fontSize=body_size + 1,
+            leading=body_size + 3, textColor=colors.HexColor(tick_color),
+            spaceBefore=1.5 * mm, spaceAfter=1 * mm, keepWithNext=True,
+        )
+        story.append(Paragraph(f"{label} periods", heading_style))
+        if not rows:
+            story.append(Paragraph("No matching periods.", small_style))
+            story.append(Spacer(1, 2 * mm))
+            return
         data = [[cell("Planet"), cell("DBA / Transit"), cell("Period")]]
-        for row in items:
+        for row in rows:
             period = f"{row['start']} to {row['end']}"
             data.append([
                 SummaryPlanetCell(row["planet"], row["tick_color"], body_size),
@@ -1056,11 +1075,11 @@ def _marriage_summary_story(items, title_style, cell_style, small_style, usable_
             ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
         ]))
         story.extend([table, Spacer(1, 4 * mm)])
-    else:
-        story.extend([
-            Paragraph("No tick-marked periods in this prediction window.", small_style),
-            Spacer(1, 4 * mm),
-        ])
+
+    green_items = [row for row in items if row["tick_color"] == "#16A34A"]
+    orange_items = [row for row in items if row["tick_color"] != "#16A34A"]
+    append_tick_table("Green tick", "#16A34A", green_items)
+    append_tick_table("Orange tick", "#D4A017", orange_items)
 
     legend_title_style = ParagraphStyle(
         "MarriageLegendTitle", parent=small_style, fontName="Helvetica-Bold",
@@ -1147,7 +1166,7 @@ def _prediction_pdf_page(
         story.append(PageBreak())
         story.extend(_marriage_summary_story(
             _marriage_summary_items(significators, dba, transits),
-            title_style, cell_style, small_style, usable_width, cell, body_size,
+            dba, title_style, small_style, usable_width, cell, body_size,
         ))
     else:
         story.extend(_generic_period_story(dba, transits, section_style, cell_style, small_style, usable_width, cell))
