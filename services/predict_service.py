@@ -13,7 +13,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import Flowable, LongTable, Paragraph, SimpleDocTemplate, Spacer, TableStyle
+from reportlab.platypus import Flowable, LongTable, PageBreak, Paragraph, SimpleDocTemplate, Spacer, TableStyle
 
 from models.schemas import PlanetLordSummaryRequest, PredictionPeriodsRequest, PredictionReportRequest, ReportRequest
 from pdf.desktop_report import render_desktop_pdf
@@ -695,6 +695,32 @@ class TransitPlanetCell(Flowable):
             canvas.line(x + 2, y - 2, x + 6, y + 3)
 
 
+class SummaryPlanetCell(Flowable):
+    """Planet label preceded by a colored vector checkmark."""
+
+    def __init__(self, planet: str, tick_color: str, font_size: float):
+        super().__init__()
+        self.planet = planet
+        self.tick_color = tick_color
+        self.font_size = font_size
+        self.height = font_size + 4
+
+    def wrap(self, avail_width, avail_height):
+        self.width = avail_width
+        return self.width, self.height
+
+    def draw(self):
+        canvas = self.canv
+        y = self.height / 2 + 1
+        canvas.setStrokeColor(colors.HexColor(self.tick_color))
+        canvas.setLineWidth(1.6)
+        canvas.line(0, y, 2.2, y - 2.2)
+        canvas.line(2.2, y - 2.2, 6.7, y + 3.4)
+        canvas.setFillColor(colors.HexColor("#1E293B"))
+        canvas.setFont("Helvetica", self.font_size)
+        canvas.drawString(10, 1, self.planet)
+
+
 def _merge_transit_periods(
     rows: list[dict[str, Any]],
     bhava: int,
@@ -951,6 +977,100 @@ def _generic_period_story(dba, transits, section_style, cell_style, small_style,
         story.append(Paragraph("No matching transit periods overlap this window.", small_style))
     return story
 
+
+def _marriage_summary_items(significators, dba, transits) -> list[dict[str, str]]:
+    """Collect only long, tick-worthy DBA and transit periods for the final page."""
+    items: dict[tuple[str, str, str, str], dict[str, str]] = {}
+    bhava_significators = significators["bhavas"]
+    transit_rows = transits.get("transit_periods", [])
+    slow_planets = {"Jupiter", "Saturn", "Rahu", "Ketu"}
+    window_start = _parse_event_date(transits.get("from_date"))
+    window_end = _parse_event_date(transits.get("end_date_exclusive"))
+
+    def add(planet: str, kind: str, start: str, end: str, tick_color: str) -> None:
+        if not _period_exceeds_six_months(start, end):
+            return
+        key = (planet, kind, start, end)
+        existing = items.get(key)
+        # A primary (green) match takes precedence over a secondary (orange)
+        # match when the same period appears in more than one bhava group.
+        if existing is None or tick_color == "#16A34A":
+            items[key] = {
+                "planet": planet,
+                "kind": kind,
+                "start": start,
+                "end": end,
+                "tick_color": tick_color,
+            }
+
+    for bhava in (7, 3, 11):
+        tick_color = "#16A34A" if bhava == 7 else "#D4A017"
+        for category in ("location", "cuspal_interlink"):
+            selected = set(bhava_significators[bhava][category])
+            if not selected:
+                continue
+            for row in _dba_planet_periods(dba, selected):
+                if row.get("show_dates"):
+                    add(row["planet"], "DBA", row["start"], row["end"], tick_color)
+
+            for row in _merge_transit_periods(
+                transit_rows,
+                bhava,
+                selected | slow_planets,
+                window_start=window_start,
+                window_end_exclusive=window_end,
+            ):
+                add(row["planet"], "Transit", row["start"], row["end"], tick_color)
+
+    return sorted(items.values(), key=lambda row: (
+        row["start"], row["planet"], row["kind"], row["end"]
+    ))
+
+
+def _marriage_summary_story(items, title_style, cell_style, small_style, usable_width, cell, body_size):
+    story = [Paragraph("Marriage Date Prediction", title_style)]
+    if items:
+        data = [[cell("Planet"), cell("DBA / Transit"), cell("Period")]]
+        for row in items:
+            period = f"{row['start']} to {row['end']}"
+            data.append([
+                SummaryPlanetCell(row["planet"], row["tick_color"], body_size),
+                cell(row["kind"]),
+                cell(period),
+            ])
+        table = LongTable(
+            data,
+            colWidths=[usable_width * .25, usable_width * .25, usable_width * .50],
+            repeatRows=1,
+            hAlign="LEFT",
+        )
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F0FA")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#072A7D")),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("GRID", (0, 0), (-1, -1), .35, colors.HexColor("#CBD5E1")),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 4),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ]))
+        story.extend([table, Spacer(1, 4 * mm)])
+    else:
+        story.extend([
+            Paragraph("No tick-marked periods in this prediction window.", small_style),
+            Spacer(1, 4 * mm),
+        ])
+
+    legend_title_style = ParagraphStyle(
+        "MarriageLegendTitle", parent=small_style, fontName="Helvetica-Bold",
+        fontSize=body_size + 1, leading=body_size + 3, textColor=colors.HexColor("#334155"),
+    )
+    story.append(Paragraph("Legends", legend_title_style))
+    story.append(SummaryPlanetCell("Green tick accuracy - above 70%", "#16A34A", body_size))
+    story.append(SummaryPlanetCell("Orange tick accuracy - above 50%", "#D4A017", body_size))
+    return story
+
 def _prediction_pdf_page(
     dba: dict[str, Any],
     transits: dict[str, Any],
@@ -1024,6 +1144,11 @@ def _prediction_pdf_page(
             level3_style, subheading_style, cell_style, small_style,
             usable_width, body_size, cell,
         ))
+        story.append(PageBreak())
+        story.extend(_marriage_summary_story(
+            _marriage_summary_items(significators, dba, transits),
+            title_style, cell_style, small_style, usable_width, cell, body_size,
+        ))
     else:
         story.extend(_generic_period_story(dba, transits, section_style, cell_style, small_style, usable_width, cell))
 
@@ -1050,7 +1175,7 @@ def create_prediction_pdf(request: PredictionReportRequest, kind: str, bhava_num
     )
     dba = get_dba_periods(period_request)
     transit = get_transit_periods(period_request, consolidate_house_periods=(kind == "marriage"))
-    title = "Marriage Date Prediction" if kind == "marriage" else "Child Birth Prediction"
+    title = "Marriage Date - Analysis" if kind == "marriage" else "Child Birth Prediction"
     significators = _prediction_significators(request, (7, 3, 11)) if kind == "marriage" else None
     prediction_pdf = _prediction_pdf_page(dba, transit, title, request.version, significators)
     base_pdf = _report_cover(request, kind)
