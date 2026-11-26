@@ -987,9 +987,13 @@ def _marriage_summary_items(significators, dba, transits) -> list[dict[str, str]
     window_start = _parse_event_date(transits.get("from_date"))
     window_end = _parse_event_date(transits.get("end_date_exclusive"))
 
-    def add(planet: str, kind: str, start: str, end: str, tick_color: str) -> None:
+    def add(
+        planet: str, kind: str, start: str, end: str, tick_color: str,
+        context: str | None = None,
+    ) -> None:
         if not _period_exceeds_six_months(start, end):
             return
+        display_kind = f"{kind} ({context})" if context else kind
         key = (planet, kind, start, end)
         existing = items.get(key)
         # A primary (green) match takes precedence over a secondary (orange)
@@ -997,7 +1001,7 @@ def _marriage_summary_items(significators, dba, transits) -> list[dict[str, str]
         if existing is None or tick_color == "#16A34A":
             items[key] = {
                 "planet": planet,
-                "kind": kind,
+                "kind": display_kind,
                 "start": start,
                 "end": end,
                 "tick_color": tick_color,
@@ -1011,7 +1015,10 @@ def _marriage_summary_items(significators, dba, transits) -> list[dict[str, str]
                 continue
             for row in _dba_planet_periods(dba, selected):
                 if row.get("show_dates"):
-                    add(row["planet"], "DBA", row["start"], row["end"], tick_color)
+                    add(
+                        row["planet"], "DBA", row["start"], row["end"],
+                        tick_color, row.get("level"),
+                    )
 
             for row in _merge_transit_periods(
                 transit_rows,
@@ -1027,7 +1034,9 @@ def _marriage_summary_items(significators, dba, transits) -> list[dict[str, str]
     ))
 
 
-def _marriage_summary_story(items, dba, title_style, small_style, usable_width, cell, body_size):
+def _marriage_summary_story(
+    items, dba, title_style, cell_style, small_style, usable_width, cell, body_size, is_mobile
+):
     story = [Paragraph("Marriage Date Prediction", title_style)]
 
     period_end = date.fromisoformat(dba["end_date_exclusive"]) - timedelta(days=1)
@@ -1049,17 +1058,21 @@ def _marriage_summary_story(items, dba, title_style, small_style, usable_width, 
             story.append(Paragraph("No matching periods.", small_style))
             story.append(Spacer(1, 2 * mm))
             return
-        data = [[cell("Planet"), cell("DBA / Transit"), cell("Period")]]
+        data = [[cell("Planet"), cell("Type"), cell("Period")]]
         for row in rows:
             period = f"{row['start']} to {row['end']}"
             data.append([
                 SummaryPlanetCell(row["planet"], row["tick_color"], body_size),
                 cell(row["kind"]),
-                cell(period),
+                cell(period, ParagraphStyle(
+                    "MarriageSummaryDates", parent=cell_style,
+                    fontName="Courier", fontSize=7.1 if is_mobile else 8.2,
+                    leading=9.2 if is_mobile else 10.5, alignment=2,
+                )),
             ])
         table = LongTable(
             data,
-            colWidths=[usable_width * .25, usable_width * .25, usable_width * .50],
+            colWidths=[usable_width * .21, usable_width * .24, usable_width * .55],
             repeatRows=1,
             hAlign="LEFT",
         )
@@ -1069,10 +1082,10 @@ def _marriage_summary_story(items, dba, title_style, small_style, usable_width, 
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
             ("GRID", (0, 0), (-1, -1), .35, colors.HexColor("#CBD5E1")),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 4),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-            ("TOPPADDING", (0, 0), (-1, -1), 4),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ("LEFTPADDING", (0, 0), (-1, -1), 5 if is_mobile else 4),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 5 if is_mobile else 4),
+            ("TOPPADDING", (0, 0), (-1, -1), 5 if is_mobile else 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5 if is_mobile else 4),
         ]))
         story.extend([table, Spacer(1, 4 * mm)])
 
@@ -1083,7 +1096,8 @@ def _marriage_summary_story(items, dba, title_style, small_style, usable_width, 
 
     legend_title_style = ParagraphStyle(
         "MarriageLegendTitle", parent=small_style, fontName="Helvetica-Bold",
-        fontSize=body_size + 1, leading=body_size + 3, textColor=colors.HexColor("#334155"),
+        fontSize=body_size + 1, leading=body_size + 3,
+        textColor=colors.HexColor("#334155"), keepWithNext=True,
     )
     story.append(Paragraph("Legends", legend_title_style))
     story.append(SummaryPlanetCell("Green tick accuracy - above 70%", "#16A34A", body_size))
@@ -1166,7 +1180,8 @@ def _prediction_pdf_page(
         story.append(PageBreak())
         story.extend(_marriage_summary_story(
             _marriage_summary_items(significators, dba, transits),
-            dba, title_style, small_style, usable_width, cell, body_size,
+            dba, title_style, cell_style, small_style, usable_width, cell,
+            body_size, is_mobile,
         ))
     else:
         story.extend(_generic_period_story(dba, transits, section_style, cell_style, small_style, usable_width, cell))
