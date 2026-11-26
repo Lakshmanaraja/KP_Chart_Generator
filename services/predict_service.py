@@ -702,9 +702,9 @@ class MarriageSummaryRow(Flowable):
         super().__init__()
         self.item = item
         self.is_mobile = is_mobile
-        self.date_size = 9.2 if is_mobile else 11
-        self.detail_size = 7.6 if is_mobile else 8.5
-        self.height = self.date_size + self.detail_size + 17
+        self.date_size = 10.5 if is_mobile else 12
+        self.detail_size = 8.8
+        self.height = self.date_size + self.detail_size + 22
 
     def wrap(self, avail_width, avail_height):
         self.width = avail_width
@@ -717,9 +717,21 @@ class MarriageSummaryRow(Flowable):
         canvas.setLineWidth(1.6)
         canvas.line(0, date_baseline + self.date_size * .25 + 2, 2.3, date_baseline + self.date_size * .25)
         canvas.line(2.3, date_baseline + self.date_size * .25, 6.8, date_baseline + self.date_size * .25 + 5)
-        canvas.setFillColor(colors.HexColor("#072A7D"))
-        canvas.setFont("Courier-Bold", self.date_size)
-        canvas.drawString(12, date_baseline, f"{self.item['start']} to {self.item['end']}")
+        canvas.setFillColor(colors.HexColor("#0F172A"))
+        canvas.setFont("Helvetica-Bold", self.date_size)
+        start_label = date.fromisoformat(self.item["start"]).strftime("%d %b %Y")
+        end_label = date.fromisoformat(self.item["end"]).strftime("%d %b %Y")
+        date_x = 12
+        canvas.drawString(date_x, date_baseline, start_label)
+        start_width = canvas.stringWidth(start_label, "Helvetica-Bold", self.date_size)
+        arrow_start = date_x + start_width + 5
+        arrow_y = date_baseline + self.date_size * .35
+        canvas.setStrokeColor(colors.HexColor("#334155"))
+        canvas.setLineWidth(.8)
+        canvas.line(arrow_start, arrow_y, arrow_start + 8, arrow_y)
+        canvas.line(arrow_start + 5.5, arrow_y + 2.5, arrow_start + 8, arrow_y)
+        canvas.line(arrow_start + 5.5, arrow_y - 2.5, arrow_start + 8, arrow_y)
+        canvas.drawString(arrow_start + 12, date_baseline, end_label)
 
         detail_y = 5
         canvas.setFillColor(colors.HexColor("#64748B"))
@@ -729,39 +741,6 @@ class MarriageSummaryRow(Flowable):
         canvas.setStrokeColor(colors.HexColor("#E2E8F0"))
         canvas.setLineWidth(0.55)
         canvas.line(0, 0, self.width, 0)
-
-
-class SummaryLegendRow(Flowable):
-    """Client-facing strength badge and meter for the summary legend."""
-
-    def __init__(self, label: str, tick_color: str, font_size: float, strength: float):
-        super().__init__()
-        self.label = label
-        self.tick_color = tick_color
-        self.font_size = font_size
-        self.strength = strength
-        self.height = font_size + 5
-
-    def wrap(self, avail_width, avail_height):
-        self.width = avail_width
-        return self.width, self.height
-
-    def draw(self):
-        canvas = self.canv
-        center_y = self.height / 2 + 1
-        canvas.setFillColor(colors.HexColor(self.tick_color))
-        canvas.circle(4, center_y, 4, stroke=0, fill=1)
-        canvas.setStrokeColor(colors.white)
-        canvas.setLineWidth(1.2)
-        canvas.line(1.8, center_y, 3.4, center_y - 1.6)
-        canvas.line(3.4, center_y - 1.6, 6.2, center_y + 1.9)
-        canvas.setFillColor(colors.HexColor("#E2E8F0"))
-        canvas.roundRect(13, center_y - 1.2, 22, 2.4, 1.2, stroke=0, fill=1)
-        canvas.setFillColor(colors.HexColor(self.tick_color))
-        canvas.roundRect(13, center_y - 1.2, 22 * self.strength, 2.4, 1.2, stroke=0, fill=1)
-        canvas.setFillColor(colors.HexColor("#475569"))
-        canvas.setFont("Helvetica", self.font_size)
-        canvas.drawString(41, 1, self.label)
 
 
 def _merge_transit_periods(
@@ -1090,8 +1069,10 @@ def _marriage_summary_story(
         backColor=colors.HexColor("#EFF6FF"), borderColor=colors.HexColor("#BFDBFE"),
         borderWidth=.6, borderPadding=6, spaceAfter=3 * mm,
     )
+    research_start = date.fromisoformat(dba["from_date"]).strftime("%d %b %Y")
+    research_end_label = period_end.strftime("%d %b %Y")
     story.append(Paragraph(
-        f"Research period: {dba['from_date']} to {period_end.isoformat()}",
+        f"Research period: {research_start} to {research_end_label}",
         research_style,
     ))
     story.append(Spacer(1, 3 * mm))
@@ -1103,7 +1084,7 @@ def _marriage_summary_story(
             leading=body_size + 3, textColor=colors.HexColor(tick_color),
             spaceBefore=1.5 * mm, spaceAfter=1 * mm, keepWithNext=True,
         )
-        story.append(Paragraph(f"{label} periods", heading_style))
+        story.append(Paragraph(label, heading_style))
         if not rows:
             story.append(Paragraph("No matching periods.", small_style))
             story.append(Spacer(1, 2 * mm))
@@ -1114,17 +1095,8 @@ def _marriage_summary_story(
 
     green_items = [row for row in items if row["tick_color"] == "#16A34A"]
     orange_items = [row for row in items if row["tick_color"] != "#16A34A"]
-    append_tick_section("Stronger Alignment Windows", "#16A34A", green_items)
-    append_tick_section("Supporting Timing Windows", "#D4A017", orange_items)
-
-    legend_title_style = ParagraphStyle(
-        "MarriageLegendTitle", parent=small_style, fontName="Helvetica-Bold",
-        fontSize=body_size + 1, leading=body_size + 3,
-        textColor=colors.HexColor("#334155"), keepWithNext=True,
-    )
-    story.append(Paragraph("Timing Guide", legend_title_style))
-    story.append(SummaryLegendRow("Stronger timing alignment", "#16A34A", body_size, .88))
-    story.append(SummaryLegendRow("Supporting timing alignment", "#D4A017", body_size, .62))
+    append_tick_section("Strong Alignment Windows (70%+)", "#16A34A", green_items)
+    append_tick_section("Moderate Alignment Windows (50%+)", "#D4A017", orange_items)
     return story
 
 def _prediction_pdf_page(
