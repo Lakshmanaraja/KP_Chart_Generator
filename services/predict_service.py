@@ -1126,8 +1126,8 @@ def _marriage_summary_story(
 
     green_items = [row for row in items if row["tick_color"] == "#16A34A"]
     orange_items = [row for row in items if row["tick_color"] != "#16A34A"]
-    append_tick_section("Strong Alignment Windows (70%+)", "#16A34A", green_items, 1.5 * mm)
-    append_tick_section("Moderate Alignment Windows (50%+)", "#D4A017", orange_items, 5 * mm)
+    append_tick_section("Strong Alignment Windows (>70% possibility)", "#16A34A", green_items, 1.5 * mm)
+    append_tick_section("Moderate Alignment Windows (>50% possibility)", "#D4A017", orange_items, 5 * mm)
     return story
 
 def _prediction_pdf_page(
