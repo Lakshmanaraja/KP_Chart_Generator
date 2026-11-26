@@ -283,25 +283,60 @@ def _prediction_significators(request: PredictionReportRequest, bhavas: tuple[in
 
 
 def _dba_planet_periods(dba: dict[str, Any], selected_planets: set[str]) -> list[dict[str, str]]:
-    """Collect matching Dasa/Bhukthi/Antara intervals once, retaining original bounds."""
-    entries: dict[tuple[str, str, str, str], dict[str, str]] = {}
+    """Return matching periods plus date-hidden ancestors needed to show their hierarchy."""
+    records: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    parents: dict[tuple[str, str, str, str], tuple[str, str, str, str]] = {}
 
-    def add(level: str, planet: Any, start: Any, end: Any) -> None:
-        if not planet or planet not in selected_planets or not start or not end:
-            return
-        key = (level, str(planet), str(start), str(end))
-        entries[key] = {"level": level, "planet": PLANET_ABBREVIATIONS.get(str(planet), str(planet)), "start": str(start)[:10], "end": str(end)[:10]}
+    def ensure(level: str, planet: Any, start: Any, end: Any) -> tuple[str, str, str, str] | None:
+        if not planet or not start or not end:
+            return None
+        raw_start, raw_end = str(start), str(end)
+        key = (level, str(planet), raw_start, raw_end)
+        record = records.setdefault(key, {
+            "level": level,
+            "planet": PLANET_ABBREVIATIONS.get(str(planet), str(planet)),
+            "start": raw_start[:10],
+            "end": raw_end[:10],
+            "show_dates": str(planet) in selected_planets,
+        })
+        record["show_dates"] = record["show_dates"] or str(planet) in selected_planets
+        return key
 
     for row in dba.get("bhukti_periods", []):
-        add("Dasa", row.get("mahadasha"), row.get("mahadasha_start"), row.get("mahadasha_end"))
-        add("Bhukthi", row.get("bhukthi"), row.get("start"), row.get("end"))
-    for row in dba.get("antara_periods", []):
-        add("Dasa", row.get("mahadasha"), row.get("mahadasha_start"), row.get("mahadasha_end"))
-        add("Bhukthi", row.get("bhukthi"), row.get("bhukthi_start"), row.get("bhukthi_end"))
-        add("Antara", row.get("antara"), row.get("start"), row.get("end"))
-    level_order = {"Dasa": 0, "Bhukthi": 1, "Antara": 2}
-    return sorted(entries.values(), key=lambda row: (row["start"], level_order[row["level"]], row["planet"], row["end"]))
+        dasa = ensure("Dasa", row.get("mahadasha"), row.get("mahadasha_start"), row.get("mahadasha_end"))
+        bhukthi = ensure("Bhukthi", row.get("bhukthi"), row.get("start"), row.get("end"))
+        if dasa and bhukthi:
+            parents[bhukthi] = dasa
 
+    for row in dba.get("antara_periods", []):
+        dasa = ensure("Dasa", row.get("mahadasha"), row.get("mahadasha_start"), row.get("mahadasha_end"))
+        bhukthi = ensure("Bhukthi", row.get("bhukthi"), row.get("bhukthi_start"), row.get("bhukthi_end"))
+        antara = ensure("Antara", row.get("antara"), row.get("start"), row.get("end"))
+        if dasa and bhukthi:
+            parents[bhukthi] = dasa
+        if bhukthi and antara:
+            parents[antara] = bhukthi
+
+    included = {key for key, row in records.items() if row["show_dates"]}
+    for key in tuple(included):
+        child = key
+        while child in parents:
+            parent = parents[child]
+            parent_start = date.fromisoformat(records[parent]["start"])
+            parent_end = date.fromisoformat(records[parent]["end"])
+            child_start = date.fromisoformat(records[child]["start"])
+            child_end = date.fromisoformat(records[child]["end"])
+            if parent_start <= child_start and parent_end >= child_end:
+                included.add(parent)
+                child = parent
+            else:
+                break
+
+    level_order = {"Dasa": 0, "Bhukthi": 1, "Antara": 2}
+    return sorted(
+        (records[key] for key in included),
+        key=lambda row: (row["start"], level_order[row["level"]], row["planet"], row["end"]),
+    )
 
 
 DBA_LEVEL_RANK = {"Dasa": 1, "Bhukthi": 2, "Antara": 3}
@@ -369,6 +404,8 @@ class DBAHierarchyRow(Flowable):
         canvas.setFillColor(colors.HexColor("#1E293B"))
         canvas.setFont("Helvetica", self.font_size)
         canvas.drawString(depth * self.INDENT + 2, baseline, f"{self.row['planet']} — {self.row['level']}")
+        if not self.row.get("show_dates", True):
+            return
 
         # Courier keeps every digit aligned; draw a vector arrow so it is not
         # dependent on a platform font's arrow glyph.
