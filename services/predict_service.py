@@ -717,7 +717,8 @@ class MarriageSummaryRow(Flowable):
         canvas.setLineWidth(1.6)
         canvas.line(0, date_baseline + self.date_size * .25 + 2, 2.3, date_baseline + self.date_size * .25)
         canvas.line(2.3, date_baseline + self.date_size * .25, 6.8, date_baseline + self.date_size * .25 + 5)
-        canvas.setFillColor(colors.HexColor("#0F172A"))
+        date_color = "#64748B" if self.item.get("time_horizon") == "Past" else "#0F172A"
+        canvas.setFillColor(colors.HexColor(date_color))
         canvas.setFont("Helvetica-Bold", self.date_size)
         start_label = date.fromisoformat(self.item["start"]).strftime("%d %b %Y")
         end_label = date.fromisoformat(self.item["end"]).strftime("%d %b %Y")
@@ -734,9 +735,26 @@ class MarriageSummaryRow(Flowable):
         canvas.drawString(arrow_start + 12, date_baseline, end_label)
 
         detail_y = 5
+        horizon = self.item.get("time_horizon", "Future")
+        horizon_style = {
+            "Past": ("#F1F5F9", "#94A3B8"),
+            "Active Window": ("#DCFCE7", "#047857"),
+            "Future": ("#E2E8F0", "#475569"),
+        }
+        badge_bg, badge_fg = horizon_style[horizon]
         canvas.setFillColor(colors.HexColor("#64748B"))
         canvas.setFont("Helvetica", self.detail_size)
-        canvas.drawString(0, detail_y, f"{self.item['planet']} · {self.item['kind']}")
+        detail = f"{self.item['planet']} · {self.item['kind']}"
+        canvas.drawString(0, detail_y, detail)
+        tag_size = 7.2 if self.is_mobile else 8
+        tag = horizon
+        tag_width = canvas.stringWidth(tag, "Helvetica-Bold", tag_size)
+        tag_x = self.width - tag_width - 10
+        canvas.setFillColor(colors.HexColor(badge_bg))
+        canvas.roundRect(tag_x - 4, detail_y - 2, tag_width + 8, tag_size + 4, 2, stroke=0, fill=1)
+        canvas.setFillColor(colors.HexColor(badge_fg))
+        canvas.setFont("Helvetica-Bold", tag_size)
+        canvas.drawString(tag_x, detail_y, tag)
 
         canvas.setStrokeColor(colors.HexColor("#E2E8F0"))
         canvas.setLineWidth(0.55)
@@ -1000,7 +1018,7 @@ def _generic_period_story(dba, transits, section_style, cell_style, small_style,
     return story
 
 
-def _marriage_summary_items(significators, dba, transits) -> list[dict[str, str]]:
+def _marriage_summary_items(significators, dba, transits, ref_year: int) -> list[dict[str, str]]:
     """Collect only long, tick-worthy DBA and transit periods for the final page."""
     items: dict[tuple[str, str, str, str], dict[str, str]] = {}
     bhava_significators = significators["bhavas"]
@@ -1009,12 +1027,22 @@ def _marriage_summary_items(significators, dba, transits) -> list[dict[str, str]
     window_start = _parse_event_date(transits.get("from_date"))
     window_end = _parse_event_date(transits.get("end_date_exclusive"))
 
+    present_end_year = ref_year + 1
+
     def add(
         planet: str, kind: str, start: str, end: str, tick_color: str,
         context: str | None = None,
     ) -> None:
         if not _period_exceeds_six_months(start, end):
             return
+        start_date = date.fromisoformat(start)
+        end_date = date.fromisoformat(end)
+        if end_date.year < ref_year:
+            time_horizon = "Past"
+        elif start_date.year <= present_end_year and end_date.year >= ref_year:
+            time_horizon = "Active Window"
+        else:
+            time_horizon = "Future"
         display_kind = f"{kind} ({context})" if context else kind
         key = (planet, kind, start, end)
         existing = items.get(key)
@@ -1027,6 +1055,7 @@ def _marriage_summary_items(significators, dba, transits) -> list[dict[str, str]
                 "start": start,
                 "end": end,
                 "tick_color": tick_color,
+                "time_horizon": time_horizon,
             }
 
     for bhava in (7, 3, 11):
@@ -1077,12 +1106,14 @@ def _marriage_summary_story(
     ))
     story.append(Spacer(1, 3 * mm))
 
-    def append_tick_section(label: str, tick_color: str, rows: list[dict[str, str]]) -> None:
+    def append_tick_section(
+        label: str, tick_color: str, rows: list[dict[str, str]], space_before: float
+    ) -> None:
         heading_style = ParagraphStyle(
             f"Marriage{label.replace(' ', '')}Heading", parent=small_style,
             fontName="Helvetica-Bold", fontSize=body_size + 1,
             leading=body_size + 3, textColor=colors.HexColor(tick_color),
-            spaceBefore=1.5 * mm, spaceAfter=1 * mm, keepWithNext=True,
+            spaceBefore=space_before, spaceAfter=2.5 * mm, keepWithNext=True,
         )
         story.append(Paragraph(label, heading_style))
         if not rows:
@@ -1095,8 +1126,8 @@ def _marriage_summary_story(
 
     green_items = [row for row in items if row["tick_color"] == "#16A34A"]
     orange_items = [row for row in items if row["tick_color"] != "#16A34A"]
-    append_tick_section("Strong Alignment Windows (70%+)", "#16A34A", green_items)
-    append_tick_section("Moderate Alignment Windows (50%+)", "#D4A017", orange_items)
+    append_tick_section("Strong Alignment Windows (70%+)", "#16A34A", green_items, 1.5 * mm)
+    append_tick_section("Moderate Alignment Windows (50%+)", "#D4A017", orange_items, 5 * mm)
     return story
 
 def _prediction_pdf_page(
@@ -1105,6 +1136,7 @@ def _prediction_pdf_page(
     title: str,
     version: str,
     significators: dict[int, dict[str, list[str]]] | None = None,
+    reference_year: int | None = None,
 ) -> bytes:
     buffer = BytesIO()
     is_mobile = version == "mobile"
@@ -1164,7 +1196,7 @@ def _prediction_pdf_page(
             keepWithNext=True,
         )
         story = _marriage_summary_story(
-            _marriage_summary_items(significators, dba, transits),
+            _marriage_summary_items(significators, dba, transits, reference_year or datetime.now().year),
             dba, title_style, small_style, body_size, is_mobile,
         )
         story.extend([
@@ -1218,7 +1250,10 @@ def create_prediction_pdf(request: PredictionReportRequest, kind: str, bhava_num
     transit = get_transit_periods(period_request, consolidate_house_periods=(kind == "marriage"))
     title = "Marriage Date - Analysis" if kind == "marriage" else "Child Birth Prediction"
     significators = _prediction_significators(request, (7, 3, 11)) if kind == "marriage" else None
-    prediction_pdf = _prediction_pdf_page(dba, transit, title, request.version, significators)
+    generation_year = datetime.now(timezone(timedelta(hours=request.timezone))).year
+    prediction_pdf = _prediction_pdf_page(
+        dba, transit, title, request.version, significators, generation_year
+    )
     base_pdf = _report_cover(request, kind)
 
     try:
