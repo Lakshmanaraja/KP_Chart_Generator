@@ -736,12 +736,15 @@ class MarriageSummaryRow(Flowable):
 
         detail_y = 5
         horizon = self.item.get("time_horizon", "Future")
-        horizon_style = {
-            "Past": ("#F1F5F9", "#94A3B8"),
-            "Active Window": ("#DCFCE7", "#047857"),
-            "Future": ("#E2E8F0", "#475569"),
-        }
-        badge_bg, badge_fg = horizon_style[horizon]
+        if horizon == "Active Window" and self.item["tick_color"] == "#D4A017":
+            badge_bg, badge_fg = "#FEF3C7", "#92400E"
+        else:
+            horizon_style = {
+                "Past": ("#F1F5F9", "#94A3B8"),
+                "Active Window": ("#DCFCE7", "#047857"),
+                "Future": ("#E2E8F0", "#475569"),
+            }
+            badge_bg, badge_fg = horizon_style[horizon]
         canvas.setFillColor(colors.HexColor("#64748B"))
         canvas.setFont("Helvetica", self.detail_size)
         detail = f"{self.item['planet']} · {self.item['kind']}"
