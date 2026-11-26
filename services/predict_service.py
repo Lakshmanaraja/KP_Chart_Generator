@@ -453,10 +453,11 @@ class DBAHierarchyRow(Flowable):
     """One compact DBA row with a date column and nested-level guide."""
     INDENT = 12  # points, approximately 16 CSS pixels
 
-    def __init__(self, row: dict[str, Any], font_size: float):
+    def __init__(self, row: dict[str, Any], font_size: float, tick_color: str = "#16A34A"):
         super().__init__()
         self.row = row
         self.font_size = font_size
+        self.tick_color = tick_color
         self.row_height = max(12, font_size + 4)
 
     def wrap(self, avail_width, avail_height):
@@ -489,7 +490,7 @@ class DBAHierarchyRow(Flowable):
         if long_period:
             tick_x = label_x + canvas.stringWidth(label, label_font, self.font_size) + 3
             tick_y = baseline + self.font_size * 0.35
-            canvas.setStrokeColor(colors.HexColor("#16A34A"))
+            canvas.setStrokeColor(colors.HexColor(self.tick_color))
             canvas.setLineWidth(1.5)
             canvas.line(tick_x, tick_y, tick_x + 2, tick_y - 2)
             canvas.line(tick_x + 2, tick_y - 2, tick_x + 6, tick_y + 3)
@@ -513,14 +514,16 @@ class DBAHierarchyRow(Flowable):
         canvas.line(arrow_center + 0.5, arrow_y - 2, arrow_center + 2.5, arrow_y)
 
 
-def _render_dba_tree(entries: list[dict[str, str]], font_size: float, small_style):
+def _render_dba_tree(
+    entries: list[dict[str, str]], font_size: float, small_style, tick_color: str = "#16A34A"
+):
     if not entries:
         return [Paragraph("No matching periods.", small_style)]
     rows: list[DBAHierarchyRow] = []
 
     def flatten(nodes):
         for node in nodes:
-            rows.append(DBAHierarchyRow(node, font_size))
+            rows.append(DBAHierarchyRow(node, font_size, tick_color))
             flatten(node["children"])
 
     flatten(_nest_dba_periods(entries))
@@ -564,11 +567,14 @@ def _period_exceeds_six_months(start_value: Any, end_value: Any) -> bool:
 class TransitPlanetCell(Flowable):
     """Planet cell with a small green check for transit periods over six months."""
 
-    def __init__(self, planet: str, start: Any, end: Any, font_size: float):
+    def __init__(
+        self, planet: str, start: Any, end: Any, font_size: float, tick_color: str = "#16A34A"
+    ):
         super().__init__()
         self.planet = planet
         self.long_period = _period_exceeds_six_months(start, end)
         self.font_size = font_size
+        self.tick_color = tick_color
         self.height = font_size + 2
 
     def wrap(self, avail_width, avail_height):
@@ -583,7 +589,7 @@ class TransitPlanetCell(Flowable):
         if self.long_period:
             x = canvas.stringWidth(self.planet, "Helvetica", self.font_size) + 3
             y = self.height / 2 + 1
-            canvas.setStrokeColor(colors.HexColor("#16A34A"))
+            canvas.setStrokeColor(colors.HexColor(self.tick_color))
             canvas.setLineWidth(1.5)
             canvas.line(x, y, x + 2, y - 2)
             canvas.line(x + 2, y - 2, x + 6, y + 3)
@@ -647,13 +653,16 @@ def _render_period_table(
     small_style,
     mark_long_periods: bool = False,
     mark_font_size: float = 7,
+    mark_tick_color: str = "#16A34A",
 ):
     if not entries:
         return Paragraph("No matching periods.", small_style)
     data = [[cell(header) for header in headers]]
     for row in entries:
         data.append([
-            TransitPlanetCell(str(row.get(column, "")), row.get("start"), row.get("end"), mark_font_size)
+            TransitPlanetCell(
+                str(row.get(column, "")), row.get("start"), row.get("end"), mark_font_size, mark_tick_color
+            )
             if mark_long_periods and column == "planet"
             else cell(row.get(column, ""))
             for column in columns
@@ -678,6 +687,7 @@ def _marriage_significator_story(significators, dba, transits, section_style, ce
     slow_planets = {"Jupiter", "Saturn", "Rahu", "Ketu"}
 
     def add_category(bhava: int, label: str, planets: list[str]):
+        tick_color = "#16A34A" if bhava == 7 else "#D4A017"
         story.append(Paragraph(f"Bhava {bhava} — {label}", section_style))
         if not planets:
             story.append(Paragraph("No planets in this category.", small_style))
@@ -685,7 +695,7 @@ def _marriage_significator_story(significators, dba, transits, section_style, ce
         selected = set(planets)
         story.append(Paragraph("Vimshottari Dasa", section_style))
         entries = _dba_planet_periods(dba, selected)
-        story.extend(_render_dba_tree(entries, body_size, small_style))
+        story.extend(_render_dba_tree(entries, body_size, small_style, tick_color))
         story.append(Spacer(1, 1.5 * mm))
         story.append(Paragraph("Transit", section_style))
         # Slow-moving transits are included by actual bhava and requested
@@ -714,6 +724,7 @@ def _marriage_significator_story(significators, dba, transits, section_style, ce
                 small_style,
                 mark_long_periods=True,
                 mark_font_size=body_size,
+                mark_tick_color=tick_color,
             ))
         story.append(Spacer(1, 2 * mm))
 
