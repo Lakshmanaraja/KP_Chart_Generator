@@ -192,12 +192,8 @@ def get_transit_periods(request: PredictionPeriodsRequest) -> dict[str, Any]:
             continue
         filtered.append({
             **row,
-            # Report the portion inside the requested window so an interval
-            # that began in an earlier year still appears with its active dates.
-            "date": overlap_start.isoformat(),
-            "exit_date": overlap_end.isoformat(),
-            "original_date": row.get("date"),
-            "original_exit_date": row.get("exit_date"),
+            # Keep the original transit boundaries for display. The overlap
+            # above controls inclusion without replacing a pre-window start.
             "actual_bhava": actual_bhava,
             "bhava_type": "primary" if actual_bhava == request.bhava_number else "secondary",
             "primary_bhava": request.bhava_number,
@@ -510,11 +506,11 @@ def _marriage_significator_story(significators, dba, transits, section_style, ce
             story.append(Paragraph("No planets in this category.", small_style))
             return
         selected = set(planets)
-        story.append(Paragraph("DBA", cell_style))
+        story.append(Paragraph("Vimshottari Dasa", section_style))
         entries = _dba_planet_periods(dba, selected)
         story.extend(_render_dba_tree(entries, body_size, small_style))
         story.append(Spacer(1, 1.5 * mm))
-        story.append(Paragraph("Transit", cell_style))
+        story.append(Paragraph("Transit", section_style))
         # Slow-moving transits are included by actual bhava and requested
         # window even when that planet is not among the natal signifiers for
         # this Location/Cuspal Interlink subsection.
