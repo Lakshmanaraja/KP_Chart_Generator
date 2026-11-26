@@ -90,10 +90,12 @@ def _cover(d: _Doc, client: dict, text_source: str = "report"):
         d.text("MARRIAGE TIMING & PARTNER ALIGNMENT", W / 2, 84 * mm, 10, True, GREY, "center")
     for l in wrap(report_title(text_source), 26, WIDTH, True):
         d.text(l, W / 2, ty, 26, True, BRAND, "center"); ty += LH(26)
-    subtitle = ("Right Timing for Marriage & What to Look For in a Partner"
+    subtitle = ("Marriage timing and partner compatibility"
                 if text_source == "marriage" else "Comprehensive Personality & Behavioural Blueprint")
-    d.text(subtitle, W / 2, ty + 3 * mm, 12, False, GREY, "center")
-    y = max(130 * mm, ty + 16 * mm)
+    subtitle_lines = wrap(subtitle, 12, WIDTH - (12 * mm if text_source == "marriage" else 0))
+    for index, line in enumerate(subtitle_lines):
+        d.text(line, W / 2, ty + 3 * mm + index * LH(12), 12, False, GREY, "center")
+    y = max(130 * mm, ty + 16 * mm + max(0, len(subtitle_lines) - 1) * LH(12))
     for l in wrap(client.get("name", ""), 22, WIDTH, True):
         d.text(l, W / 2, y, 22, True, BODY, "center"); y += LH(22)
     rows = [("Date of Birth", client.get("date_of_birth")), ("Time of Birth", client.get("time_of_birth")),

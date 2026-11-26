@@ -158,7 +158,7 @@ def cover_copy(text_source: str = "report"):
     """(kicker, title, subtitle) for the cover title card."""
     if text_source == "marriage":
         return ("MARRIAGE TIMING & PARTNER ALIGNMENT", "PROSPECT OF MARRIAGE REPORT",
-                "Right Timing for Marriage & What to Look For in a Partner")
+                "Marriage timing and partner compatibility")
     if text_source == "child":
         return ("CHILD PERSONALITY & BEHAVIOURAL BLUEPRINT", "Understanding Your Child",
                 "A Comprehensive Guide for Parents")
@@ -180,7 +180,8 @@ def _cover(d: _Doc, client: dict, text_source: str = "report"):
     kpt = _fit(kicker, 8.5, inner * 0.9, True, 6, track)
     tpt = _fit(title, 18, inner * 0.9, True, 10)
     spt = 10.5
-    sub_lines = wrap(subtitle, spt, inner)
+    subtitle_width = inner - (4 * mm if text_source == "marriage" else 0)
+    sub_lines = wrap(subtitle, spt, subtitle_width)
     pad = 5 * mm
     h1 = pad + kpt + 3 * mm + 3 * mm + tpt + 2.5 * mm + LH(spt) * len(sub_lines) + pad - 2 * mm
     y1 = 32 * mm
