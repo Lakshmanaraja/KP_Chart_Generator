@@ -1,6 +1,7 @@
 """Generic DBA/transit windows and marriage/child-birth prediction reports."""
 from __future__ import annotations
 
+from calendar import monthrange
 from datetime import date, datetime, time, timedelta, timezone
 from io import BytesIO
 from typing import Any
@@ -469,9 +470,29 @@ class DBAHierarchyRow(Flowable):
 
         canvas.setFillColor(colors.HexColor("#1E293B"))
         canvas.setFont("Helvetica", self.font_size)
-        canvas.drawString(depth * self.INDENT + 2, baseline, f"{self.row['planet']} — {self.row['level']}")
+        label = f"{self.row['planet']} — {self.row['level']}"
+        label_x = depth * self.INDENT + 2
+        canvas.drawString(label_x, baseline, label)
         if not self.row.get("show_dates", True):
             return
+
+        try:
+            start_date = date.fromisoformat(self.row["start"])
+            end_date = date.fromisoformat(self.row["end"])
+            month_index = start_date.year * 12 + start_date.month - 1 + 6
+            threshold_year, month0 = divmod(month_index, 12)
+            threshold_month = month0 + 1
+            threshold_day = min(start_date.day, monthrange(threshold_year, threshold_month)[1])
+            six_month_threshold = date(threshold_year, threshold_month, threshold_day)
+        except (KeyError, TypeError, ValueError):
+            six_month_threshold = None
+        if six_month_threshold is not None and end_date > six_month_threshold:
+            tick_x = label_x + canvas.stringWidth(label, "Helvetica", self.font_size) + 3
+            tick_y = baseline + self.font_size * 0.35
+            canvas.setStrokeColor(colors.HexColor("#16A34A"))
+            canvas.setLineWidth(1.5)
+            canvas.line(tick_x, tick_y, tick_x + 2, tick_y - 2)
+            canvas.line(tick_x + 2, tick_y - 2, tick_x + 6, tick_y + 3)
 
         # Courier keeps every digit aligned; draw a vector arrow so it is not
         # dependent on a platform font's arrow glyph.
