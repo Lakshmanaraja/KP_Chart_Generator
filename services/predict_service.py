@@ -468,21 +468,26 @@ class DBAHierarchyRow(Flowable):
         canvas = self.canv
         depth = int(self.row["depth"])
         baseline = (self.height - self.font_size) / 2 + 1
+        long_period = self.row.get("show_dates", True) and _period_exceeds_six_months(
+            self.row.get("start"), self.row.get("end")
+        )
         if depth:
             canvas.setStrokeColor(colors.HexColor("#CBD5E1"))
             canvas.setLineWidth(1.1)
             canvas.line(depth * self.INDENT - 4, 1, depth * self.INDENT - 4, self.height - 1)
 
-        canvas.setFillColor(colors.HexColor("#1E293B"))
-        canvas.setFont("Helvetica", self.font_size)
+        emphasis_color = colors.HexColor("#0B0F19") if long_period else colors.HexColor("#1E293B")
+        label_font = "Helvetica-Bold" if long_period else "Helvetica"
+        canvas.setFillColor(emphasis_color)
+        canvas.setFont(label_font, self.font_size)
         label = f"{self.row['planet']} — {self.row['level']}"
         label_x = depth * self.INDENT + 2
         canvas.drawString(label_x, baseline, label)
         if not self.row.get("show_dates", True):
             return
 
-        if _period_exceeds_six_months(self.row.get("start"), self.row.get("end")):
-            tick_x = label_x + canvas.stringWidth(label, "Helvetica", self.font_size) + 3
+        if long_period:
+            tick_x = label_x + canvas.stringWidth(label, label_font, self.font_size) + 3
             tick_y = baseline + self.font_size * 0.35
             canvas.setStrokeColor(colors.HexColor("#16A34A"))
             canvas.setLineWidth(1.5)
@@ -494,8 +499,8 @@ class DBAHierarchyRow(Flowable):
         date_size = max(5.6, self.font_size - 0.3)
         start, end = self.row["start"], self.row["end"]
         right_edge = self.width - 2
-        canvas.setFont("Courier", date_size)
-        canvas.setFillColor(colors.HexColor("#475569"))
+        canvas.setFont("Courier-Bold" if long_period else "Courier", date_size)
+        canvas.setFillColor(emphasis_color if long_period else colors.HexColor("#475569"))
         canvas.drawRightString(right_edge, baseline, end)
         end_width = canvas.stringWidth(end, "Courier", date_size)
         arrow_center = right_edge - end_width - 7
