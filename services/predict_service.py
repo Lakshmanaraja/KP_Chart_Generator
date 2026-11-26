@@ -13,11 +13,12 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import LongTable, Paragraph, SimpleDocTemplate, Spacer, TableStyle
 
-from models.schemas import PredictionPeriodsRequest, PredictionReportRequest, ReportRequest
+from models.schemas import PlanetLordSummaryRequest, PredictionPeriodsRequest, PredictionReportRequest, ReportRequest
 from pdf.desktop_report import render_desktop_pdf
 from pdf.mobile_report import H as MOBILE_H, W as MOBILE_W, render_mobile_pdf
 from services.chart_service import compute_kp_json
 from services.dasa_service import calculate_antaras, calculate_bhuktis, compute_major_dasha
+from services.planet_lord_summary_service import PLANET_ABBREVIATIONS, _calculate as calculate_planet_summary
 from services.report_service import NoTraitsFoundError, _pdf
 from services.transit_service import get_star_transits_for_cusps
 from utils.date_utils import get_moon_longitude, to_julian_day
@@ -237,11 +238,199 @@ def _report_cover(request: PredictionReportRequest) -> bytes:
         return render_mobile_pdf([], client, "report")
 
 
+
+def _prediction_significators(request: PredictionReportRequest, bhavas: tuple[int, ...]) -> dict[int, dict[str, list[str]]]:
+    """Classify natal planets by house location and cuspal summary links."""
+    try:
+        chart = compute_kp_json(
+            request.date_of_birth,
+            ":".join(str(part).zfill(2) for part in _time_parts(request.time_of_birth)),
+            request.latitude,
+            request.longitude,
+            request.timezone,
+            request.ayanamsa,
+        )
+        options = PlanetLordSummaryRequest(
+            date_of_birth=request.date_of_birth,
+            time_of_birth=request.time_of_birth,
+            latitude=request.latitude,
+            longitude=request.longitude,
+            timezone=request.timezone,
+            ayanamsa=request.ayanamsa,
+        )
+        summary = calculate_planet_summary({"cusps": chart.get("houses", []), "planets": chart.get("planets", [])}, options)
+    except (ValueError, TypeError, OverflowError) as exc:
+        raise HTTPException(422, f"Invalid birth details: {exc}") from None
+
+    by_bhava: dict[int, dict[str, list[str]]] = {}
+    for bhava in bhavas:
+        located: list[str] = []
+        interlinked: list[str] = []
+        for row in summary["rows"]:
+            planet = str(row["planet_name"])
+            if row.get("location") == bhava:
+                located.append(planet)
+                continue
+            linked = {
+                int(value)
+                for key in ("nl_bhavas", "su_bhavas", "ss_bhavas", "sk_bhavas")
+                for value in (row.get(key) or [])
+            }
+            if bhava in linked:
+                interlinked.append(planet)
+        by_bhava[bhava] = {"location": located, "cuspal_interlink": interlinked}
+    return by_bhava
+
+
+def _dba_planet_periods(dba: dict[str, Any], selected_planets: set[str]) -> list[dict[str, str]]:
+    """Collect matching Dasa/Bhukthi/Antara intervals once, retaining original bounds."""
+    entries: dict[tuple[str, str, str, str], dict[str, str]] = {}
+
+    def add(level: str, planet: Any, start: Any, end: Any) -> None:
+        if not planet or planet not in selected_planets or not start or not end:
+            return
+        key = (level, str(planet), str(start), str(end))
+        entries[key] = {"level": level, "planet": PLANET_ABBREVIATIONS.get(str(planet), str(planet)), "start": str(start)[:10], "end": str(end)[:10]}
+
+    for row in dba.get("bhukti_periods", []):
+        add("Dasa", row.get("mahadasha"), row.get("mahadasha_start"), row.get("mahadasha_end"))
+        add("Bhukthi", row.get("bhukthi"), row.get("start"), row.get("end"))
+    for row in dba.get("antara_periods", []):
+        add("Dasa", row.get("mahadasha"), row.get("mahadasha_start"), row.get("mahadasha_end"))
+        add("Bhukthi", row.get("bhukthi"), row.get("bhukthi_start"), row.get("bhukthi_end"))
+        add("Antara", row.get("antara"), row.get("start"), row.get("end"))
+    level_order = {"Dasa": 0, "Bhukthi": 1, "Antara": 2}
+    return sorted(entries.values(), key=lambda row: (row["start"], level_order[row["level"]], row["planet"], row["end"]))
+
+
+def _merge_transit_periods(rows: list[dict[str, Any]], bhava: int, selected_planets: set[str]) -> list[dict[str, str]]:
+    """Merge adjacent star-segment rows for the same planet within one bhava."""
+    grouped: dict[str, list[tuple[datetime, datetime]]] = {}
+    for row in rows:
+        planet = str(row.get("planet") or "")
+        if planet not in selected_planets or row.get("actual_bhava", row.get("bhava")) != bhava:
+            continue
+        try:
+            start, end = _as_utc_datetime(row["date"]), _as_utc_datetime(row["exit_date"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if end > start:
+            grouped.setdefault(planet, []).append((start, end))
+
+    merged: list[dict[str, str]] = []
+    for planet, intervals in grouped.items():
+        intervals.sort()
+        current_start = current_end = None
+        for start, end in intervals:
+            if current_start is None:
+                current_start, current_end = start, end
+            elif start <= current_end:
+                current_end = max(current_end, end)
+            else:
+                merged.append({"planet": PLANET_ABBREVIATIONS.get(planet, planet), "start": current_start.date().isoformat(), "end": current_end.date().isoformat()})
+                current_start, current_end = start, end
+        if current_start is not None:
+            merged.append({"planet": PLANET_ABBREVIATIONS.get(planet, planet), "start": current_start.date().isoformat(), "end": current_end.date().isoformat()})
+    return sorted(merged, key=lambda row: (row["start"], row["planet"], row["end"]))
+
+
+def _render_period_table(entries: list[dict[str, str]], headers: list[str], columns: list[str], widths: list[float], usable_width: float, cell, small_style):
+    if not entries:
+        return Paragraph("No matching periods.", small_style)
+    data = [[cell(header) for header in headers]]
+    data.extend([[cell(row.get(column, "")) for column in columns] for row in entries])
+    table = LongTable(data, colWidths=[width * usable_width for width in widths], repeatRows=1, hAlign="LEFT")
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F0FA")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#072A7D")),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#CBD5E1")),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 2), ("RIGHTPADDING", (0, 0), (-1, -1), 2),
+        ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+    ]))
+    return table
+
+
+def _marriage_significator_story(significators, dba, transits, section_style, cell_style, small_style, usable_width, cell):
+    story = []
+    target_bhavas = (7, 3, 11)
+    transit_rows = transits.get("transit_periods", [])
+    slow_planets = {"Jupiter", "Saturn", "Rahu", "Ketu"}
+
+    def add_category(bhava: int, label: str, planets: list[str]):
+        story.append(Paragraph(f"Bhava {bhava} — {label}", section_style))
+        if not planets:
+            story.append(Paragraph("No planets in this category.", small_style))
+            return
+        selected = set(planets)
+        story.append(Paragraph("DBA", cell_style))
+        entries = _dba_planet_periods(dba, selected)
+        story.append(_render_period_table(entries, ["Planet", "Period", "From", "To"], ["planet", "level", "start", "end"], [0.18, 0.30, 0.26, 0.26], usable_width, cell, small_style))
+        story.append(Spacer(1, 1.5 * mm))
+        story.append(Paragraph("Transit", cell_style))
+        transit_entries = _merge_transit_periods(transit_rows, bhava, selected)
+        slow = [row for row in transit_entries if row["planet"] in {PLANET_ABBREVIATIONS.get(name, name) for name in slow_planets}]
+        other = [row for row in transit_entries if row not in slow]
+        for subheading, group in (("Slow-moving planets", slow), ("Other planets", other)):
+            story.append(Paragraph(subheading, small_style))
+            story.append(_render_period_table(group, ["Planet", "From", "To"], ["planet", "start", "end"], [0.30, 0.35, 0.35], usable_width, cell, small_style))
+        story.append(Spacer(1, 2 * mm))
+
+    story.append(Paragraph("Primary Significators", section_style))
+    for category in ("location", "cuspal_interlink"):
+        label = "Location" if category == "location" else "Cuspal Interlink"
+        add_category(7, label, significators[7][category])
+    story.append(Paragraph("Secondary Significators", section_style))
+    for bhava in target_bhavas[1:]:
+        for category in ("location", "cuspal_interlink"):
+            label = "Location" if category == "location" else "Cuspal Interlink"
+            add_category(bhava, label, significators[bhava][category])
+    return story
+
+
+def _generic_period_story(dba, transits, section_style, cell_style, small_style, usable_width, cell):
+    story = [Paragraph("DBA Periods", section_style)]
+    bhuktis = dba.get("bhukti_periods", [])
+    if bhuktis:
+        data = [[cell("Dasa"), cell("Bhukthi"), cell("From"), cell("To")]]
+        data.extend([[cell(row["mahadasha"]), cell(row["bhukthi"]), cell(row["start"][:10]), cell(row["end"][:10])] for row in bhuktis])
+        widths = [usable_width * .19, usable_width * .22, usable_width * .30, usable_width * .29]
+        table = LongTable(data, colWidths=widths, repeatRows=1, hAlign="LEFT")
+        table.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F0FA")), ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#072A7D")), ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"), ("GRID", (0, 0), (-1, -1), .35, colors.HexColor("#CBD5E1")), ("VALIGN", (0, 0), (-1, -1), "TOP")]))
+        story.extend([table, Spacer(1, 2 * mm)])
+    else:
+        story.append(Paragraph("No Bhukthi periods overlap this window.", small_style))
+    antaras = dba.get("antara_periods", [])
+    story.append(Paragraph("Antara Periods", section_style))
+    if antaras:
+        data = [[cell("Dasa"), cell("Bhukthi"), cell("Antara"), cell("From"), cell("To")]]
+        data.extend([[cell(row["mahadasha"]), cell(row["bhukthi"]), cell(row["antara"]), cell(row["start"][:10]), cell(row["end"][:10])] for row in antaras])
+        widths = [usable_width * .16, usable_width * .18, usable_width * .20, usable_width * .23, usable_width * .23]
+        table = LongTable(data, colWidths=widths, repeatRows=1, hAlign="LEFT")
+        table.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F0FA")), ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#072A7D")), ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"), ("GRID", (0, 0), (-1, -1), .35, colors.HexColor("#CBD5E1")), ("VALIGN", (0, 0), (-1, -1), "TOP")]))
+        story.append(table)
+    else:
+        story.append(Paragraph("No Antara periods overlap this window.", small_style))
+    story.extend([Spacer(1, 2 * mm), Paragraph("Transit Periods", section_style)])
+    rows = transits.get("transit_periods", [])
+    if rows:
+        data = [[cell("Planet"), cell("Star"), cell("Bhava"), cell("From"), cell("To")]]
+        data.extend([[cell(row["planet"]), cell(row["star"]), cell(f"{row['actual_bhava']} ({row['bhava_type']})"), cell(str(row["date"])[:10]), cell(str(row["exit_date"])[:10])] for row in rows])
+        widths = [usable_width * .16, usable_width * .25, usable_width * .20, usable_width * .195, usable_width * .195]
+        table = LongTable(data, colWidths=widths, repeatRows=1, hAlign="LEFT")
+        table.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F0FA")), ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#072A7D")), ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"), ("GRID", (0, 0), (-1, -1), .35, colors.HexColor("#CBD5E1")), ("VALIGN", (0, 0), (-1, -1), "TOP")]))
+        story.append(table)
+    else:
+        story.append(Paragraph("No matching transit periods overlap this window.", small_style))
+    return story
+
 def _prediction_pdf_page(
     dba: dict[str, Any],
     transits: dict[str, Any],
     title: str,
     version: str,
+    significators: dict[int, dict[str, list[str]]] | None = None,
 ) -> bytes:
     buffer = BytesIO()
     is_mobile = version == "mobile"
@@ -275,82 +464,15 @@ def _prediction_pdf_page(
             small_style,
         ),
         Spacer(1, 2 * mm),
-        Paragraph("DBA Periods", section_style),
     ]
 
     def cell(value: Any, style=cell_style):
         return Paragraph(str(value if value is not None else "—"), style)
 
-    bhuktis = dba["bhukti_periods"]
-    if bhuktis:
-        data = [[cell("Dasa"), cell("Bhukthi"), cell("From"), cell("To")]]
-        data.extend([[cell(row["mahadasha"]), cell(row["bhukthi"]), cell(row["start"][:10]), cell(row["end"][:10])] for row in bhuktis])
-        widths = [usable_width * 0.19, usable_width * 0.22, usable_width * 0.30, usable_width * 0.29]
-        table = LongTable(data, colWidths=widths, repeatRows=1, hAlign="LEFT")
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F0FA")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#072A7D")),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#CBD5E1")),
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 2),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 2),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-        ]))
-        story.extend([table, Spacer(1, 2 * mm)])
+    if significators is not None:
+        story.extend(_marriage_significator_story(significators, dba, transits, section_style, cell_style, small_style, usable_width, cell))
     else:
-        story.append(Paragraph("No Bhukthi periods overlap this window.", small_style))
-
-    antaras = dba["antara_periods"]
-    if antaras:
-        data = [[cell("Dasa"), cell("Bhukthi"), cell("Antara"), cell("From"), cell("To")]]
-        data.extend([[cell(row["mahadasha"]), cell(row["bhukthi"]), cell(row["antara"]), cell(row["start"][:10]), cell(row["end"][:10])] for row in antaras])
-        widths = [usable_width * .16, usable_width * .18, usable_width * .20, usable_width * .23, usable_width * .23]
-        table = LongTable(data, colWidths=widths, repeatRows=1, hAlign="LEFT")
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F0FA")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#072A7D")),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#CBD5E1")),
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 2),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 2),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-        ]))
-        story.extend([table, Spacer(1, 2 * mm)])
-    else:
-        story.append(Paragraph("No Antara periods overlap this window.", small_style))
-
-    story.append(Paragraph("Transit Periods", section_style))
-    rows = transits["transit_periods"]
-    if rows:
-        data = [[cell("Planet"), cell("Star"), cell("Bhava"), cell("From"), cell("To")]]
-        data.extend([
-            [
-                cell(row["planet"]), cell(row["star"]),
-                cell(f"{row['actual_bhava']} ({row['bhava_type']})"),
-                cell(str(row["date"])[:10]), cell(str(row["exit_date"])[:10]),
-            ]
-            for row in rows
-        ])
-        widths = [usable_width * .16, usable_width * .25, usable_width * .20, usable_width * .195, usable_width * .195]
-        table = LongTable(data, colWidths=widths, repeatRows=1, hAlign="LEFT")
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F0FA")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#072A7D")),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#CBD5E1")),
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 2),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 2),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-        ]))
-        story.append(table)
-    else:
-        story.append(Paragraph("No matching transit periods overlap this window.", small_style))
+        story.extend(_generic_period_story(dba, transits, section_style, cell_style, small_style, usable_width, cell))
 
     doc = SimpleDocTemplate(
         buffer, pagesize=page_size, leftMargin=margin, rightMargin=margin,
@@ -376,7 +498,8 @@ def create_prediction_pdf(request: PredictionReportRequest, kind: str, bhava_num
     dba = get_dba_periods(period_request)
     transit = get_transit_periods(period_request)
     title = "Marriage Date Prediction" if kind == "marriage" else "Child Birth Prediction"
-    prediction_pdf = _prediction_pdf_page(dba, transit, title, request.version)
+    significators = _prediction_significators(request, (7, 3, 11)) if kind == "marriage" else None
+    prediction_pdf = _prediction_pdf_page(dba, transit, title, request.version, significators)
     base_pdf = _report_cover(request)
 
     try:
