@@ -1021,7 +1021,7 @@ def _generic_period_story(dba, transits, section_style, cell_style, small_style,
     return story
 
 
-def _marriage_summary_items(significators, dba, transits, ref_year: int) -> list[dict[str, str]]:
+def _marriage_summary_items(significators, dba, transits, reference_date: date) -> list[dict[str, str]]:
     """Collect only long, tick-worthy DBA and transit periods for the final page."""
     items: dict[tuple[str, str, str, str], dict[str, str]] = {}
     bhava_significators = significators["bhavas"]
@@ -1030,7 +1030,7 @@ def _marriage_summary_items(significators, dba, transits, ref_year: int) -> list
     window_start = _parse_event_date(transits.get("from_date"))
     window_end = _parse_event_date(transits.get("end_date_exclusive"))
 
-    present_end_year = ref_year + 1
+    present_end_date = add_calendar_years(reference_date, 1)
 
     def add(
         planet: str, kind: str, start: str, end: str, tick_color: str,
@@ -1040,9 +1040,9 @@ def _marriage_summary_items(significators, dba, transits, ref_year: int) -> list
             return
         start_date = date.fromisoformat(start)
         end_date = date.fromisoformat(end)
-        if end_date.year < ref_year:
+        if end_date < reference_date:
             time_horizon = "Past"
-        elif start_date.year <= present_end_year and end_date.year >= ref_year:
+        elif start_date <= present_end_date and end_date >= reference_date:
             time_horizon = "Active Window"
         else:
             time_horizon = "Future"
@@ -1148,7 +1148,7 @@ def _prediction_pdf_page(
     title: str,
     version: str,
     significators: dict[int, dict[str, list[str]]] | None = None,
-    reference_year: int | None = None,
+    reference_date: date | None = None,
 ) -> bytes:
     buffer = BytesIO()
     is_mobile = version == "mobile"
@@ -1208,7 +1208,9 @@ def _prediction_pdf_page(
             keepWithNext=True,
         )
         story = _marriage_summary_story(
-            _marriage_summary_items(significators, dba, transits, reference_year or datetime.now().year),
+            _marriage_summary_items(
+                significators, dba, transits, reference_date or datetime.now().date()
+            ),
             dba, title_style, small_style, body_size, is_mobile,
         )
         story.extend([
@@ -1262,9 +1264,9 @@ def create_prediction_pdf(request: PredictionReportRequest, kind: str, bhava_num
     transit = get_transit_periods(period_request, consolidate_house_periods=(kind == "marriage"))
     title = "Marriage Date - Analysis" if kind == "marriage" else "Child Birth Prediction"
     significators = _prediction_significators(request, (7, 3, 11)) if kind == "marriage" else None
-    generation_year = datetime.now(timezone(timedelta(hours=request.timezone))).year
+    generation_date = datetime.now(timezone(timedelta(hours=request.timezone))).date()
     prediction_pdf = _prediction_pdf_page(
-        dba, transit, title, request.version, significators, generation_year
+        dba, transit, title, request.version, significators, generation_date
     )
     base_pdf = _report_cover(request, kind)
 
