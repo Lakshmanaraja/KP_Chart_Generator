@@ -515,7 +515,10 @@ def _marriage_significator_story(significators, dba, transits, section_style, ce
         story.extend(_render_dba_tree(entries, body_size, small_style))
         story.append(Spacer(1, 1.5 * mm))
         story.append(Paragraph("Transit", cell_style))
-        transit_entries = _merge_transit_periods(transit_rows, bhava, selected)
+        # Slow-moving transits are included by actual bhava and requested
+        # window even when that planet is not among the natal signifiers for
+        # this Location/Cuspal Interlink subsection.
+        transit_entries = _merge_transit_periods(transit_rows, bhava, selected | slow_planets)
         slow = [row for row in transit_entries if row["planet"] in {PLANET_ABBREVIATIONS.get(name, name) for name in slow_planets}]
         other = [row for row in transit_entries if row not in slow]
         for subheading, group in (("Slow-moving planets", slow), ("Other planets", other)):
