@@ -20,9 +20,10 @@ from pdf.mobile_report import H as MOBILE_H, W as MOBILE_W, render_mobile_pdf
 from services.chart_service import compute_kp_json
 from services.dasa_service import calculate_antaras, calculate_bhuktis, compute_major_dasha
 from services.planet_lord_summary_service import PLANET_ABBREVIATIONS, _calculate as calculate_planet_summary
+from services.matcher_service import house_of_degree
 from services.report_service import NoTraitsFoundError, _pdf
 from services.transit_service import get_star_transits_for_cusps
-from utils.date_utils import get_moon_longitude, to_julian_day
+from utils.date_utils import find_sub_lord_recursive, get_moon_longitude, get_nak_charan_and_pos, to_julian_day
 
 
 BHAVA_GROUPS = ((1, 5, 9), (2, 6, 10), (3, 7, 11), (4, 8, 12))
@@ -239,6 +240,7 @@ def _consolidate_bhava_transits(
         intervals.sort(key=lambda item: (item[0], item[1]))
         current_start = current_end = None
         current = None
+        current_exit_degree = None
         stars: set[str] = set()
 
         def append_current():
@@ -251,21 +253,25 @@ def _consolidate_bhava_transits(
                     "actual_bhava": house,
                     "date": current_start.isoformat(),
                     "exit_date": current_end.isoformat(),
+                    "exit_degree": current_exit_degree,
                     "stars": sorted(stars),
                 })
 
         for start, end, row in intervals:
             if current_start is None:
                 current_start, current_end, current = start, end, row
+                current_exit_degree = row.get("exit_degree")
                 stars = {str(row.get("star"))} if row.get("star") else set()
             elif start <= current_end:
                 if end > current_end:
                     current_end = end
+                    current_exit_degree = row.get("exit_degree")
                 if row.get("star"):
                     stars.add(str(row["star"]))
             else:
                 append_current()
                 current_start, current_end, current = start, end, row
+                current_exit_degree = row.get("exit_degree")
                 stars = {str(row.get("star"))} if row.get("star") else set()
         append_current()
 
@@ -311,7 +317,7 @@ def _report_cover(request: PredictionReportRequest, kind: str = "report") -> byt
 
 
 
-def _prediction_significators(request: PredictionReportRequest, bhavas: tuple[int, ...]) -> dict[int, dict[str, list[str]]]:
+def _prediction_significators(request: PredictionReportRequest, bhavas: tuple[int, ...]) -> dict[str, Any]:
     """Classify natal planets by house location and cuspal summary links."""
     try:
         chart = compute_kp_json(
@@ -335,6 +341,20 @@ def _prediction_significators(request: PredictionReportRequest, bhavas: tuple[in
         raise HTTPException(422, f"Invalid birth details: {exc}") from None
 
     by_bhava: dict[int, dict[str, list[str]]] = {}
+    planet_rows = {row["planet_name"]: row for row in summary["rows"]}
+    chart_planets = {planet.get("planet_name"): planet for planet in chart.get("planets", [])}
+    combined_values: dict[str, str] = {}
+    cusp_rows = chart.get("houses", [])
+    for planet, row in planet_rows.items():
+        chart_planet = chart_planets.get(planet)
+        if chart_planet:
+            combined_values[planet] = _time_science_combined_value(
+                planet,
+                chart_planet,
+                cusp_rows,
+                row.get("location"),
+            )
+
     for bhava in bhavas:
         located: list[str] = []
         interlinked: list[str] = []
@@ -351,10 +371,71 @@ def _prediction_significators(request: PredictionReportRequest, bhavas: tuple[in
             if bhava in linked:
                 interlinked.append(planet)
         by_bhava[bhava] = {"location": located, "cuspal_interlink": interlinked}
-    return by_bhava
+    return {"bhavas": by_bhava, "cusps": cusp_rows, "combined_values": combined_values}
 
 
-def _dba_planet_periods(dba: dict[str, Any], selected_planets: set[str]) -> list[dict[str, str]]:
+def _time_science_combined_value(
+    planet: str,
+    planet_data: dict[str, Any],
+    cusps: list[dict[str, Any]],
+    own_house: int | str | None,
+) -> str:
+    """Format PL-NL-SU-SS-SK like the Time Science Combined row in Dasa Analysis."""
+    roles = (
+        (planet, None),
+        (planet_data.get("nakshatra_lord"), None),
+        (planet_data.get("sub_lord"), "sub_lord"),
+        (planet_data.get("sub_sub_lord"), "sub_sub_lord"),
+        (planet_data.get("sub_sub_sub_lord"), "sub_sub_sub_lord"),
+    )
+    values: list[str] = []
+    for index, (role, cusp_column) in enumerate(roles):
+        if not role:
+            continue
+        bhavas = (
+            sorted({int(cusp["house_id"]) for cusp in cusps
+                    if cusp.get(cusp_column) == role and cusp.get("house_id") is not None})
+            if cusp_column else []
+        )
+        if not bhavas and own_house is not None:
+            try:
+                bhavas = [int(own_house)]
+            except (TypeError, ValueError):
+                bhavas = []
+        abbreviation = PLANET_ABBREVIATIONS.get(str(role), str(role))
+        if index == 0:
+            abbreviation = abbreviation.upper()
+        values.append(f"{abbreviation}({','.join(map(str, bhavas))})")
+    return "-".join(values)
+
+
+def _transit_combined_value(planet: str, degree: Any, cusps: list[dict[str, Any]]) -> str | None:
+    """Build a Time Science combined value from a transit planet's boundary degree."""
+    if degree is None or not planet:
+        return None
+    try:
+        degree = float(degree)
+        _, _, nakshatra_lord, _, position_in_nakshatra, nakshatra_size = get_nak_charan_and_pos(degree)
+        sub_lords = find_sub_lord_recursive(
+            position_in_nakshatra, nakshatra_size, nakshatra_lord, levels=3
+        )
+        own_house = house_of_degree(degree, cusps)
+    except (TypeError, ValueError, IndexError, KeyError):
+        return None
+    planet_data = {
+        "nakshatra_lord": nakshatra_lord,
+        "sub_lord": sub_lords[0] if len(sub_lords) > 0 else None,
+        "sub_sub_lord": sub_lords[1] if len(sub_lords) > 1 else None,
+        "sub_sub_sub_lord": sub_lords[2] if len(sub_lords) > 2 else None,
+    }
+    return _time_science_combined_value(planet, planet_data, cusps, own_house)
+
+
+def _dba_planet_periods(
+    dba: dict[str, Any],
+    selected_planets: set[str],
+    combined_values: dict[str, str] | None = None,
+) -> list[dict[str, Any]]:
     """Return matching periods plus date-hidden ancestors needed to show their hierarchy."""
     records: dict[tuple[str, str, str, str], dict[str, Any]] = {}
     parents: dict[tuple[str, str, str, str], tuple[str, str, str, str]] = {}
@@ -370,6 +451,7 @@ def _dba_planet_periods(dba: dict[str, Any], selected_planets: set[str]) -> list
             "start": raw_start[:10],
             "end": raw_end[:10],
             "show_dates": str(planet) in selected_planets,
+            "combined_value": combined_values.get(str(planet)) if combined_values and str(planet) in selected_planets else None,
         })
         record["show_dates"] = record["show_dates"] or str(planet) in selected_planets
         return key
@@ -458,7 +540,12 @@ class DBAHierarchyRow(Flowable):
         self.row = row
         self.font_size = font_size
         self.tick_color = tick_color
-        self.row_height = max(12, font_size + 4)
+        self.combined_value = row.get("combined_value")
+        self.summary_font_size = max(4.8, font_size - 1.4)
+        self.row_height = max(
+            12,
+            font_size + 4 + (self.summary_font_size + 2 if self.combined_value else 0),
+        )
 
     def wrap(self, avail_width, avail_height):
         self.width = avail_width
@@ -468,7 +555,10 @@ class DBAHierarchyRow(Flowable):
     def draw(self):
         canvas = self.canv
         depth = int(self.row["depth"])
-        baseline = (self.height - self.font_size) / 2 + 1
+        baseline = (
+            self.summary_font_size + 3
+            if self.combined_value else (self.height - self.font_size) / 2 + 1
+        )
         long_period = self.row.get("show_dates", True) and _period_exceeds_six_months(
             self.row.get("start"), self.row.get("end")
         )
@@ -484,6 +574,10 @@ class DBAHierarchyRow(Flowable):
         label = f"{self.row['planet']} — {self.row['level']}"
         label_x = depth * self.INDENT + 2
         canvas.drawString(label_x, baseline, label)
+        if self.combined_value:
+            canvas.setFillColor(colors.HexColor("#64748B"))
+            canvas.setFont("Helvetica", self.summary_font_size)
+            canvas.drawString(label_x, 1, self.combined_value)
         if not self.row.get("show_dates", True):
             return
 
@@ -601,9 +695,10 @@ def _merge_transit_periods(
     selected_planets: set[str],
     window_start: date | None = None,
     window_end_exclusive: date | None = None,
-) -> list[dict[str, str]]:
+    include_boundary_values: bool = False,
+) -> list[dict[str, Any]]:
     """Merge adjacent calendar-day intervals for the same planet and bhava."""
-    grouped: dict[str, list[tuple[date, date]]] = {}
+    grouped: dict[str, list[tuple[date, date, dict[str, Any]]]] = {}
     for row in rows:
         planet = row.get("planet")
         if planet not in selected_planets or row.get("actual_bhava", row.get("bhava")) != bhava:
@@ -616,30 +711,48 @@ def _merge_transit_periods(
             continue
         if window_start is not None and end < window_start:
             continue
-        grouped.setdefault(planet, []).append((start, end))
+        grouped.setdefault(planet, []).append((start, end, row))
 
     merged: list[dict[str, str]] = []
     for planet, intervals in grouped.items():
-        intervals.sort(key=lambda interval: (interval[0], interval[1]))
+        intervals.sort(key=lambda interval: (
+            interval[0], interval[1], _as_utc_datetime(interval[2].get("date")),
+        ))
         current_start = current_end = None
-        for start, end in intervals:
-            if current_start is None:
-                current_start, current_end = start, end
-            elif start <= current_end + timedelta(days=1):
-                current_end = max(current_end, end)
-            else:
-                merged.append({
-                    "planet": PLANET_ABBREVIATIONS.get(planet, planet),
-                    "start": current_start.isoformat(),
-                    "end": current_end.isoformat(),
-                })
-                current_start, current_end = start, end
-        if current_start is not None:
-            merged.append({
+        start_row = end_row = None
+
+        def append_current():
+            if current_start is None or current_end is None or start_row is None:
+                return
+            item = {
                 "planet": PLANET_ABBREVIATIONS.get(planet, planet),
                 "start": current_start.isoformat(),
                 "end": current_end.isoformat(),
-            })
+            }
+            if include_boundary_values:
+                item.update({
+                    "planet_name": planet,
+                    "start_degree": start_row.get("entry_degree"),
+                    "end_degree": end_row.get("exit_degree") if end_row else None,
+                })
+            merged.append(item)
+
+        for start, end, row in intervals:
+            if current_start is None:
+                current_start, current_end = start, end
+                start_row = end_row = row
+            elif start <= current_end + timedelta(days=1):
+                if end > current_end or (
+                    end == current_end and end_row is not None
+                    and _as_utc_datetime(row.get("exit_date")) > _as_utc_datetime(end_row.get("exit_date"))
+                ):
+                    current_end = max(current_end, end)
+                    end_row = row
+            else:
+                append_current()
+                current_start, current_end = start, end
+                start_row = end_row = row
+        append_current()
     return sorted(merged, key=lambda row: (row["start"], row["planet"], row["end"]))
 
 
@@ -654,19 +767,27 @@ def _render_period_table(
     mark_long_periods: bool = False,
     mark_font_size: float = 7,
     mark_tick_color: str = "#16A34A",
+    boundary_font_size: float | None = None,
 ):
     if not entries:
         return Paragraph("No matching periods.", small_style)
     data = [[cell(header) for header in headers]]
     for row in entries:
-        data.append([
-            TransitPlanetCell(
-                str(row.get(column, "")), row.get("start"), row.get("end"), mark_font_size, mark_tick_color
-            )
-            if mark_long_periods and column == "planet"
-            else cell(row.get(column, ""))
-            for column in columns
-        ])
+        rendered_row = []
+        for column in columns:
+            if mark_long_periods and column == "planet":
+                rendered_row.append(TransitPlanetCell(
+                    str(row.get(column, "")), row.get("start"), row.get("end"), mark_font_size, mark_tick_color
+                ))
+            elif column in {"start", "end"} and row.get(f"{column}_combined_value"):
+                summary_size = boundary_font_size or max(4.8, mark_font_size - 1.4)
+                summary = row[f"{column}_combined_value"]
+                rendered_row.append(cell(
+                    f"{row.get(column, '')}<br/><font size=\"{summary_size}\" color=\"#64748B\">{summary}</font>"
+                ))
+            else:
+                rendered_row.append(cell(row.get(column, "")))
+        data.append(rendered_row)
     table = LongTable(data, colWidths=[width * usable_width for width in widths], repeatRows=1, hAlign="LEFT")
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F0FA")),
@@ -682,19 +803,27 @@ def _render_period_table(
 
 def _marriage_significator_story(significators, dba, transits, section_style, cell_style, small_style, usable_width, body_size, cell):
     story = []
+    bhava_significators = significators["bhavas"]
+    combined_values = significators["combined_values"]
+    natal_cusps = significators["cusps"]
     target_bhavas = (7, 3, 11)
     transit_rows = transits.get("transit_periods", [])
     slow_planets = {"Jupiter", "Saturn", "Rahu", "Ketu"}
 
     def add_category(bhava: int, label: str, planets: list[str]):
         tick_color = "#16A34A" if bhava == 7 else "#D4A017"
+        is_cuspal_interlink = label == "Cuspal Interlink"
         story.append(Paragraph(f"Bhava {bhava} — {label}", section_style))
         if not planets:
             story.append(Paragraph("No planets in this category.", small_style))
             return
         selected = set(planets)
         story.append(Paragraph("Vimshottari Dasa", section_style))
-        entries = _dba_planet_periods(dba, selected)
+        entries = _dba_planet_periods(
+            dba,
+            selected,
+            combined_values if is_cuspal_interlink else None,
+        )
         story.extend(_render_dba_tree(entries, body_size, small_style, tick_color))
         story.append(Spacer(1, 1.5 * mm))
         story.append(Paragraph("Transit", section_style))
@@ -709,7 +838,18 @@ def _marriage_significator_story(significators, dba, transits, section_style, ce
             selected | slow_planets,
             window_start=win_start,
             window_end_exclusive=win_end_excl,
+            include_boundary_values=is_cuspal_interlink,
         )
+        if is_cuspal_interlink:
+            for row in transit_entries:
+                planet_name = row.get("planet_name")
+                if planet_name:
+                    row["start_combined_value"] = _transit_combined_value(
+                        planet_name, row.get("start_degree"), natal_cusps
+                    )
+                    row["end_combined_value"] = _transit_combined_value(
+                        planet_name, row.get("end_degree"), natal_cusps
+                    )
         slow = [row for row in transit_entries if row["planet"] in {PLANET_ABBREVIATIONS.get(name, name) for name in slow_planets}]
         other = [row for row in transit_entries if row not in slow]
         for subheading, group in (("Slow-moving planets", slow), ("Other planets", other)):
@@ -725,18 +865,19 @@ def _marriage_significator_story(significators, dba, transits, section_style, ce
                 mark_long_periods=True,
                 mark_font_size=body_size,
                 mark_tick_color=tick_color,
+                boundary_font_size=max(4.8, body_size - 1.4),
             ))
         story.append(Spacer(1, 2 * mm))
 
     story.append(Paragraph("Primary Significators", section_style))
     for category in ("location", "cuspal_interlink"):
         label = "Location" if category == "location" else "Cuspal Interlink"
-        add_category(7, label, significators[7][category])
+        add_category(7, label, bhava_significators[7][category])
     story.append(Paragraph("Secondary Significators", section_style))
     for bhava in target_bhavas[1:]:
         for category in ("location", "cuspal_interlink"):
             label = "Location" if category == "location" else "Cuspal Interlink"
-            add_category(bhava, label, significators[bhava][category])
+            add_category(bhava, label, bhava_significators[bhava][category])
     return story
 
 
