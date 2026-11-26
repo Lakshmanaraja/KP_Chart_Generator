@@ -11,7 +11,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import LongTable, Paragraph, SimpleDocTemplate, Spacer, TableStyle
+from reportlab.platypus import Flowable, LongTable, Paragraph, SimpleDocTemplate, Spacer, TableStyle
 
 from models.schemas import PlanetLordSummaryRequest, PredictionPeriodsRequest, PredictionReportRequest, ReportRequest
 from pdf.desktop_report import render_desktop_pdf
@@ -303,6 +303,105 @@ def _dba_planet_periods(dba: dict[str, Any], selected_planets: set[str]) -> list
     return sorted(entries.values(), key=lambda row: (row["start"], level_order[row["level"]], row["planet"], row["end"]))
 
 
+
+DBA_LEVEL_RANK = {"Dasa": 1, "Bhukthi": 2, "Antara": 3}
+
+
+def _nest_dba_periods(entries: list[dict[str, str]]) -> list[dict[str, Any]]:
+    """Nest periods under their deepest date-enclosing higher-level period."""
+    ordered = sorted(entries, key=lambda row: (
+        date.fromisoformat(row["start"]), DBA_LEVEL_RANK[row["level"]],
+        date.fromisoformat(row["end"]), row["planet"],
+    ))
+    roots: list[dict[str, Any]] = []
+    prior: list[dict[str, Any]] = []
+    for entry in ordered:
+        node = {**entry, "children": [], "depth": 0}
+        child_start, child_end = date.fromisoformat(entry["start"]), date.fromisoformat(entry["end"])
+        parents = [candidate for candidate in prior
+                   if DBA_LEVEL_RANK[candidate["level"]] < DBA_LEVEL_RANK[entry["level"]]
+                   and date.fromisoformat(candidate["start"]) <= child_start
+                   and date.fromisoformat(candidate["end"]) >= child_end]
+        if parents:
+            parent = max(parents, key=lambda candidate: (
+                DBA_LEVEL_RANK[candidate["level"]],
+                -(date.fromisoformat(candidate["end"]) - date.fromisoformat(candidate["start"])).days,
+            ))
+            node["depth"] = parent["depth"] + 1
+            parent["children"].append(node)
+        else:
+            roots.append(node)
+        prior.append(node)
+
+    def sort_tree(nodes: list[dict[str, Any]]) -> None:
+        nodes.sort(key=lambda row: (date.fromisoformat(row["start"]), DBA_LEVEL_RANK[row["level"]], date.fromisoformat(row["end"]), row["planet"]))
+        for node in nodes:
+            sort_tree(node["children"])
+
+    sort_tree(roots)
+    return roots
+
+
+class DBAHierarchyRow(Flowable):
+    """One compact DBA row with a date column and nested-level guide."""
+    INDENT = 12  # points, approximately 16 CSS pixels
+
+    def __init__(self, row: dict[str, Any], font_size: float):
+        super().__init__()
+        self.row = row
+        self.font_size = font_size
+        self.row_height = max(12, font_size + 4)
+
+    def wrap(self, avail_width, avail_height):
+        self.width = avail_width
+        self.height = self.row_height
+        return self.width, self.height
+
+    def draw(self):
+        canvas = self.canv
+        depth = int(self.row["depth"])
+        baseline = (self.height - self.font_size) / 2 + 1
+        if depth:
+            canvas.setStrokeColor(colors.HexColor("#CBD5E1"))
+            canvas.setLineWidth(1.1)
+            canvas.line(depth * self.INDENT - 4, 1, depth * self.INDENT - 4, self.height - 1)
+
+        canvas.setFillColor(colors.HexColor("#1E293B"))
+        canvas.setFont("Helvetica", self.font_size)
+        canvas.drawString(depth * self.INDENT + 2, baseline, f"{self.row['planet']} — {self.row['level']}")
+
+        # Courier keeps every digit aligned; draw a vector arrow so it is not
+        # dependent on a platform font's arrow glyph.
+        date_size = max(5.6, self.font_size - 0.3)
+        start, end = self.row["start"], self.row["end"]
+        right_edge = self.width - 2
+        canvas.setFont("Courier", date_size)
+        canvas.setFillColor(colors.HexColor("#475569"))
+        canvas.drawRightString(right_edge, baseline, end)
+        end_width = canvas.stringWidth(end, "Courier", date_size)
+        arrow_center = right_edge - end_width - 7
+        canvas.drawRightString(arrow_center - 5, baseline, start)
+        canvas.setStrokeColor(colors.HexColor("#64748B"))
+        canvas.setLineWidth(0.8)
+        arrow_y = baseline + date_size * 0.34
+        canvas.line(arrow_center - 2.5, arrow_y, arrow_center + 2.5, arrow_y)
+        canvas.line(arrow_center + 0.5, arrow_y + 2, arrow_center + 2.5, arrow_y)
+        canvas.line(arrow_center + 0.5, arrow_y - 2, arrow_center + 2.5, arrow_y)
+
+
+def _render_dba_tree(entries: list[dict[str, str]], font_size: float, small_style):
+    if not entries:
+        return [Paragraph("No matching periods.", small_style)]
+    rows: list[DBAHierarchyRow] = []
+
+    def flatten(nodes):
+        for node in nodes:
+            rows.append(DBAHierarchyRow(node, font_size))
+            flatten(node["children"])
+
+    flatten(_nest_dba_periods(entries))
+    return rows
+
 def _merge_transit_periods(rows: list[dict[str, Any]], bhava: int, selected_planets: set[str]) -> list[dict[str, str]]:
     """Merge adjacent star-segment rows for the same planet within one bhava."""
     grouped: dict[str, list[tuple[datetime, datetime]]] = {}
@@ -352,7 +451,7 @@ def _render_period_table(entries: list[dict[str, str]], headers: list[str], colu
     return table
 
 
-def _marriage_significator_story(significators, dba, transits, section_style, cell_style, small_style, usable_width, cell):
+def _marriage_significator_story(significators, dba, transits, section_style, cell_style, small_style, usable_width, body_size, cell):
     story = []
     target_bhavas = (7, 3, 11)
     transit_rows = transits.get("transit_periods", [])
@@ -366,7 +465,7 @@ def _marriage_significator_story(significators, dba, transits, section_style, ce
         selected = set(planets)
         story.append(Paragraph("DBA", cell_style))
         entries = _dba_planet_periods(dba, selected)
-        story.append(_render_period_table(entries, ["Planet", "Period", "From", "To"], ["planet", "level", "start", "end"], [0.18, 0.30, 0.26, 0.26], usable_width, cell, small_style))
+        story.extend(_render_dba_tree(entries, body_size, small_style))
         story.append(Spacer(1, 1.5 * mm))
         story.append(Paragraph("Transit", cell_style))
         transit_entries = _merge_transit_periods(transit_rows, bhava, selected)
@@ -470,7 +569,7 @@ def _prediction_pdf_page(
         return Paragraph(str(value if value is not None else "—"), style)
 
     if significators is not None:
-        story.extend(_marriage_significator_story(significators, dba, transits, section_style, cell_style, small_style, usable_width, cell))
+        story.extend(_marriage_significator_story(significators, dba, transits, section_style, cell_style, small_style, usable_width, body_size, cell))
     else:
         story.extend(_generic_period_story(dba, transits, section_style, cell_style, small_style, usable_width, cell))
 
