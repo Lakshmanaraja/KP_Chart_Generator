@@ -1171,30 +1171,43 @@ def _prediction_pdf_page(
         "MarriageLevel4", parent=small_style, fontName="Helvetica-Bold",
         keepWithNext=True, spaceAfter=0.7 * mm,
     )
-    story = [
-        Paragraph(title, title_style),
-        Paragraph(
-            f"Prediction window: {dba['from_date']} through {(date.fromisoformat(dba['end_date_exclusive']) - timedelta(days=1)).isoformat()}",
-            small_style,
-        ),
-        Spacer(1, 2 * mm),
-    ]
-
     def cell(value: Any, style=cell_style):
         return Paragraph(str(value if value is not None else "—"), style)
 
     if significators is not None:
+        reference_style = ParagraphStyle(
+            "AstrologerReference", parent=small_style, fontName="Helvetica-BoldOblique",
+            fontSize=body_size, leading=body_size + 2, textColor=colors.HexColor("#64748B"),
+            keepWithNext=True,
+        )
+        story = _marriage_summary_story(
+            _marriage_summary_items(significators, dba, transits),
+            dba, title_style, small_style, body_size, is_mobile,
+        )
+        story.extend([
+            PageBreak(),
+            Paragraph(title, title_style),
+            Paragraph("For Astrologer Reference. Clients may ignore this section.", reference_style),
+            Paragraph(
+                f"Prediction window: {dba['from_date']} through {(date.fromisoformat(dba['end_date_exclusive']) - timedelta(days=1)).isoformat()}",
+                small_style,
+            ),
+            Spacer(1, 2 * mm),
+        ])
         story.extend(_marriage_significator_story(
             significators, dba, transits, level1_style, level2_style,
             level3_style, subheading_style, cell_style, small_style,
             usable_width, body_size, cell,
         ))
-        story.append(PageBreak())
-        story.extend(_marriage_summary_story(
-            _marriage_summary_items(significators, dba, transits),
-            dba, title_style, small_style, body_size, is_mobile,
-        ))
     else:
+        story = [
+            Paragraph(title, title_style),
+            Paragraph(
+                f"Prediction window: {dba['from_date']} through {(date.fromisoformat(dba['end_date_exclusive']) - timedelta(days=1)).isoformat()}",
+                small_style,
+            ),
+            Spacer(1, 2 * mm),
+        ]
         story.extend(_generic_period_story(dba, transits, section_style, cell_style, small_style, usable_width, cell))
 
     doc = SimpleDocTemplate(
