@@ -970,8 +970,9 @@ def _marriage_significator_story(
             if override and override.get("deleted"):
                 continue
             if override:
-                row["show_tick"] = bool(override.get("selected", True))
-                row["tick_color"] = override.get("tick_color", tick_color)
+                row["show_tick"] = bool(override.get("selected", True) and override.get("tick_color"))
+                if override.get("tick_color"):
+                    row["tick_color"] = override["tick_color"]
             edited_transits.append(row)
         transit_entries = edited_transits
         slow = [row for row in transit_entries if row["planet"] in {PLANET_ABBREVIATIONS.get(name, name) for name in slow_planets}]
@@ -1008,8 +1009,9 @@ def _marriage_significator_story(
             if override and override.get("deleted"):
                 continue
             if override:
-                row["show_tick"] = bool(override.get("selected", True))
-                row["tick_color"] = override.get("tick_color", tick_color)
+                row["show_tick"] = bool(override.get("selected", True) and override.get("tick_color"))
+                if override.get("tick_color"):
+                    row["tick_color"] = override["tick_color"]
             edited_entries.append(row)
         entries = edited_entries
         story.extend(_render_dba_tree(entries, body_size, small_style, tick_color))
@@ -1260,13 +1262,58 @@ def _prediction_pdf_page(
             override = overrides.get(_prediction_item_key(
                 item["planet"], item["kind"], item["start"], item["end"]
             ))
-            if override and (override.get("deleted") or not override.get("selected", True)):
+            if override and (override.get("deleted") or not override.get("selected", True) or not override.get("tick_color")):
                 continue
             edited_summary_items.append({
                 **item,
                 "tick_color": override.get("tick_color", item["tick_color"]) if override else item["tick_color"],
             })
         summary_items = edited_summary_items
+        # Include manually selected dated rows, even when they are shorter than
+        # the automatic six-month summary threshold. Only accept values present
+        # in the server-calculated detailed sections.
+        valid_periods: set[tuple[str, str, str, str]] = set()
+        bhava_significators = significators["bhavas"]
+        slow_planets = {"Jupiter", "Saturn", "Rahu", "Ketu"}
+        window_start = _parse_event_date(transits.get("from_date"))
+        window_end = _parse_event_date(transits.get("end_date_exclusive"))
+        for bhava in (7, 3, 11):
+            for category in ("location", "cuspal_interlink"):
+                selected = set(bhava_significators[bhava][category])
+                for row in _dba_planet_periods(dba, selected):
+                    if row.get("show_dates"):
+                        valid_periods.add(_prediction_item_key(
+                            row["planet"], f"DBA ({row['level']})", row["start"], row["end"]
+                        ))
+                for row in _merge_transit_periods(
+                    transits.get("transit_periods", []), bhava, selected | slow_planets,
+                    window_start=window_start, window_end_exclusive=window_end,
+                ):
+                    valid_periods.add(_prediction_item_key(
+                        row["planet"], "Transit", row["start"], row["end"]
+                    ))
+        existing_keys = {
+            _prediction_item_key(row["planet"], row["kind"], row["start"], row["end"])
+            for row in summary_items
+        }
+        present_end_date = add_calendar_years(reference_date or datetime.now().date(), 1)
+        for key, override in overrides.items():
+            planet, kind, start, end = key
+            tick_color = override.get("tick_color")
+            if (key in existing_keys or key not in valid_periods or override.get("deleted")
+                    or not override.get("selected", True) or tick_color not in {"#16A34A", "#D4A017"}):
+                continue
+            start_date, end_date = date.fromisoformat(start), date.fromisoformat(end)
+            if end_date < (reference_date or datetime.now().date()):
+                horizon = "Past"
+            elif start_date <= present_end_date and end_date >= (reference_date or datetime.now().date()):
+                horizon = "Active Window"
+            else:
+                horizon = "Future"
+            summary_items.append({
+                "planet": planet, "kind": kind, "start": start, "end": end,
+                "tick_color": tick_color, "time_horizon": horizon,
+            })
         story = _marriage_summary_story(
             summary_items,
             dba, title_style, small_style, body_size, is_mobile,

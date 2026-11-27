@@ -75,7 +75,7 @@ class PredictionItemOverride(BaseModel):
     end: date
     selected: bool = True
     deleted: bool = False
-    tick_color: Literal["#16A34A", "#D4A017"]
+    tick_color: Optional[Literal["#16A34A", "#D4A017"]] = None
 
 
 class PredictionReportRequest(PredictionBirthDetails):
