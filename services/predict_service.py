@@ -318,7 +318,10 @@ def _report_cover(request: PredictionReportRequest, kind: str = "report") -> byt
 
 
 
-def _prediction_significators(request: PredictionReportRequest, bhavas: tuple[int, ...]) -> dict[str, Any]:
+def _prediction_significators(
+    request: PredictionReportRequest | PredictionPeriodsRequest,
+    bhavas: tuple[int, ...],
+) -> dict[str, Any]:
     """Classify natal planets by house location and cuspal summary links."""
     try:
         chart = compute_kp_json(
@@ -1282,3 +1285,83 @@ def create_prediction_pdf(request: PredictionReportRequest, kind: str, bhava_num
         return result.getvalue()
     except Exception as exc:
         raise HTTPException(500, f"Could not assemble prediction report: {exc}") from None
+
+
+def get_marriage_prediction_data(request: PredictionPeriodsRequest) -> dict[str, Any]:
+    """Return the interactive marriage summary and detailed report sections as JSON."""
+    marriage_request = request.model_copy(update={"bhava_number": 7})
+    dba = get_dba_periods(marriage_request)
+    transits = get_transit_periods(marriage_request, consolidate_house_periods=True)
+    significators = _prediction_significators(marriage_request, (7, 3, 11))
+    transit_rows = transits.get("transit_periods", [])
+    slow_planets = {"Jupiter", "Saturn", "Rahu", "Ketu"}
+    full_planet_names = {abbreviation: planet for planet, abbreviation in PLANET_ABBREVIATIONS.items()}
+    win_start = _parse_event_date(transits.get("from_date"))
+    win_end_excl = _parse_event_date(transits.get("end_date_exclusive"))
+    sections: list[dict[str, Any]] = []
+
+    for bhava in (7, 3, 11):
+        location_transits: set[tuple[str, str, str]] = set()
+        category_sections = []
+        for category, label in (("location", "Location"), ("cuspal_interlink", "Cuspal Links")):
+            selected = set(significators["bhavas"][bhava][category])
+            dba_entries = _dba_planet_periods(
+                dba,
+                selected,
+                significators["combined_values"] if category == "cuspal_interlink" else None,
+            )
+            dba_tree = _nest_dba_periods(dba_entries)
+            transit_entries = _merge_transit_periods(
+                transit_rows,
+                bhava,
+                selected | slow_planets,
+                window_start=win_start,
+                window_end_exclusive=win_end_excl,
+                include_boundary_values=category == "cuspal_interlink",
+            ) if selected else []
+            if category == "location":
+                location_transits = {
+                    (row.get("planet_name") or full_planet_names.get(row["planet"], row["planet"]), row["start"], row["end"])
+                    for row in transit_entries
+                }
+            else:
+                transit_entries = [
+                    row for row in transit_entries
+                    if (row.get("planet_name") or full_planet_names.get(row["planet"], row["planet"]), row["start"], row["end"])
+                    not in location_transits
+                ]
+                for row in transit_entries:
+                    planet_name = row.get("planet_name")
+                    if planet_name:
+                        row["start_combined_value"] = _transit_combined_value(
+                            planet_name, row.get("start_degree"), significators["cusps"]
+                        )
+                        row["end_combined_value"] = _transit_combined_value(
+                            planet_name, row.get("end_degree"), significators["cusps"]
+                        )
+
+            slow_abbreviations = {PLANET_ABBREVIATIONS.get(name, name) for name in slow_planets}
+            category_sections.append({
+                "category": category,
+                "label": label,
+                "planets": sorted(selected),
+                "transit": {
+                    "slow_moving": [row for row in transit_entries if row["planet"] in slow_abbreviations],
+                    "other": [row for row in transit_entries if row["planet"] not in slow_abbreviations],
+                },
+                "dba": dba_tree,
+            })
+        sections.append({
+            "bhava": bhava,
+            "title": "Primary Significator" if bhava == 7 else f"Secondary Significator {1 if bhava == 3 else 2}",
+            "categories": category_sections,
+        })
+
+    reference_date = datetime.now(timezone(timedelta(hours=marriage_request.timezone))).date()
+    return {
+        "from_date": dba["from_date"],
+        "end_date_exclusive": dba["end_date_exclusive"],
+        "duration_years": dba["duration_years"],
+        "summary": _marriage_summary_items(significators, dba, transits, reference_date),
+        "sections": sections,
+    }

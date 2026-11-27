@@ -6,7 +6,12 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import Response
 
 from models.schemas import PredictionPeriodsRequest, PredictionReportRequest
-from services.predict_service import create_prediction_pdf, get_dba_periods, get_transit_periods
+from services.predict_service import (
+    create_prediction_pdf,
+    get_dba_periods,
+    get_marriage_prediction_data,
+    get_transit_periods,
+)
 
 
 router = APIRouter(prefix="/predict", tags=["Predictions"])
@@ -28,6 +33,11 @@ def dba_periods(payload: PredictionPeriodsRequest):
 @router.post("/api/transit-periods", dependencies=[Depends(auth)])
 def transit_periods(payload: PredictionPeriodsRequest):
     return get_transit_periods(payload)
+
+
+@router.post("/api/marriage-data", dependencies=[Depends(auth)])
+def marriage_prediction_data(payload: PredictionPeriodsRequest):
+    return get_marriage_prediction_data(payload)
 
 
 def _prediction_response(payload: PredictionReportRequest, kind: str, bhava_number: int):
