@@ -911,6 +911,7 @@ def _marriage_significator_story(
     slow_planets = {"Jupiter", "Saturn", "Rahu", "Ketu"}
     location_transit_intervals: dict[int, set[tuple[str, str, str]]] = {}
     overrides = _prediction_override_map(item_overrides)
+    selection_is_authoritative = item_overrides is not None
 
     def add_category(bhava: int, label: str, planets: list[str]):
         tick_color = "#16A34A" if bhava == 7 else "#D4A017"
@@ -973,6 +974,8 @@ def _marriage_significator_story(
                 row["show_tick"] = bool(override.get("selected", True) and override.get("tick_color"))
                 if override.get("tick_color"):
                     row["tick_color"] = override["tick_color"]
+            elif selection_is_authoritative:
+                row["show_tick"] = False
             edited_transits.append(row)
         transit_entries = edited_transits
         slow = [row for row in transit_entries if row["planet"] in {PLANET_ABBREVIATIONS.get(name, name) for name in slow_planets}]
@@ -1012,6 +1015,8 @@ def _marriage_significator_story(
                 row["show_tick"] = bool(override.get("selected", True) and override.get("tick_color"))
                 if override.get("tick_color"):
                     row["tick_color"] = override["tick_color"]
+            elif selection_is_authoritative:
+                row["show_tick"] = False
             edited_entries.append(row)
         entries = edited_entries
         story.extend(_render_dba_tree(entries, body_size, small_style, tick_color))
@@ -1254,6 +1259,7 @@ def _prediction_pdf_page(
             keepWithNext=True,
         )
         overrides = _prediction_override_map(item_overrides)
+        selection_is_authoritative = item_overrides is not None
         summary_items = _marriage_summary_items(
             significators, dba, transits, reference_date or datetime.now().date()
         )
@@ -1262,6 +1268,8 @@ def _prediction_pdf_page(
             override = overrides.get(_prediction_item_key(
                 item["planet"], item["kind"], item["start"], item["end"]
             ))
+            if selection_is_authoritative and not override:
+                continue
             if override and (override.get("deleted") or not override.get("selected", True) or not override.get("tick_color")):
                 continue
             edited_summary_items.append({
@@ -1370,7 +1378,11 @@ def create_prediction_pdf(request: PredictionReportRequest, kind: str, bhava_num
     title = "Marriage Date - Analysis" if kind == "marriage" else "Child Birth Prediction"
     significators = _prediction_significators(request, (7, 3, 11)) if kind == "marriage" else None
     generation_date = datetime.now(timezone(timedelta(hours=request.timezone))).date()
-    item_overrides = [item.model_dump() for item in request.prediction_item_overrides or []] if kind == "marriage" else None
+    item_overrides = (
+        [item.model_dump() for item in request.prediction_item_overrides]
+        if kind == "marriage" and request.prediction_item_overrides is not None
+        else None
+    )
     prediction_pdf = _prediction_pdf_page(
         dba, transit, title, request.version, significators, generation_date,
         item_overrides=item_overrides,
