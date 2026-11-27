@@ -50,6 +50,10 @@ def report_title(text_source: str = "report") -> str:
     """Cover/PDF title: child reports get the parent-guide title."""
     if text_source == "marriage":
         return "PROSPECT OF MARRIAGE REPORT"
+    if text_source == "child-birth":
+        return "CHILD BIRTH PREDICTION REPORT"
+    if text_source == "property-guidance":
+        return "PROPERTY GUIDANCE REPORT"
     return ("Understanding Your Child: A Guide for Parents"
             if text_source == "child" else "Character Assessment Report")
 
@@ -86,13 +90,22 @@ def _cover(d: _Doc, client: dict, text_source: str = "report"):
         c.drawImage(LOGO, W / 2 - 11 * mm, H - 52 * mm, 22 * mm, 22 * mm, mask="auto")
     d.text("TIME SCIENCE", W / 2, 62 * mm, 20, True, BRAND, "center")
     ty = 95 * mm
-    if text_source == "marriage":
-        d.text("MARRIAGE TIMING & PARTNER ALIGNMENT", W / 2, 84 * mm, 10, True, GREY, "center")
+    if text_source in {"marriage", "child-birth", "property-guidance"}:
+        kicker = {
+            "marriage": "MARRIAGE TIMING & PARTNER ALIGNMENT",
+            "child-birth": "CHILD BIRTH TIMING",
+            "property-guidance": "PROPERTY TIMING & OWNERSHIP",
+        }[text_source]
+        d.text(kicker, W / 2, 84 * mm, 10, True, GREY, "center")
     for l in wrap(report_title(text_source), 26, WIDTH, True):
         d.text(l, W / 2, ty, 26, True, BRAND, "center"); ty += LH(26)
-    subtitle = ("Key periods and partner insights"
-                if text_source == "marriage" else "Comprehensive Personality & Behavioural Blueprint")
-    subtitle_lines = wrap(subtitle, 12, WIDTH - (12 * mm if text_source == "marriage" else 0))
+    subtitle = {
+        "marriage": "Key periods and partner insights",
+        "child-birth": "Timing indicators and family guidance",
+        "property-guidance": "Key periods for property matters",
+    }.get(text_source, "Comprehensive Personality & Behavioural Blueprint")
+    prediction_cover = text_source in {"marriage", "child-birth", "property-guidance"}
+    subtitle_lines = wrap(subtitle, 12, WIDTH - (12 * mm if prediction_cover else 0))
     for index, line in enumerate(subtitle_lines):
         d.text(line, W / 2, ty + 3 * mm + index * LH(12), 12, False, GREY, "center")
     y = max(130 * mm, ty + 16 * mm + max(0, len(subtitle_lines) - 1) * LH(12))

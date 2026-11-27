@@ -141,6 +141,10 @@ def report_title(text_source: str = "report") -> str:
     """Cover/PDF title: child reports get the parent-guide title."""
     if text_source == "marriage":
         return "PROSPECT OF MARRIAGE REPORT"
+    if text_source == "child-birth":
+        return "CHILD BIRTH PREDICTION REPORT"
+    if text_source == "property-guidance":
+        return "PROPERTY GUIDANCE REPORT"
     return ("Understanding Your Child: A Guide for Parents"
             if text_source == "child" else "Character Assessment Report")
 
@@ -159,6 +163,12 @@ def cover_copy(text_source: str = "report"):
     if text_source == "marriage":
         return ("MARRIAGE TIMING & PARTNER ALIGNMENT", "PROSPECT OF MARRIAGE REPORT",
                 "Key periods and partner insights")
+    if text_source == "child-birth":
+        return ("CHILD BIRTH TIMING", "CHILD BIRTH PREDICTION REPORT",
+                "Timing indicators and family guidance")
+    if text_source == "property-guidance":
+        return ("PROPERTY TIMING & OWNERSHIP", "PROPERTY GUIDANCE REPORT",
+                "Key periods for property matters")
     if text_source == "child":
         return ("CHILD PERSONALITY & BEHAVIOURAL BLUEPRINT", "Understanding Your Child",
                 "A Comprehensive Guide for Parents")

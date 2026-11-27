@@ -286,10 +286,10 @@ def _report_cover(request: PredictionReportRequest, kind: str = "report") -> byt
         "place": request.place,
         "timezone": f"UTC{'+' if request.timezone >= 0 else ''}{request.timezone:g}",
     }
-    if kind == "marriage":
+    if kind in {"marriage", "child-birth", "property-guidance"}:
         if request.version == "desktop":
-            return render_desktop_pdf([], client, "marriage")
-        return render_mobile_pdf([], client, "marriage")
+            return render_desktop_pdf([], client, kind)
+        return render_mobile_pdf([], client, kind)
 
     report_request = ReportRequest(
         name=request.name,
@@ -901,12 +901,13 @@ def _marriage_significator_story(
     significators, dba, transits, level1_style, level2_style, level3_style,
     subheading_style, cell_style, small_style, usable_width, body_size, cell,
     item_overrides: list[dict[str, Any]] | None = None,
+    target_bhavas: tuple[int, ...] = (7, 3, 11),
+    primary_bhava: int = 7,
 ):
     story = []
     bhava_significators = significators["bhavas"]
     combined_values = significators["combined_values"]
     natal_cusps = significators["cusps"]
-    target_bhavas = (7, 3, 11)
     transit_rows = transits.get("transit_periods", [])
     slow_planets = {"Jupiter", "Saturn", "Rahu", "Ketu"}
     location_transit_intervals: dict[int, set[tuple[str, str, str]]] = {}
@@ -914,7 +915,7 @@ def _marriage_significator_story(
     selection_is_authoritative = item_overrides is not None
 
     def add_category(bhava: int, label: str, planets: list[str]):
-        tick_color = "#16A34A" if bhava == 7 else "#D4A017"
+        tick_color = "#16A34A" if bhava == primary_bhava else "#D4A017"
         is_cuspal_interlink = label == "Cuspal Interlink"
         story.append(Paragraph(f"Bhava {bhava} — {label}", level2_style))
         if not planets:
@@ -1025,7 +1026,7 @@ def _marriage_significator_story(
     story.append(Paragraph("Primary Significators", level1_style))
     for category in ("location", "cuspal_interlink"):
         label = "Location" if category == "location" else "Cuspal Interlink"
-        add_category(7, label, bhava_significators[7][category])
+    add_category(primary_bhava, label, bhava_significators[primary_bhava][category])
     story.append(Paragraph("Secondary Significators", level1_style))
     for bhava in target_bhavas[1:]:
         for category in ("location", "cuspal_interlink"):
@@ -1071,7 +1072,11 @@ def _generic_period_story(dba, transits, section_style, cell_style, small_style,
     return story
 
 
-def _marriage_summary_items(significators, dba, transits, reference_date: date) -> list[dict[str, str]]:
+def _marriage_summary_items(
+    significators, dba, transits, reference_date: date,
+    target_bhavas: tuple[int, ...] = (7, 3, 11),
+    primary_bhava: int = 7,
+) -> list[dict[str, str]]:
     """Collect only long, tick-worthy DBA and transit periods for the final page."""
     items: dict[tuple[str, str, str, str], dict[str, str]] = {}
     bhava_significators = significators["bhavas"]
@@ -1111,8 +1116,8 @@ def _marriage_summary_items(significators, dba, transits, reference_date: date) 
                 "time_horizon": time_horizon,
             }
 
-    for bhava in (7, 3, 11):
-        tick_color = "#16A34A" if bhava == 7 else "#D4A017"
+    for bhava in target_bhavas:
+        tick_color = "#16A34A" if bhava == primary_bhava else "#D4A017"
         for category in ("location", "cuspal_interlink"):
             selected = set(bhava_significators[bhava][category])
             if not selected:
@@ -1139,13 +1144,14 @@ def _marriage_summary_items(significators, dba, transits, reference_date: date) 
 
 
 def _marriage_summary_story(
-    items, dba, title_style, small_style, body_size, is_mobile
+    items, dba, title_style, small_style, body_size, is_mobile,
+    summary_title: str = "Marriage Date Prediction",
 ):
-    story = [Paragraph("Marriage Date Prediction", title_style)]
+    story = [Paragraph(summary_title, title_style)]
 
     period_end = date.fromisoformat(dba["end_date_exclusive"]) - timedelta(days=1)
     research_style = ParagraphStyle(
-        "MarriageResearchWindow", parent=small_style,
+        "PredictionResearchWindow", parent=small_style,
         fontName="Helvetica-Bold", fontSize=body_size,
         leading=body_size + 2.5, textColor=colors.HexColor("#072A7D"),
         backColor=colors.HexColor("#EFF6FF"), borderColor=colors.HexColor("#BFDBFE"),
@@ -1163,7 +1169,7 @@ def _marriage_summary_story(
         label: str, tick_color: str, rows: list[dict[str, str]], space_before: float
     ) -> None:
         heading_style = ParagraphStyle(
-            f"Marriage{label.replace(' ', '')}Heading", parent=small_style,
+            f"Prediction{label.replace(' ', '')}Heading", parent=small_style,
             fontName="Helvetica-Bold", fontSize=body_size + 1,
             leading=body_size + 3, textColor=colors.HexColor(tick_color),
             spaceBefore=space_before, spaceAfter=2.5 * mm, keepWithNext=True,
@@ -1182,7 +1188,7 @@ def _marriage_summary_story(
     append_tick_section("Strong Alignment Windows (>70% possibility)", "#16A34A", green_items, 1.5 * mm)
     story.append(PageBreak())
     story.extend([
-        Paragraph("Marriage Date Prediction", title_style),
+        Paragraph(summary_title, title_style),
         Paragraph(
             f"Research period: {research_start} to {research_end_label}",
             research_style,
@@ -1200,6 +1206,9 @@ def _prediction_pdf_page(
     significators: dict[int, dict[str, list[str]]] | None = None,
     reference_date: date | None = None,
     item_overrides: list[dict[str, Any]] | None = None,
+    target_bhavas: tuple[int, ...] = (7, 3, 11),
+    primary_bhava: int = 7,
+    summary_title: str = "Marriage Date Prediction",
 ) -> bytes:
     buffer = BytesIO()
     is_mobile = version == "mobile"
@@ -1261,7 +1270,8 @@ def _prediction_pdf_page(
         overrides = _prediction_override_map(item_overrides)
         selection_is_authoritative = item_overrides is not None
         summary_items = _marriage_summary_items(
-            significators, dba, transits, reference_date or datetime.now().date()
+            significators, dba, transits, reference_date or datetime.now().date(),
+            target_bhavas, primary_bhava,
         )
         edited_summary_items = []
         for item in summary_items:
@@ -1285,7 +1295,7 @@ def _prediction_pdf_page(
         slow_planets = {"Jupiter", "Saturn", "Rahu", "Ketu"}
         window_start = _parse_event_date(transits.get("from_date"))
         window_end = _parse_event_date(transits.get("end_date_exclusive"))
-        for bhava in (7, 3, 11):
+        for bhava in target_bhavas:
             for category in ("location", "cuspal_interlink"):
                 selected = set(bhava_significators[bhava][category])
                 for row in _dba_planet_periods(dba, selected):
@@ -1324,7 +1334,7 @@ def _prediction_pdf_page(
             })
         story = _marriage_summary_story(
             summary_items,
-            dba, title_style, small_style, body_size, is_mobile,
+            dba, title_style, small_style, body_size, is_mobile, summary_title,
         )
         story.extend([
             PageBreak(),
@@ -1340,6 +1350,7 @@ def _prediction_pdf_page(
             significators, dba, transits, level1_style, level2_style,
             level3_style, subheading_style, cell_style, small_style,
             usable_width, body_size, cell, item_overrides,
+            target_bhavas, primary_bhava,
         ))
     else:
         story = [
@@ -1362,6 +1373,14 @@ def _prediction_pdf_page(
 
 
 def create_prediction_pdf(request: PredictionReportRequest, kind: str, bhava_number: int) -> bytes:
+    report_settings = {
+        "marriage": ((7, 3, 11), "Marriage Date - Analysis", "Marriage Date Prediction"),
+        "child-birth": ((5, 1, 9), "Child Birth - Analysis", "Child Birth Prediction"),
+        "property-guidance": ((4, 8, 12), "Property Guidance - Analysis", "Property Guidance Prediction"),
+    }
+    target_bhavas, title, summary_title = report_settings.get(
+        kind, ((bhava_number,), "Prediction Analysis", "Prediction")
+    )
     period_request = PredictionPeriodsRequest(
         date_of_birth=request.date_of_birth,
         time_of_birth=request.time_of_birth,
@@ -1374,18 +1393,20 @@ def create_prediction_pdf(request: PredictionReportRequest, kind: str, bhava_num
         bhava_number=bhava_number,
     )
     dba = get_dba_periods(period_request)
-    transit = get_transit_periods(period_request, consolidate_house_periods=(kind == "marriage"))
-    title = "Marriage Date - Analysis" if kind == "marriage" else "Child Birth Prediction"
-    significators = _prediction_significators(request, (7, 3, 11)) if kind == "marriage" else None
+    transit = get_transit_periods(period_request, consolidate_house_periods=True)
+    significators = _prediction_significators(request, target_bhavas)
     generation_date = datetime.now(timezone(timedelta(hours=request.timezone))).date()
     item_overrides = (
         [item.model_dump() for item in request.prediction_item_overrides]
-        if kind == "marriage" and request.prediction_item_overrides is not None
+        if request.prediction_item_overrides is not None
         else None
     )
     prediction_pdf = _prediction_pdf_page(
         dba, transit, title, request.version, significators, generation_date,
         item_overrides=item_overrides,
+        target_bhavas=target_bhavas,
+        primary_bhava=target_bhavas[0],
+        summary_title=summary_title,
     )
     base_pdf = _report_cover(request, kind)
 
@@ -1403,12 +1424,24 @@ def create_prediction_pdf(request: PredictionReportRequest, kind: str, bhava_num
         raise HTTPException(500, f"Could not assemble prediction report: {exc}") from None
 
 
-def get_marriage_prediction_data(request: PredictionPeriodsRequest) -> dict[str, Any]:
-    """Return the interactive marriage summary and detailed report sections as JSON."""
-    marriage_request = request.model_copy(update={"bhava_number": 7})
-    dba = get_dba_periods(marriage_request)
-    transits = get_transit_periods(marriage_request, consolidate_house_periods=True)
-    significators = _prediction_significators(marriage_request, (7, 3, 11))
+PREDICTION_BHAVA_GROUPS = {7: (7, 3, 11), 5: (5, 1, 9), 4: (4, 8, 12)}
+PREDICTION_TITLES = {
+    7: "Marriage Date Prediction",
+    5: "Child Birth Prediction",
+    4: "Property Guidance Prediction",
+}
+
+
+def get_prediction_data(request: PredictionPeriodsRequest) -> dict[str, Any]:
+    """Return interactive summary and detailed prediction sections for a bhava group."""
+    target_bhavas = PREDICTION_BHAVA_GROUPS.get(request.bhava_number)
+    if target_bhavas is None:
+        raise HTTPException(422, "Prediction data is supported for bhavas 4, 5, and 7")
+    primary_bhava = target_bhavas[0]
+    prediction_request = request.model_copy(update={"bhava_number": primary_bhava})
+    dba = get_dba_periods(prediction_request)
+    transits = get_transit_periods(prediction_request, consolidate_house_periods=True)
+    significators = _prediction_significators(prediction_request, target_bhavas)
     transit_rows = transits.get("transit_periods", [])
     slow_planets = {"Jupiter", "Saturn", "Rahu", "Ketu"}
     full_planet_names = {abbreviation: planet for planet, abbreviation in PLANET_ABBREVIATIONS.items()}
@@ -1416,7 +1449,7 @@ def get_marriage_prediction_data(request: PredictionPeriodsRequest) -> dict[str,
     win_end_excl = _parse_event_date(transits.get("end_date_exclusive"))
     sections: list[dict[str, Any]] = []
 
-    for bhava in (7, 3, 11):
+    for bhava_index, bhava in enumerate(target_bhavas):
         location_transits: set[tuple[str, str, str]] = set()
         category_sections = []
         for category, label in (("location", "Location"), ("cuspal_interlink", "Cuspal Links")):
@@ -1469,15 +1502,23 @@ def get_marriage_prediction_data(request: PredictionPeriodsRequest) -> dict[str,
             })
         sections.append({
             "bhava": bhava,
-            "title": "Primary Significator" if bhava == 7 else f"Secondary Significator {1 if bhava == 3 else 2}",
+            "title": "Primary Significator" if bhava_index == 0 else f"Secondary Significator {bhava_index}",
             "categories": category_sections,
         })
 
-    reference_date = datetime.now(timezone(timedelta(hours=marriage_request.timezone))).date()
+    reference_date = datetime.now(timezone(timedelta(hours=prediction_request.timezone))).date()
     return {
         "from_date": dba["from_date"],
         "end_date_exclusive": dba["end_date_exclusive"],
         "duration_years": dba["duration_years"],
-        "summary": _marriage_summary_items(significators, dba, transits, reference_date),
+        "primary_bhava": primary_bhava,
+        "secondary_bhavas": list(target_bhavas[1:]),
+        "report_title": PREDICTION_TITLES[primary_bhava],
+        "summary": _marriage_summary_items(significators, dba, transits, reference_date, target_bhavas, primary_bhava),
         "sections": sections,
     }
+
+
+def get_marriage_prediction_data(request: PredictionPeriodsRequest) -> dict[str, Any]:
+    """Backwards-compatible marriage interactive prediction endpoint."""
+    return get_prediction_data(request.model_copy(update={"bhava_number": 7}))

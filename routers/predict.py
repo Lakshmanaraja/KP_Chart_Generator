@@ -9,6 +9,7 @@ from models.schemas import PredictionPeriodsRequest, PredictionReportRequest
 from services.predict_service import (
     create_prediction_pdf,
     get_dba_periods,
+    get_prediction_data,
     get_marriage_prediction_data,
     get_transit_periods,
 )
@@ -40,6 +41,16 @@ def marriage_prediction_data(payload: PredictionPeriodsRequest):
     return get_marriage_prediction_data(payload)
 
 
+@router.post("/api/child-birth-data", dependencies=[Depends(auth)])
+def child_birth_prediction_data(payload: PredictionPeriodsRequest):
+    return get_prediction_data(payload.model_copy(update={"bhava_number": 5}))
+
+
+@router.post("/api/property-guidance-data", dependencies=[Depends(auth)])
+def property_guidance_prediction_data(payload: PredictionPeriodsRequest):
+    return get_prediction_data(payload.model_copy(update={"bhava_number": 4}))
+
+
 def _prediction_response(payload: PredictionReportRequest, kind: str, bhava_number: int):
     pdf = create_prediction_pdf(payload, kind, bhava_number)
     slug = re.sub(r"[^a-z0-9]+", "-", payload.name.lower()).strip("-") or "client"
@@ -59,3 +70,8 @@ def marriage_prediction(payload: PredictionReportRequest):
 @router.post("/api/child-birth", dependencies=[Depends(auth)])
 def child_birth_prediction(payload: PredictionReportRequest):
     return _prediction_response(payload, "child-birth", 5)
+
+
+@router.post("/api/property-guidance", dependencies=[Depends(auth)])
+def property_guidance_prediction(payload: PredictionReportRequest):
+    return _prediction_response(payload, "property-guidance", 4)
