@@ -562,9 +562,12 @@ class DBAHierarchyRow(Flowable):
             self.summary_font_size + 3
             if self.combined_value else (self.height - self.font_size) / 2 + 1
         )
-        long_period = self.row.get("show_dates", True) and _period_exceeds_six_months(
-            self.row.get("start"), self.row.get("end")
-        )
+        long_period = self.row.get("show_tick")
+        if long_period is None:
+            long_period = self.row.get("show_dates", True) and _period_exceeds_six_months(
+                self.row.get("start"), self.row.get("end")
+            )
+        tick_color = self.row.get("tick_color", self.tick_color)
         if depth:
             canvas.setStrokeColor(colors.HexColor("#CBD5E1"))
             canvas.setLineWidth(1.1)
@@ -593,7 +596,7 @@ class DBAHierarchyRow(Flowable):
         if long_period:
             tick_x = label_x + canvas.stringWidth(label, label_font, self.font_size) + 3
             tick_y = baseline + self.font_size * 0.35
-            canvas.setStrokeColor(colors.HexColor(self.tick_color))
+            canvas.setStrokeColor(colors.HexColor(tick_color))
             canvas.setLineWidth(1.5)
             canvas.line(tick_x, tick_y, tick_x + 2, tick_y - 2)
             canvas.line(tick_x + 2, tick_y - 2, tick_x + 6, tick_y + 3)
@@ -631,6 +634,17 @@ def _render_dba_tree(
 
     flatten(_nest_dba_periods(entries))
     return rows
+
+
+def _prediction_item_key(planet: Any, kind: Any, start: Any, end: Any) -> tuple[str, str, str, str]:
+    return (str(planet), str(kind), str(start)[:10], str(end)[:10])
+
+
+def _prediction_override_map(overrides: list[dict[str, Any]] | None) -> dict[tuple[str, str, str, str], dict[str, Any]]:
+    return {
+        _prediction_item_key(row.get("planet"), row.get("kind"), row.get("start"), row.get("end")): row
+        for row in (overrides or [])
+    }
 
 def _parse_event_date(value: Any) -> date | None:
     """Normalize date, datetime, or ISO text to a calendar date in UTC."""
@@ -671,11 +685,12 @@ class TransitPlanetCell(Flowable):
     """Planet cell with a small green check for transit periods over six months."""
 
     def __init__(
-        self, planet: str, start: Any, end: Any, font_size: float, tick_color: str = "#16A34A"
+        self, planet: str, start: Any, end: Any, font_size: float,
+        tick_color: str = "#16A34A", show_tick: bool | None = None,
     ):
         super().__init__()
         self.planet = planet
-        self.long_period = _period_exceeds_six_months(start, end)
+        self.long_period = _period_exceeds_six_months(start, end) if show_tick is None else show_tick
         self.font_size = font_size
         self.tick_color = tick_color
         self.height = font_size + 2
@@ -856,7 +871,8 @@ def _render_period_table(
         for column in columns:
             if mark_long_periods and column == "planet":
                 rendered_row.append(TransitPlanetCell(
-                    str(row.get(column, "")), row.get("start"), row.get("end"), mark_font_size, mark_tick_color
+                    str(row.get(column, "")), row.get("start"), row.get("end"), mark_font_size,
+                    row.get("tick_color", mark_tick_color), row.get("show_tick"),
                 ))
             elif column in {"start", "end"} and row.get(f"{column}_combined_value"):
                 summary_size = boundary_font_size or max(4.8, mark_font_size - 1.4)
@@ -884,6 +900,7 @@ def _render_period_table(
 def _marriage_significator_story(
     significators, dba, transits, level1_style, level2_style, level3_style,
     subheading_style, cell_style, small_style, usable_width, body_size, cell,
+    item_overrides: list[dict[str, Any]] | None = None,
 ):
     story = []
     bhava_significators = significators["bhavas"]
@@ -893,6 +910,7 @@ def _marriage_significator_story(
     transit_rows = transits.get("transit_periods", [])
     slow_planets = {"Jupiter", "Saturn", "Rahu", "Ketu"}
     location_transit_intervals: dict[int, set[tuple[str, str, str]]] = {}
+    overrides = _prediction_override_map(item_overrides)
 
     def add_category(bhava: int, label: str, planets: list[str]):
         tick_color = "#16A34A" if bhava == 7 else "#D4A017"
@@ -946,6 +964,16 @@ def _marriage_significator_story(
                     row["end_combined_value"] = _transit_combined_value(
                         planet_name, row.get("end_degree"), natal_cusps
                     )
+        edited_transits = []
+        for row in transit_entries:
+            override = overrides.get(_prediction_item_key(row["planet"], "Transit", row["start"], row["end"]))
+            if override and override.get("deleted"):
+                continue
+            if override:
+                row["show_tick"] = bool(override.get("selected", True))
+                row["tick_color"] = override.get("tick_color", tick_color)
+            edited_transits.append(row)
+        transit_entries = edited_transits
         slow = [row for row in transit_entries if row["planet"] in {PLANET_ABBREVIATIONS.get(name, name) for name in slow_planets}]
         other = [row for row in transit_entries if row not in slow]
         for subheading, group in (("Slow-moving planets", slow), ("Other planets", other)):
@@ -972,6 +1000,18 @@ def _marriage_significator_story(
             selected,
             combined_values if is_cuspal_interlink else None,
         )
+        edited_entries = []
+        for row in entries:
+            override = overrides.get(_prediction_item_key(
+                row["planet"], f"DBA ({row['level']})", row["start"], row["end"]
+            ))
+            if override and override.get("deleted"):
+                continue
+            if override:
+                row["show_tick"] = bool(override.get("selected", True))
+                row["tick_color"] = override.get("tick_color", tick_color)
+            edited_entries.append(row)
+        entries = edited_entries
         story.extend(_render_dba_tree(entries, body_size, small_style, tick_color))
         story.append(Spacer(1, 1.5 * mm))
 
@@ -1152,6 +1192,7 @@ def _prediction_pdf_page(
     version: str,
     significators: dict[int, dict[str, list[str]]] | None = None,
     reference_date: date | None = None,
+    item_overrides: list[dict[str, Any]] | None = None,
 ) -> bytes:
     buffer = BytesIO()
     is_mobile = version == "mobile"
@@ -1210,10 +1251,24 @@ def _prediction_pdf_page(
             fontSize=body_size, leading=body_size + 2, textColor=colors.HexColor("#64748B"),
             keepWithNext=True,
         )
+        overrides = _prediction_override_map(item_overrides)
+        summary_items = _marriage_summary_items(
+            significators, dba, transits, reference_date or datetime.now().date()
+        )
+        edited_summary_items = []
+        for item in summary_items:
+            override = overrides.get(_prediction_item_key(
+                item["planet"], item["kind"], item["start"], item["end"]
+            ))
+            if override and (override.get("deleted") or not override.get("selected", True)):
+                continue
+            edited_summary_items.append({
+                **item,
+                "tick_color": override.get("tick_color", item["tick_color"]) if override else item["tick_color"],
+            })
+        summary_items = edited_summary_items
         story = _marriage_summary_story(
-            _marriage_summary_items(
-                significators, dba, transits, reference_date or datetime.now().date()
-            ),
+            summary_items,
             dba, title_style, small_style, body_size, is_mobile,
         )
         story.extend([
@@ -1229,7 +1284,7 @@ def _prediction_pdf_page(
         story.extend(_marriage_significator_story(
             significators, dba, transits, level1_style, level2_style,
             level3_style, subheading_style, cell_style, small_style,
-            usable_width, body_size, cell,
+            usable_width, body_size, cell, item_overrides,
         ))
     else:
         story = [
@@ -1268,8 +1323,10 @@ def create_prediction_pdf(request: PredictionReportRequest, kind: str, bhava_num
     title = "Marriage Date - Analysis" if kind == "marriage" else "Child Birth Prediction"
     significators = _prediction_significators(request, (7, 3, 11)) if kind == "marriage" else None
     generation_date = datetime.now(timezone(timedelta(hours=request.timezone))).date()
+    item_overrides = [item.model_dump() for item in request.prediction_item_overrides or []] if kind == "marriage" else None
     prediction_pdf = _prediction_pdf_page(
-        dba, transit, title, request.version, significators, generation_date
+        dba, transit, title, request.version, significators, generation_date,
+        item_overrides=item_overrides,
     )
     base_pdf = _report_cover(request, kind)
 

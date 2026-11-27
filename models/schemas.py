@@ -68,6 +68,16 @@ class PredictionPeriodsRequest(PredictionBirthDetails):
     bhava_number: int = Field(..., ge=1, le=12)
 
 
+class PredictionItemOverride(BaseModel):
+    planet: str = Field(..., min_length=1, max_length=10)
+    kind: Literal["Transit", "DBA (Dasa)", "DBA (Bhukthi)", "DBA (Antara)"]
+    start: date
+    end: date
+    selected: bool = True
+    deleted: bool = False
+    tick_color: Literal["#16A34A", "#D4A017"]
+
+
 class PredictionReportRequest(PredictionBirthDetails):
     name: str = Field(..., min_length=1, max_length=100)
     place: Optional[str] = None
@@ -79,6 +89,7 @@ class PredictionReportRequest(PredictionBirthDetails):
     topics: Optional[List[str]] = None
     include_sn: bool = False
     include_sk: bool = False
+    prediction_item_overrides: Optional[List[PredictionItemOverride]] = None
 # class BTRSubmission(BaseModel):
 #     dateOfBirth: str
 #     originalBirthTime: str
