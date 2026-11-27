@@ -720,8 +720,11 @@ class MarriageSummaryRow(Flowable):
         super().__init__()
         self.item = item
         self.is_mobile = is_mobile
-        self.date_size = 10.5 if is_mobile else 12
-        self.detail_size = 8.8
+        self.is_dasa = item.get("kind") == "DBA (Dasa)"
+        # Dasa supplies the larger timing context. Keep Bhukthi and Transit
+        # visually prominent because they provide the more actionable window.
+        self.date_size = (9.5 if is_mobile else 10.5) if self.is_dasa else (11.5 if is_mobile else 12.5)
+        self.detail_size = (8.2 if is_mobile else 8.6) if self.is_dasa else (9.2 if is_mobile else 9.6)
         self.height = self.date_size + self.detail_size + 22
 
     def wrap(self, avail_width, avail_height):
@@ -731,18 +734,23 @@ class MarriageSummaryRow(Flowable):
     def draw(self):
         canvas = self.canv
         date_baseline = self.height - self.date_size - 3
-        canvas.setStrokeColor(colors.HexColor(self.item["tick_color"]))
-        canvas.setLineWidth(1.6)
+        tick_color = "#86EFAC" if self.is_dasa else self.item["tick_color"]
+        canvas.setStrokeColor(colors.HexColor(tick_color))
+        canvas.setLineWidth(1.1 if self.is_dasa else 1.8)
         canvas.line(0, date_baseline + self.date_size * .25 + 2, 2.3, date_baseline + self.date_size * .25)
         canvas.line(2.3, date_baseline + self.date_size * .25, 6.8, date_baseline + self.date_size * .25 + 5)
-        date_color = "#64748B" if self.item.get("time_horizon") == "Past" else "#0F172A"
+        date_color = (
+            "#64748B" if self.is_dasa or self.item.get("time_horizon") == "Past"
+            else "#0F172A"
+        )
         canvas.setFillColor(colors.HexColor(date_color))
-        canvas.setFont("Helvetica-Bold", self.date_size)
+        date_font = "Helvetica" if self.is_dasa else "Helvetica-Bold"
+        canvas.setFont(date_font, self.date_size)
         start_label = date.fromisoformat(self.item["start"]).strftime("%d %b %Y")
         end_label = date.fromisoformat(self.item["end"]).strftime("%d %b %Y")
         date_x = 12
         canvas.drawString(date_x, date_baseline, start_label)
-        start_width = canvas.stringWidth(start_label, "Helvetica-Bold", self.date_size)
+        start_width = canvas.stringWidth(start_label, date_font, self.date_size)
         arrow_start = date_x + start_width + 5
         arrow_y = date_baseline + self.date_size * .35
         canvas.setStrokeColor(colors.HexColor("#334155"))
@@ -754,28 +762,32 @@ class MarriageSummaryRow(Flowable):
 
         detail_y = 5
         horizon = self.item.get("time_horizon", "Future")
-        if horizon == "Active Window" and self.item["tick_color"] == "#D4A017":
-            badge_bg, badge_fg = "#FEF3C7", "#92400E"
-        else:
-            horizon_style = {
-                "Past": ("#F1F5F9", "#94A3B8"),
-                "Active Window": ("#DCFCE7", "#047857"),
-                "Future": ("#E2E8F0", "#475569"),
-            }
-            badge_bg, badge_fg = horizon_style[horizon]
-        canvas.setFillColor(colors.HexColor("#64748B"))
-        canvas.setFont("Helvetica", self.detail_size)
+        canvas.setFillColor(colors.HexColor("#94A3B8" if self.is_dasa else "#475569"))
+        canvas.setFont("Helvetica" if self.is_dasa else "Helvetica-Bold", self.detail_size)
         detail = f"{self.item['planet']} · {self.item['kind']}"
         canvas.drawString(0, detail_y, detail)
-        tag_size = 7.2 if self.is_mobile else 8
-        tag = horizon
-        tag_width = canvas.stringWidth(tag, "Helvetica-Bold", tag_size)
-        tag_x = self.width - tag_width - 10
-        canvas.setFillColor(colors.HexColor(badge_bg))
-        canvas.roundRect(tag_x - 4, detail_y - 2, tag_width + 8, tag_size + 4, 2, stroke=0, fill=1)
-        canvas.setFillColor(colors.HexColor(badge_fg))
-        canvas.setFont("Helvetica-Bold", tag_size)
-        canvas.drawString(tag_x, detail_y, tag)
+
+        # Dasa rows describe the larger cycle; their date horizon badge can
+        # distract from the more actionable Bhukthi and Transit rows.
+        if not self.is_dasa:
+            if horizon == "Active Window" and self.item["tick_color"] == "#D4A017":
+                badge_bg, badge_fg = "#FEF3C7", "#92400E"
+            else:
+                horizon_style = {
+                    "Past": ("#F1F5F9", "#94A3B8"),
+                    "Active Window": ("#DCFCE7", "#047857"),
+                    "Future": ("#E2E8F0", "#475569"),
+                }
+                badge_bg, badge_fg = horizon_style[horizon]
+            tag_size = 7.2 if self.is_mobile else 8
+            tag = horizon
+            tag_width = canvas.stringWidth(tag, "Helvetica-Bold", tag_size)
+            tag_x = self.width - tag_width - 10
+            canvas.setFillColor(colors.HexColor(badge_bg))
+            canvas.roundRect(tag_x - 4, detail_y - 2, tag_width + 8, tag_size + 4, 2, stroke=0, fill=1)
+            canvas.setFillColor(colors.HexColor(badge_fg))
+            canvas.setFont("Helvetica-Bold", tag_size)
+            canvas.drawString(tag_x, detail_y, tag)
 
         canvas.setStrokeColor(colors.HexColor("#E2E8F0"))
         canvas.setLineWidth(0.55)
@@ -1072,6 +1084,18 @@ def _generic_period_story(dba, transits, section_style, cell_style, small_style,
     return story
 
 
+def _filter_summary_dasa_without_bhukthi(items: list[dict[str, str]]) -> list[dict[str, str]]:
+    bhukthi_rows = [row for row in items if row["kind"] == "DBA (Bhukthi)"]
+    return [
+        row for row in items
+        if row["kind"] != "DBA (Dasa)" or any(
+            row["tick_color"] == child["tick_color"]
+            and row["start"] <= child["start"] and child["end"] <= row["end"]
+            for child in bhukthi_rows
+        )
+    ]
+
+
 def _marriage_summary_items(
     significators, dba, transits, reference_date: date,
     target_bhavas: tuple[int, ...] = (7, 3, 11),
@@ -1138,8 +1162,13 @@ def _marriage_summary_items(
             ):
                 add(row["planet"], "Transit", row["start"], row["end"], tick_color)
 
-    return sorted(items.values(), key=lambda row: (
-        row["start"], row["planet"], row["kind"], row["end"]
+    rows = list(items.values())
+    # A Dasa is useful in the client summary only when it contains at least
+    # one listed Bhukthi period; otherwise it is a broad, unsupported span.
+    rows = _filter_summary_dasa_without_bhukthi(rows)
+    rank = {"DBA (Dasa)": 0, "DBA (Bhukthi)": 1, "DBA (Antara)": 2, "Transit": 3}
+    return sorted(rows, key=lambda row: (
+        row["start"], rank.get(row["kind"], 4), row["planet"], row["end"]
     ))
 
 
@@ -1332,6 +1361,7 @@ def _prediction_pdf_page(
                 "planet": planet, "kind": kind, "start": start, "end": end,
                 "tick_color": tick_color, "time_horizon": horizon,
             })
+        summary_items = _filter_summary_dasa_without_bhukthi(summary_items)
         story = _marriage_summary_story(
             summary_items,
             dba, title_style, small_style, body_size, is_mobile, summary_title,
