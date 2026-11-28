@@ -15,7 +15,13 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import Flowable, LongTable, PageBreak, Paragraph, SimpleDocTemplate, Spacer, TableStyle
 
-from models.schemas import PlanetLordSummaryRequest, PredictionPeriodsRequest, PredictionReportRequest, ReportRequest
+from models.schemas import (
+    PlanetLordSummaryRequest,
+    PredictionPeriodsRequest,
+    PredictionReportBatchRequest,
+    PredictionReportRequest,
+    ReportRequest,
+)
 from pdf.desktop_report import render_desktop_pdf
 from pdf.mobile_report import H as MOBILE_H, W as MOBILE_W, render_mobile_pdf
 from services.chart_service import compute_kp_json
@@ -1238,7 +1244,10 @@ def _prediction_pdf_page(
     target_bhavas: tuple[int, ...] = (7, 3, 11),
     primary_bhava: int = 7,
     summary_title: str = "Marriage Date Prediction",
+    part: str = "all",
 ) -> bytes:
+    if part not in {"all", "summary", "analysis"}:
+        raise ValueError("part must be all, summary, or analysis")
     buffer = BytesIO()
     is_mobile = version == "mobile"
     page_size = (MOBILE_W, MOBILE_H) if is_mobile else A4
@@ -1362,12 +1371,11 @@ def _prediction_pdf_page(
                 "tick_color": tick_color, "time_horizon": horizon,
             })
         summary_items = _filter_summary_dasa_without_bhukthi(summary_items)
-        story = _marriage_summary_story(
+        summary_story = _marriage_summary_story(
             summary_items,
             dba, title_style, small_style, body_size, is_mobile, summary_title,
         )
-        story.extend([
-            PageBreak(),
+        analysis_story = [
             Paragraph(title, title_style),
             Paragraph("For Astrologer Reference. Clients may ignore this section.", reference_style),
             Paragraph(
@@ -1375,13 +1383,19 @@ def _prediction_pdf_page(
                 small_style,
             ),
             Spacer(1, 2 * mm),
-        ])
-        story.extend(_marriage_significator_story(
+        ]
+        analysis_story.extend(_marriage_significator_story(
             significators, dba, transits, level1_style, level2_style,
             level3_style, subheading_style, cell_style, small_style,
             usable_width, body_size, cell, item_overrides,
             target_bhavas, primary_bhava,
         ))
+        if part == "summary":
+            story = summary_story
+        elif part == "analysis":
+            story = analysis_story
+        else:
+            story = [*summary_story, PageBreak(), *analysis_story]
     else:
         story = [
             Paragraph(title, title_style),
@@ -1452,6 +1466,80 @@ def create_prediction_pdf(request: PredictionReportRequest, kind: str, bhava_num
         return result.getvalue()
     except Exception as exc:
         raise HTTPException(500, f"Could not assemble prediction report: {exc}") from None
+
+
+def create_combined_prediction_pdf(request: PredictionReportBatchRequest) -> bytes:
+    """Build one cover, then every selected summary, then every analysis section."""
+    if len({item.kind for item in request.reports}) != len(request.reports):
+        raise HTTPException(400, "Choose each prediction report type only once")
+    settings = {
+        "marriage": ((7, 3, 11), 7, "marriage", "Marriage Date - Analysis", "Marriage Date Prediction"),
+        "child_birth": ((5, 1, 9), 5, "child-birth", "Child Birth - Analysis", "Child Birth Prediction"),
+        "property_guidance": ((4, 8, 12), 4, "property-guidance", "Property Guidance - Analysis", "Property Guidance Prediction"),
+    }
+    order = {"marriage": 0, "child_birth": 1, "property_guidance": 2}
+    reports = sorted(request.reports, key=lambda item: order[item.kind])
+
+    try:
+        writer = PdfWriter()
+        first_spec = reports[0]
+        first_request = request.model_copy(update={
+            "from_date": first_spec.from_date or request.from_date,
+            "duration_years": first_spec.duration_years,
+        })
+        _, _, first_cover_kind, _, _ = settings[first_spec.kind]
+        cover_pdf = PdfReader(BytesIO(_report_cover(first_request, first_cover_kind)))
+        writer.add_page(cover_pdf.pages[0])
+
+        summary_pdfs: list[bytes] = []
+        analysis_pdfs: list[bytes] = []
+        for spec in reports:
+            target_bhavas, bhava_number, _, title, summary_title = settings[spec.kind]
+            report_request = request.model_copy(update={
+                "from_date": spec.from_date or request.from_date,
+                "duration_years": spec.duration_years,
+                "prediction_item_overrides": None,
+            })
+            period_request = PredictionPeriodsRequest(
+                date_of_birth=report_request.date_of_birth,
+                time_of_birth=report_request.time_of_birth,
+                latitude=report_request.latitude,
+                longitude=report_request.longitude,
+                timezone=report_request.timezone,
+                ayanamsa=report_request.ayanamsa,
+                from_date=report_request.from_date,
+                duration_years=report_request.duration_years,
+                bhava_number=bhava_number,
+            )
+            dba = get_dba_periods(period_request)
+            transits = get_transit_periods(period_request, consolidate_house_periods=True)
+            significators = _prediction_significators(report_request, target_bhavas)
+            generation_date = datetime.now(timezone(timedelta(hours=report_request.timezone))).date()
+            common = (
+                dba, transits, title, report_request.version, significators,
+                generation_date,
+            )
+            summary_pdfs.append(_prediction_pdf_page(
+                *common, target_bhavas=target_bhavas,
+                primary_bhava=target_bhavas[0], summary_title=summary_title,
+                part="summary",
+            ))
+            analysis_pdfs.append(_prediction_pdf_page(
+                *common, target_bhavas=target_bhavas,
+                primary_bhava=target_bhavas[0], summary_title=summary_title,
+                part="analysis",
+            ))
+
+        for pdf_bytes in summary_pdfs + analysis_pdfs:
+            for page in PdfReader(BytesIO(pdf_bytes)).pages:
+                writer.add_page(page)
+        result = BytesIO()
+        writer.write(result)
+        return result.getvalue()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(500, f"Could not assemble combined prediction report: {exc}") from None
 
 
 PREDICTION_BHAVA_GROUPS = {7: (7, 3, 11), 5: (5, 1, 9), 4: (4, 8, 12)}

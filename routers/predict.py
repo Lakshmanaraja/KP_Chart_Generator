@@ -5,8 +5,9 @@ import re
 from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import Response
 
-from models.schemas import PredictionPeriodsRequest, PredictionReportRequest
+from models.schemas import PredictionPeriodsRequest, PredictionReportBatchRequest, PredictionReportRequest
 from services.predict_service import (
+    create_combined_prediction_pdf,
     create_prediction_pdf,
     get_dba_periods,
     get_prediction_data,
@@ -75,3 +76,15 @@ def child_birth_prediction(payload: PredictionReportRequest):
 @router.post("/api/property-guidance", dependencies=[Depends(auth)])
 def property_guidance_prediction(payload: PredictionReportRequest):
     return _prediction_response(payload, "property-guidance", 4)
+
+
+@router.post("/api/combined-predictions", dependencies=[Depends(auth)])
+def combined_prediction_reports(payload: PredictionReportBatchRequest):
+    pdf = create_combined_prediction_pdf(payload)
+    slug = re.sub(r"[^a-z0-9]+", "-", payload.name.lower()).strip("-") or "client"
+    filename = f"combined-predictions-{slug}.pdf"
+    return Response(
+        pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

@@ -90,6 +90,16 @@ class PredictionReportRequest(PredictionBirthDetails):
     include_sn: bool = False
     include_sk: bool = False
     prediction_item_overrides: Optional[List[PredictionItemOverride]] = None
+
+
+class PredictionReportBatchItem(BaseModel):
+    kind: Literal["marriage", "child_birth", "property_guidance"]
+    from_date: Optional[date] = None
+    duration_years: int = Field(5, ge=1, le=120)
+
+
+class PredictionReportBatchRequest(PredictionReportRequest):
+    reports: List[PredictionReportBatchItem] = Field(..., min_length=2, max_length=3)
 # class BTRSubmission(BaseModel):
 #     dateOfBirth: str
 #     originalBirthTime: str
