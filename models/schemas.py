@@ -90,6 +90,7 @@ class PredictionReportRequest(PredictionBirthDetails):
     include_sn: bool = False
     include_sk: bool = False
     prediction_item_overrides: Optional[List[PredictionItemOverride]] = None
+    part: Literal["all", "summary", "analysis"] = "all"
 
 
 class PredictionReportBatchItem(BaseModel):
@@ -100,6 +101,16 @@ class PredictionReportBatchItem(BaseModel):
 
 class PredictionReportBatchRequest(PredictionReportRequest):
     reports: List[PredictionReportBatchItem] = Field(..., min_length=2, max_length=3)
+
+
+class PredictionPdfSection(BaseModel):
+    pdf_base64: str = Field(..., min_length=1)
+    skip_pages: int = Field(0, ge=0, le=5)
+
+
+class PredictionPdfComposeRequest(BaseModel):
+    cover_pdf_base64: str = Field(..., min_length=1)
+    sections: List[PredictionPdfSection] = Field(default_factory=list, max_length=50)
 # class BTRSubmission(BaseModel):
 #     dateOfBirth: str
 #     originalBirthTime: str

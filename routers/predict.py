@@ -5,9 +5,10 @@ import re
 from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import Response
 
-from models.schemas import PredictionPeriodsRequest, PredictionReportBatchRequest, PredictionReportRequest
+from models.schemas import PredictionPdfComposeRequest, PredictionPeriodsRequest, PredictionReportBatchRequest, PredictionReportRequest
 from services.predict_service import (
     create_combined_prediction_pdf,
+    compose_prediction_pdfs,
     create_prediction_pdf,
     get_dba_periods,
     get_prediction_data,
@@ -87,4 +88,17 @@ def combined_prediction_reports(payload: PredictionReportBatchRequest):
         pdf,
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post("/api/compose", dependencies=[Depends(auth)])
+def compose_reports(payload: PredictionPdfComposeRequest):
+    pdf = compose_prediction_pdfs(
+        payload.cover_pdf_base64,
+        [section.model_dump() for section in payload.sections],
+    )
+    return Response(
+        pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="time-science-combined-report.pdf"'},
     )

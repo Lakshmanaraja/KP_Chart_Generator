@@ -5,6 +5,7 @@ from calendar import monthrange
 from datetime import date, datetime, time, timedelta, timezone
 from io import BytesIO
 import re
+import base64
 from typing import Any
 
 from fastapi import HTTPException
@@ -1451,7 +1452,10 @@ def create_prediction_pdf(request: PredictionReportRequest, kind: str, bhava_num
         target_bhavas=target_bhavas,
         primary_bhava=target_bhavas[0],
         summary_title=summary_title,
+        part=request.part,
     )
+    if request.part != "all":
+        return prediction_pdf
     base_pdf = _report_cover(request, kind)
 
     try:
@@ -1469,7 +1473,7 @@ def create_prediction_pdf(request: PredictionReportRequest, kind: str, bhava_num
 
 
 def create_combined_prediction_pdf(request: PredictionReportBatchRequest) -> bytes:
-    """Build one cover, then every selected summary, then every analysis section."""
+    """Build prediction pages in the requested part, with cover for full reports."""
     if len({item.kind for item in request.reports}) != len(request.reports):
         raise HTTPException(400, "Choose each prediction report type only once")
     settings = {
@@ -1488,8 +1492,9 @@ def create_combined_prediction_pdf(request: PredictionReportBatchRequest) -> byt
             "duration_years": first_spec.duration_years,
         })
         _, _, first_cover_kind, _, _ = settings[first_spec.kind]
-        cover_pdf = PdfReader(BytesIO(_report_cover(first_request, first_cover_kind)))
-        writer.add_page(cover_pdf.pages[0])
+        if request.part == "all":
+            cover_pdf = PdfReader(BytesIO(_report_cover(first_request, first_cover_kind)))
+            writer.add_page(cover_pdf.pages[0])
 
         summary_pdfs: list[bytes] = []
         analysis_pdfs: list[bytes] = []
@@ -1530,7 +1535,8 @@ def create_combined_prediction_pdf(request: PredictionReportBatchRequest) -> byt
                 part="analysis",
             ))
 
-        for pdf_bytes in summary_pdfs + analysis_pdfs:
+        selected_parts = summary_pdfs + analysis_pdfs if request.part == "all" else (summary_pdfs if request.part == "summary" else analysis_pdfs)
+        for pdf_bytes in selected_parts:
             for page in PdfReader(BytesIO(pdf_bytes)).pages:
                 writer.add_page(page)
         result = BytesIO()
@@ -1540,6 +1546,26 @@ def create_combined_prediction_pdf(request: PredictionReportBatchRequest) -> byt
         raise
     except Exception as exc:
         raise HTTPException(500, f"Could not assemble combined prediction report: {exc}") from None
+
+
+def compose_prediction_pdfs(cover_pdf_base64: str, sections: list[dict[str, Any]]) -> bytes:
+    """Merge a shared cover and ordered report parts, optionally omitting source covers."""
+    try:
+        writer = PdfWriter()
+        cover_bytes = base64.b64decode(cover_pdf_base64, validate=True)
+        cover = PdfReader(BytesIO(cover_bytes))
+        for page in cover.pages:
+            writer.add_page(page)
+        for section in sections:
+            raw = base64.b64decode(section["pdf_base64"], validate=True)
+            pages = PdfReader(BytesIO(raw)).pages
+            for page in pages[int(section.get("skip_pages", 0)):]:
+                writer.add_page(page)
+        output = BytesIO()
+        writer.write(output)
+        return output.getvalue()
+    except Exception as exc:
+        raise HTTPException(400, f"Could not compose report PDFs: {exc}") from None
 
 
 PREDICTION_BHAVA_GROUPS = {7: (7, 3, 11), 5: (5, 1, 9), 4: (4, 8, 12)}
